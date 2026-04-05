@@ -23,12 +23,26 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
-// CORS Configuration
+// --- 🌐 NEW CORS CONFIGURATION ---
+// This allows both your local computer and your live Vercel site to talk to this API
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://visionbridge-ventures.vercel.app'
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173', // Matches your Vite frontend port
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  // 💡 THE FIX: 'Authorization' must be allowed so the frontend can send the JWT Token
-  allowedHeaders: ['Content-Type', 'Authorization'] 
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -37,11 +51,9 @@ app.use(express.json());
 app.get('/', (req, res) => res.send('✅ VisionBridge API is active'));
 
 // --- 🔓 PUBLIC API ROUTES ---
-// Anyone can access this to login or reset their password
 app.use('/api/auth', authRoutes); 
 
 // --- 🔐 PROTECTED API ROUTES ---
-// The authMiddleware acts as a bouncer. No valid token = No entry.
 app.use('/api/dashboard', authMiddleware, dashboardRoutes); 
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
@@ -58,5 +70,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ VisionBridge Backend running on http://localhost:${PORT}`);
+  console.log(`✅ VisionBridge Backend running on port ${PORT}`);
 });
