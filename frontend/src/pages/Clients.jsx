@@ -43,7 +43,7 @@ const Clients = () => {
     try {
       // 💡 THE FIX: Get token and add Authorization header for fetching clients
       const token = sessionStorage.getItem("token");
-      const res = await fetch('http://localhost:3000/api/clients', {
+      const res = await fetch('https://visionbridge-backend.onrender.com/api/clients', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -80,7 +80,7 @@ const Clients = () => {
       return;
     }
 
-    const url = isEditing ? `http://localhost:3000/api/clients/${editingId}` : `http://localhost:3000/api/clients`;
+    const url = isEditing ? `https://visionbridge-backend.onrender.com/api/clients/${editingId}` : `https://visionbridge-backend.onrender.com/api/clients`;
     const method = isEditing ? 'PUT' : 'POST';
     const token = sessionStorage.getItem("token"); // 💡 Get token for saving
 
@@ -231,7 +231,7 @@ const Clients = () => {
                   <button onClick={async () => { 
                     if(window.confirm("Delete permanently?")) { 
                       const token = sessionStorage.getItem("token"); // 💡 Get token for delete
-                      await fetch(`http://localhost:3000/api/clients/${c.id}`, {
+                      await fetch(`https://visionbridge-backend.onrender.com/api/clients/${c.id}`, {
                         method:'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` } // 💡 Add Auth header
                       }); 

@@ -34,7 +34,7 @@ const MFSchemes = () => {
   const fetchSchemes = async () => {
     try {
       const token = sessionStorage.getItem("token"); // 💡 Get Token
-      const res = await fetch('http://localhost:3000/api/mf-schemes', {
+      const res = await fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', {
         headers: { 'Authorization': `Bearer ${token}` } // 💡 Auth Header
       });
       const data = await res.json();
@@ -51,7 +51,7 @@ const MFSchemes = () => {
     e.preventDefault();
     if (grandTotal !== 100) return alert(`⚠️ Allocation must be exactly 100%. Current: ${grandTotal}%`);
 
-    const url = isEditing ? `http://localhost:3000/api/mf-schemes/${editingId}` : `http://localhost:3000/api/mf-schemes`;
+    const url = isEditing ? `https://visionbridge-backend.onrender.com/api/mf-schemes/${editingId}` : `https://visionbridge-backend.onrender.com/api/mf-schemes`;
     const token = sessionStorage.getItem("token"); // 💡 Get Token
 
     const payload = {
@@ -107,7 +107,7 @@ const MFSchemes = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Permanently delete this scheme?")) {
       const token = sessionStorage.getItem("token"); // 💡 Get Token
-      await fetch(`http://localhost:3000/api/mf-schemes/${id}`, { 
+      await fetch(`https://visionbridge-backend.onrender.com/api/mf-schemes/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` } // 💡 Auth Header
       });

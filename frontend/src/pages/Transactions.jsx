@@ -33,9 +33,9 @@ const Transactions = () => {
       const headers = { 'Authorization': `Bearer ${token}` }; // 💡 Auth Header
 
       const [cRes, sRes, tRes] = await Promise.all([
-        fetch('http://localhost:3000/api/clients', { headers }),
-        fetch('http://localhost:3000/api/mf-schemes', { headers }),
-        fetch('http://localhost:3000/api/transactions', { headers })
+        fetch('https://visionbridge-backend.onrender.com/api/clients', { headers }),
+        fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers }),
+        fetch('https://visionbridge-backend.onrender.com/api/transactions', { headers })
       ]);
       const cData = await cRes.json();
       const sData = await sRes.json();
@@ -94,10 +94,10 @@ const Transactions = () => {
             amount: cleanAmount 
         };
 
-        const resOut = await fetch('http://localhost:3000/api/transactions', {
+        const resOut = await fetch('https://visionbridge-backend.onrender.com/api/transactions', {
           method: 'POST', headers, body: JSON.stringify(outPayload)
         });
-        const resIn = await fetch('http://localhost:3000/api/transactions', {
+        const resIn = await fetch('https://visionbridge-backend.onrender.com/api/transactions', {
           method: 'POST', headers, body: JSON.stringify(inPayload)
         });
 
@@ -108,7 +108,7 @@ const Transactions = () => {
       } catch (err) { alert("❌ Error during Switch"); }
 
     } else {
-      const url = isEditing ? `http://localhost:3000/api/transactions/${editingId}` : `http://localhost:3000/api/transactions`;
+      const url = isEditing ? `https://visionbridge-backend.onrender.com/api/transactions/${editingId}` : `https://visionbridge-backend.onrender.com/api/transactions`;
       try {
         const res = await fetch(url, {
           method: isEditing ? 'PUT' : 'POST',

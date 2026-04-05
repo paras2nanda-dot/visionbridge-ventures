@@ -10,7 +10,7 @@ const Reports = () => {
       const token = sessionStorage.getItem("token");
 
       // 💡 THE FIX: Attach the Authorization header to the fetch request
-      const response = await fetch(`http://localhost:3000/api/reports/${endpoint}`, {
+      const response = await fetch(`https://visionbridge-backend.onrender.com/api/reports/${endpoint}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

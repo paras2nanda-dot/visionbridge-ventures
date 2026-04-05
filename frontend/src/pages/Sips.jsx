@@ -40,9 +40,9 @@ const Sips = () => {
       const headers = { 'Authorization': `Bearer ${token}` }; // 💡 Auth Header
 
       const [cRes, sRes, sipRes] = await Promise.all([
-        fetch('http://localhost:3000/api/clients', { headers }),
-        fetch('http://localhost:3000/api/mf-schemes', { headers }),
-        fetch('http://localhost:3000/api/sips', { headers })
+        fetch('https://visionbridge-backend.onrender.com/api/clients', { headers }),
+        fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers }),
+        fetch('https://visionbridge-backend.onrender.com/api/sips', { headers })
       ]);
       const cData = await cRes.json();
       const sData = await sRes.json();
@@ -93,7 +93,7 @@ const Sips = () => {
       stopped_at: formData.status === 'Stopped' ? formData.end_date : null 
     };
 
-    const url = isEditing ? `http://localhost:3000/api/sips/${editingId}` : `http://localhost:3000/api/sips`;
+    const url = isEditing ? `https://visionbridge-backend.onrender.com/api/sips/${editingId}` : `https://visionbridge-backend.onrender.com/api/sips`;
     const token = sessionStorage.getItem("token"); // 💡 Get Token
 
     try {

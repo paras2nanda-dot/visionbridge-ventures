@@ -12,7 +12,7 @@ const ClientDashboard = () => {
   // 1. 💡 THE FIX: Fetch all clients with Authorization Header
   useEffect(() => {
     const token = sessionStorage.getItem("token");
-    fetch('http://localhost:3000/api/clients', {
+    fetch('https://visionbridge-backend.onrender.com/api/clients', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())
@@ -27,7 +27,7 @@ const ClientDashboard = () => {
     setIsLoading(true);
     setSelectedClient({ id: client.id }); 
 
-    fetch(`http://localhost:3000/api/client-dashboard/${client.id}`, {
+    fetch(`https://visionbridge-backend.onrender.com/api/client-dashboard/${client.id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {

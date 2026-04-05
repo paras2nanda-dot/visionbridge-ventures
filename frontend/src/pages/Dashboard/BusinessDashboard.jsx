@@ -8,7 +8,7 @@ const BusinessDashboard = () => {
     // 💡 THE FIX: Grab the JWT token from SESSION storage
     const token = sessionStorage.getItem("token");
 
-    fetch('http://localhost:3000/api/dashboard/business', {
+    fetch('https://visionbridge-backend.onrender.com/api/dashboard/business', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

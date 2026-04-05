@@ -16,7 +16,7 @@ const Charts = () => {
     const token = sessionStorage.getItem("token");
 
     // 💡 THE FIX: Pass the token in the Authorization header to pass the backend middleware
-    fetch('http://localhost:3000/api/dashboard/charts', {
+    fetch('https://visionbridge-backend.onrender.com/api/dashboard/charts', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
