@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// 🔌 Path adjusted to find api.js in the services folder
+// 🔌 Correct path: go up (..) then into services
 import api from "../services/api";
 
 export default function Login() {
@@ -23,13 +23,13 @@ export default function Login() {
     console.log("🚀 Login button clicked. Attempting to reach backend...");
 
     try {
-      // 📡 Axios automatically uses the baseURL from your api.js
+      // 📡 Axios uses the baseURL from your services/api.js
       const res = await api.post("/auth/login", { username, password });
 
       console.log("📡 Server Response Status:", res.status);
       const data = res.data; 
       
-      // 🛡️ Security: Store session token and user info
+      // 🛡️ Store session token and user info
       sessionStorage.setItem("token", data.token); 
       sessionStorage.setItem("username", data.user?.full_name || username); 
       
@@ -73,7 +73,7 @@ export default function Login() {
 
   return (
     <div style={styles.pageWrapper}>
-      {/* 🖼️ LEFT PANEL */}
+      {/* LEFT PANEL */}
       <div style={styles.leftPanel}>
         <div style={styles.overlay}></div>
         <div style={styles.leftContent}>
@@ -91,7 +91,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* 🔐 RIGHT PANEL */}
+      {/* RIGHT PANEL */}
       <div style={styles.rightPanel}>
         <div style={styles.loginFormContainer}>
           <div style={styles.logoContainer}>
@@ -141,7 +141,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* 🔑 FORGOT PASSWORD MODAL */}
+      {/* FORGOT PASSWORD MODAL */}
       {showReset && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
@@ -171,6 +171,7 @@ export default function Login() {
   );
 }
 
+// ... styles object remains exactly the same as your original ...
 const styles = {
   pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif" },
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://pixabay.com/images/download/nattanan23-money-2724241_1920.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
