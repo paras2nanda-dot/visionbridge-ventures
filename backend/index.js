@@ -23,24 +23,32 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
-// --- 🌐 NEW CORS CONFIGURATION ---
-// This allows both your local computer and your live Vercel site to talk to this API
+// --- 🌐 ENHANCED CORS CONFIGURATION ---
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://visionbridge-ventures.vercel.app'
+  'https://visionbridge-ventures.vercel.app',
+  'https://visionbridge-ventures-iota.vercel.app'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // 1. Allow requests with no origin (like mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+    
+    // 2. Allow if it's in our specific list
+    const isWhitelisted = allowedOrigins.includes(origin);
+    
+    // 3. Allow ANY vercel.app domain (Very helpful for Vercel dynamic links)
+    const isVercel = origin.endsWith('.vercel.app');
+
+    if (isWhitelisted || isVercel) {
+      callback(null, true);
+    } else {
+      console.log("❌ CORS Blocked Origin:", origin);
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Added OPTIONS for security pre-flights
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
