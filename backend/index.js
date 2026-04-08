@@ -32,13 +32,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // 1. Allow requests with no origin (like mobile apps)
     if (!origin) return callback(null, true);
-    
-    // 2. Allow if it's in our specific list
     const isWhitelisted = allowedOrigins.includes(origin);
-    
-    // 3. Allow ANY vercel.app domain (Very helpful for Vercel dynamic links)
     const isVercel = origin.endsWith('.vercel.app');
 
     if (isWhitelisted || isVercel) {
@@ -48,7 +43,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Added OPTIONS for security pre-flights
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -76,7 +71,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
+// --- 🚀 START SERVER ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+// Using '0.0.0.0' allows Render to bind to the port correctly
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ VisionBridge Backend running on port ${PORT}`);
 });
