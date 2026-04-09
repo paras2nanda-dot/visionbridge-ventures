@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify"; // 💡 Added this
-import "react-toastify/dist/ReactToastify.css"; // 💡 Added the styles
+import { ToastContainer } from "react-toastify"; 
+import "react-toastify/dist/ReactToastify.css"; 
 
 // 📂 Core Components
 import Layout from "./components/Layout";
@@ -41,7 +41,7 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <>
-      {/* 💡 The ToastContainer lives here so it can show messages over any page */}
+      {/* 💡 The ToastContainer is moved to the very top and given a high z-index */}
       <ToastContainer 
         position="top-right"
         autoClose={3000}
@@ -53,6 +53,7 @@ function App() {
         draggable
         pauseOnHover
         theme="colored"
+        style={{ zIndex: 99999 }} 
       />
 
       <Routes>
@@ -82,11 +83,8 @@ function App() {
           <Route path="/reports" element={<Reports />} />
         </Route>
 
-        <Route path="*" element={
-          <div style={{ padding: '100px', textAlign: 'center', fontSize: '24px', fontWeight: '900', color: '#1e293b' }}>
-            404 - PAGE NOT FOUND
-          </div>
-        } />
+        {/* 🚫 Default Redirect to Login instead of a plain 404 text */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </>
   );
