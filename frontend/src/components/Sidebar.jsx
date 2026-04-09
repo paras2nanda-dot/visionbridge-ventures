@@ -29,6 +29,18 @@ const Sidebar = ({ closeMobileMenu }) => {
 
   return (
     <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e293b' }}>
+      
+      {/* 💡 CSS to hide the scrollbar specifically for the navigation area */}
+      <style>{`
+        .sidebar-nav::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
+        }
+        .sidebar-nav {
+          -ms-overflow-style: none; /* IE and Edge */
+          scrollbar-width: none; /* Firefox */
+        }
+      `}</style>
+
       <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
         <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
         <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px', fontWeight: '700' }}>
@@ -41,7 +53,7 @@ const Sidebar = ({ closeMobileMenu }) => {
           <NavLink
             key={item.name}
             to={item.path}
-            onClick={closeMobileMenu} // 💡 Closes the menu on mobile after clicking
+            onClick={closeMobileMenu} 
             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
             style={{ fontWeight: '900' }}
           >
