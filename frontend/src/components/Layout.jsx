@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
+// 💡 NEW: Import the power-user and security features
+import AutoLogout from './AutoLogout';
+import CommandPalette from './CommandPalette';
+
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation(); // 💡 Get current URL path
@@ -28,6 +32,10 @@ const Layout = () => {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', position: 'relative' }}>
       
+      {/* 💡 NEW: Drop them here! They will handle themselves invisibly/as overlays */}
+      <AutoLogout timeoutMinutes={15} />
+      <CommandPalette />
+
       {/* 📱 MOBILE HAMBURGER BUTTON */}
       <button 
         onClick={toggleSidebar}
