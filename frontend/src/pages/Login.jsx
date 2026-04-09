@@ -8,14 +8,17 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // 💡 New Loading State
 
   const [showReset, setShowReset] = useState(false);
   const [resetUser, setResetUser] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState(""); 
   const [newPassword, setNewPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false); // 💡 New Reset Loading State
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoggingIn(true); // 🚀 Start Loading
     const cleanUsername = username.trim().toLowerCase();
 
     try {
@@ -27,14 +30,16 @@ export default function Login() {
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
       navigate("/dashboard");
     } catch (err) {
-      // 💡 This will now work because api.js won't refresh the page on auth errors
       const errorMsg = err.response?.data?.error || "Invalid username or password";
       toast.error(errorMsg);
+    } finally {
+      setIsLoggingIn(false); // 🛑 Stop Loading
     }
   };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    setIsResetting(true);
     const cleanResetUser = resetUser.trim().toLowerCase();
 
     try {
@@ -43,6 +48,8 @@ export default function Login() {
       setTimeout(() => setShowReset(false), 2000);
     } catch (err) {
       toast.error(`❌ ${err.response?.data?.error || "Reset failed"}`);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -70,7 +77,14 @@ export default function Login() {
               <input type={showPassword ? "text" : "password"} style={styles.passwordInput} value={password} onChange={(e) => setPassword(e.target.value)} required />
               <span style={styles.eyeIcon} onClick={() => setShowPassword(!showPassword)}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
-            <button type="submit" style={styles.loginBtn}>Sign In</button>
+            
+            <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>
+              {isLoggingIn ? (
+                <div style={styles.loaderContainer}>
+                   <div className="login-spinner"></div> SYNCING...
+                </div>
+              ) : "Sign In"}
+            </button>
           </form>
           <p style={styles.forgot} onClick={() => setShowReset(true)}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
         </div>
@@ -84,17 +98,33 @@ export default function Login() {
               <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
               <input style={styles.input} placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
               <input style={styles.input} type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-              <button type="submit" style={styles.loginBtn}>Reset</button>
+              <button type="submit" style={styles.loginBtn} disabled={isResetting}>
+                {isResetting ? "UPDATING..." : "Reset"}
+              </button>
               <button type="button" style={styles.cancelBtn} onClick={() => setShowReset(false)}>Back</button>
             </form>
           </div>
         </div>
       )}
+
+      {/* 💡 Spinner CSS Injector */}
+      <style>{`
+        .login-spinner {
+          width: 18px;
+          height: 18px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top: 2px solid #fff;
+          border-radius: 50%;
+          animation: spin-login 0.8s linear infinite;
+        }
+        @keyframes spin-login { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
 
 const styles = {
+  // ... existing styles ...
   pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif" },
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2071&auto=format&fit=crop')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.7) 100%)' },
@@ -110,7 +140,8 @@ const styles = {
   passwordContainer: { position: "relative", width: "100%", marginBottom: "35px" },
   passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e2e8f0" },
   eyeIcon: { position: "absolute", right: "15px", top: "15px", cursor: "pointer" },
-  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "800" },
+  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "800", display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.2s' },
+  loaderContainer: { display: 'flex', alignItems: 'center', gap: '10px' },
   cancelBtn: { width: "100%", padding: "14px", background: "none", color: "#64748b", border: "none", cursor: "pointer", marginTop: "10px" },
   forgot: { marginTop: "30px", fontSize: "14px", color: "#64748b", cursor: "pointer" },
   resetLink: { color: "#2563eb", fontWeight: '800' },
