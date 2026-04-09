@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const Sidebar = ({ closeMobileMenu }) => {
   const navigate = useNavigate();
   const userName = sessionStorage.getItem('username') || 'Advisor';
+  
+  // 💡 Track if the user is currently logging out
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const menuItems = [
     { name: '📊 Dashboard', path: '/dashboard' },
@@ -17,6 +20,8 @@ const Sidebar = ({ closeMobileMenu }) => {
   ];
 
   const handleLogout = async () => {
+    setIsLoggingOut(true); // 💡 Start loading animation
+    
     try {
       await api.post('/auth/logout');
     } catch (err) {
@@ -33,6 +38,10 @@ const Sidebar = ({ closeMobileMenu }) => {
       <style>{`
         .sidebar-nav::-webkit-scrollbar { display: none; }
         .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 💡 CSS for the spinning loading icon */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
       `}</style>
 
       <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
@@ -57,12 +66,28 @@ const Sidebar = ({ closeMobileMenu }) => {
       </nav>
 
       <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid #334155' }}>
+        {/* 💡 UPDATED LOGOUT BUTTON */}
         <button 
           onClick={handleLogout} 
+          disabled={isLoggingOut}
           className="sidebar-link" 
-          style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontWeight: '900', color: '#ef4444' }}
+          style={{ 
+            width: '100%', 
+            textAlign: 'left', 
+            border: 'none', 
+            background: 'none', 
+            cursor: isLoggingOut ? 'not-allowed' : 'pointer', 
+            fontWeight: '900', 
+            color: isLoggingOut ? '#fca5a5' : '#ef4444', 
+            transition: 'color 0.2s ease',
+            opacity: isLoggingOut ? 0.7 : 1
+          }}
         >
-          🚪 Logout
+          {isLoggingOut ? (
+            <span><span className="spin-icon">⏳</span> Logging out...</span>
+          ) : (
+            <span>🚪 Logout</span>
+          )}
         </button>
       </div>
     </div>
