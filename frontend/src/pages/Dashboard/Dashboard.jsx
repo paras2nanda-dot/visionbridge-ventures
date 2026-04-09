@@ -18,15 +18,26 @@ const Dashboard = () => {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    outline: 'none'
+    outline: 'none',
+    position: 'relative',
+    zIndex: 20 // 💡 Keeps buttons clickable and on top
   });
 
   return (
-    <div style={{ padding: '30px', width: '100%', minHeight: '100vh', background: '#f8fafc' }}>
-      <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '25px' }}>Dashboard</h1>
+    <div className="container fade-in" style={{ width: '100%', minHeight: '100vh' }}>
+      <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '25px' }}>
+        Dashboard
+      </h1>
       
       {/* Sub-Tabs Switcher */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '2px solid #e2e8f0' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '10px', 
+        marginBottom: '30px', 
+        borderBottom: '2px solid #e2e8f0',
+        position: 'relative',
+        zIndex: 15 
+      }}>
         <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>
           🏢 Business Dashboard
         </button>
@@ -35,7 +46,8 @@ const Dashboard = () => {
         </button>
       </div>
 
-      <div className="fade-in">
+      {/* 💡 Content area with explicit z-index to stay above the background */}
+      <div style={{ position: 'relative', z-index: 10 }}>
         {activeTab === 'business' ? <BusinessDashboard /> : <ClientDashboard />}
       </div>
     </div>
