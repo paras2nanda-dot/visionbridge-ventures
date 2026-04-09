@@ -18,32 +18,14 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    
-    // 🛠️ Normalization: Clean input before sending
     const cleanUsername = username.trim().toLowerCase();
 
     try {
-      // 📡 Requesting login. Cookies are handled automatically due to withCredentials in api.js
-      const res = await api.post("/auth/login", { 
-        username: cleanUsername, 
-        password 
-      });
-
-      const data = res.data; 
-      
-      /**
-       * 🛡️ SECURITY UPDATE:
-       * We NO LONGER store the token in sessionStorage. 
-       * It is now a secure HttpOnly cookie.
-       */
-      sessionStorage.setItem("username", data.user?.full_name || cleanUsername); 
-      
-      console.log("✅ Login successful. Session managed by secure cookies.");
+      const res = await api.post("/auth/login", { username: cleanUsername, password });
+      sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
       navigate("/dashboard");
     } catch (err) {
-      console.error("🔥 Login Error:", err);
-      const serverMessage = err.response?.data?.error || err.response?.data?.message;
-      setError(serverMessage || "Invalid username or password");
+      setError(err.response?.data?.error || "Invalid username or password");
     }
   };
 
@@ -53,20 +35,11 @@ export default function Login() {
     const cleanResetUser = resetUser.trim().toLowerCase();
 
     try {
-      await api.post("/auth/reset-password", { 
-        username: cleanResetUser, 
-        securityAnswer, 
-        newPassword 
-      });
-
-      setResetMessage("✅ Password updated successfully!");
-      setTimeout(() => {
-        setShowReset(false);
-        setResetMessage("");
-      }, 2500);
+      await api.post("/auth/reset-password", { username: cleanResetUser, securityAnswer, newPassword });
+      setResetMessage("✅ Password updated!");
+      setTimeout(() => setShowReset(false), 2000);
     } catch (err) {
-      const msg = err.response?.data?.error || "Reset failed";
-      setResetMessage(`❌ ${msg}`);
+      setResetMessage(`❌ ${err.response?.data?.error || "Reset failed"}`);
     }
   };
 
@@ -77,7 +50,6 @@ export default function Login() {
         <div style={styles.leftContent}>
           <div style={styles.tagline}>VISIONBRIDGE VENTURES</div>
           <h1 style={styles.mainHeading}>Smart Investing, <br />Brighter Future.</h1>
-          <p style={styles.description}>Manage portfolios and visualize wealth growth with India's most intuitive platform.</p>
         </div>
       </div>
 
@@ -92,13 +64,13 @@ export default function Login() {
             <input style={styles.input} placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
             <label style={styles.label}>Password</label>
             <div style={styles.passwordContainer}>
-              <input type={showPassword ? "text" : "password"} style={styles.passwordInput} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input type={showPassword ? "text" : "password"} style={styles.passwordInput} value={password} onChange={(e) => setPassword(e.target.value)} required />
               <span style={styles.eyeIcon} onClick={() => setShowPassword(!showPassword)}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
             {error && <p style={styles.error}>{error}</p>}
             <button type="submit" style={styles.loginBtn}>Sign In</button>
           </form>
-          <p style={styles.forgot} onClick={() => setShowReset(true)}>Forgot password? <span style={styles.resetLink}>Recover Access</span></p>
+          <p style={styles.forgot} onClick={() => setShowReset(true)}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
         </div>
       </div>
 
@@ -128,22 +100,20 @@ const styles = {
   leftContent: { position: 'relative', zIndex: 2, color: '#fff', maxWidth: '520px' },
   tagline: { fontSize: '13px', fontWeight: '800', letterSpacing: '2px', color: '#10b981', marginBottom: '20px' },
   mainHeading: { fontSize: '48px', fontWeight: '900', lineHeight: '1.2', marginBottom: '20px' },
-  description: { fontSize: '18px', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '40px' },
-  rightPanel: { flex: 1, background: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px', overflowY: 'auto' },
-  loginFormContainer: { width: '100%', maxWidth: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0' }, 
-  logoContainer: { display: 'flex', alignItems: 'center', marginBottom: '50px', width: '100%', justifyContent: 'center' },
-  logoImage: { width: '241.5px', height: 'auto', borderRadius: '18px', objectFit: 'contain', border: '1px solid #e2e8f0', boxShadow: '0 8px 15px -3px rgba(0, 0, 0, 0.1)' },
-  formTitle: { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px 0' },
+  rightPanel: { flex: 1, background: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
+  loginFormContainer: { width: '100%', maxWidth: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+  logoImage: { width: '241.5px', height: 'auto', borderRadius: '18px', objectFit: 'contain' },
+  formTitle: { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: '20px 0' },
   label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px' },
-  input: { width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "10px", border: "1.5px solid #e2e8f0", outline: "none", fontSize: '15px' },
+  input: { width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "10px", border: "1.5px solid #e2e8f0" },
   passwordContainer: { position: "relative", width: "100%", marginBottom: "35px" },
-  passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e2e8f0", outline: "none", fontSize: '15px' },
-  eyeIcon: { position: "absolute", right: "15px", top: "15px", cursor: "pointer", fontSize: "18px" },
+  passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e2e8f0" },
+  eyeIcon: { position: "absolute", right: "15px", top: "15px", cursor: "pointer" },
   loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "800" },
-  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "#64748b", border: "none", cursor: "pointer", fontWeight: "700", marginTop: "10px", textDecoration: 'underline' },
+  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "#64748b", border: "none", cursor: "pointer", marginTop: "10px" },
   forgot: { marginTop: "30px", fontSize: "14px", color: "#64748b", cursor: "pointer" },
   resetLink: { color: "#2563eb", fontWeight: '800' },
-  error: { color: "#ef4444", fontSize: "13px", marginBottom: "15px", textAlign: "center", fontWeight: '600' },
+  error: { color: "#ef4444", fontSize: "13px", marginBottom: "15px", textAlign: "center" },
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(5px)' },
-  modalCard: { background: "#fff", padding: "40px", borderRadius: "24px", width: "380px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" }
+  modalCard: { background: "#fff", padding: "40px", borderRadius: "24px", width: "380px" }
 };
