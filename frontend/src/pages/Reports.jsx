@@ -6,10 +6,8 @@ const Reports = () => {
   const handleDownload = async (endpoint, filename) => {
     setDownloadingReport(endpoint);
     try {
-      // 💡 THE FIX: Retrieve the JWT token from local storage
       const token = sessionStorage.getItem("token");
 
-      // 💡 THE FIX: Attach the Authorization header to the fetch request
       const response = await fetch(`https://visionbridge-backend.onrender.com/api/reports/${endpoint}`, {
         method: 'GET',
         headers: {
@@ -32,10 +30,41 @@ const Reports = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url); // Clean up the memory
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Download failed:", error);
       alert(error.message || "Failed to download the report.");
+    } finally {
+      setDownloadingReport(null);
+    }
+  };
+
+  // 🛡️ NEW: SYSTEM BACKUP LOGIC
+  const handleBackup = async () => {
+    setDownloadingReport('system-backup');
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await fetch(`https://visionbridge-backend.onrender.com/api/backup`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Backup failed. Ensure you are logged in.');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const timestamp = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `visionbridge_system_backup_${timestamp}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(error.message);
     } finally {
       setDownloadingReport(null);
     }
@@ -164,6 +193,27 @@ const Reports = () => {
           }}
         >
           {downloadingReport === 'schemes-database' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
+        </button>
+      </div>
+
+      {/* 🛡️ NEW SECTION: SYSTEM MAINTENANCE */}
+      <div style={{ ...cardStyle, border: '2px solid #fecaca', background: '#fff1f2', marginTop: '40px' }}>
+        <div>
+          <h3 style={{ margin: 0, fontWeight: '800', color: '#991b1b' }}>System Maintenance</h3>
+          <p style={{ margin: '5px 0 0 0', color: '#b91c1c', fontSize: '13px' }}>
+            <strong>Admin Only:</strong> Full database JSON backup for disaster recovery.
+          </p>
+        </div>
+        <button 
+          onClick={handleBackup}
+          disabled={downloadingReport === 'system-backup'}
+          style={{
+            background: '#ef4444', color: 'white', border: 'none', padding: '12px 25px', 
+            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'system-backup' ? 'wait' : 'pointer',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+          }}
+        >
+          {downloadingReport === 'system-backup' ? 'PREPARING...' : '💾 DOWNLOAD JSON'}
         </button>
       </div>
       
