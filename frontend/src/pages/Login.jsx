@@ -28,6 +28,9 @@ export default function Login() {
       const res = await api.post("/auth/login", { username: cleanUsername, password });
       
       sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
+      // 💡 THE FIX: Save token so the api.js interceptor can use it
+      sessionStorage.setItem("token", res.data.token); 
+      
       navigate("/dashboard");
     } catch (err) {
       console.error("Login Error Details:", err.response);

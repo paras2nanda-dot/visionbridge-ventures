@@ -14,7 +14,8 @@ export const login = async (req, res) => {
       maxAge: 8 * 60 * 60 * 1000 
     });
 
-    res.json({ message: "Login successful", user: data.user });
+    // 💡 THE FIX: Send token in JSON response as fallback for cookie blockers
+    res.json({ message: "Login successful", user: data.user, token: data.token });
   } catch (err) {
     res.status(401).json({ error: err.message });
   }

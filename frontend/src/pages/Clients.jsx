@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api'; // 💡 Imported the secure API instance
 
 const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
@@ -41,14 +42,9 @@ const Clients = () => {
 
   const fetchClients = async () => {
     try {
-      // 💡 THE FIX: Get token and add Authorization header for fetching clients
-      const token = sessionStorage.getItem("token");
-      const res = await fetch('https://visionbridge-backend.onrender.com/api/clients', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      const data = await res.json();
-      const validData = Array.isArray(data) ? data : [];
+      // 💡 api.get handles the cookie automatically
+      const res = await api.get('/clients');
+      const validData = Array.isArray(res.data) ? res.data : [];
       setClients(validData);
       
       // 💡 SMARTER ID GENERATION
@@ -80,33 +76,24 @@ const Clients = () => {
       return;
     }
 
-    const url = isEditing ? `https://visionbridge-backend.onrender.com/api/clients/${editingId}` : `https://visionbridge-backend.onrender.com/api/clients`;
-    const method = isEditing ? 'PUT' : 'POST';
-    const token = sessionStorage.getItem("token"); // 💡 Get token for saving
+    const url = isEditing ? `/clients/${editingId}` : `/clients`;
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 💡 Add Auth header
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (res.ok) {
-        alert(isEditing ? "✅ Client Updated Successfully!" : "✅ Client Added Successfully!");
-        setIsEditing(false);
-        setEditingId(null);
-        setFormData(initialState); 
-        fetchClients(); 
-        setActiveSubTab('basic'); 
+      // 💡 Axios handles the HTTP methods and cookies cleanly
+      if (isEditing) {
+        await api.put(url, formData);
       } else {
-        const errorData = await res.json();
-        alert(`❌ Failed to save client:\n\n${errorData.error || 'Unauthorized'}`);
+        await api.post(url, formData);
       }
+
+      alert(isEditing ? "✅ Client Updated Successfully!" : "✅ Client Added Successfully!");
+      setIsEditing(false);
+      setEditingId(null);
+      setFormData(initialState); 
+      fetchClients(); 
+      setActiveSubTab('basic'); 
     } catch (err) { 
-      alert("❌ Error connecting to server."); 
+      alert(`❌ Failed to save client:\n\n${err.response?.data?.error || 'Unauthorized'}`); 
     }
   };
 
@@ -230,12 +217,12 @@ const Clients = () => {
                   <button onClick={() => handleEdit(c)} style={{ border: 'none', color: '#38bdf8', background: 'none', cursor: 'pointer', marginRight: '15px', fontWeight: '600' }}>Edit</button>
                   <button onClick={async () => { 
                     if(window.confirm("Delete permanently?")) { 
-                      const token = sessionStorage.getItem("token"); // 💡 Get token for delete
-                      await fetch(`https://visionbridge-backend.onrender.com/api/clients/${c.id}`, {
-                        method:'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` } // 💡 Add Auth header
-                      }); 
-                      fetchClients(); 
+                      try {
+                        await api.delete(`/clients/${c.id}`); 
+                        fetchClients(); 
+                      } catch (err) {
+                        alert("Failed to delete.");
+                      }
                     }
                   }} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '600' }}>Delete</button>
                 </td>

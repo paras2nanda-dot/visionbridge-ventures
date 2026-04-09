@@ -1,25 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../services/api'; // 💡 Imported the secure API instance
 
 const BusinessDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 💡 THE FIX: Grab the JWT token from SESSION storage
-    const token = sessionStorage.getItem("token");
-
-    fetch('https://visionbridge-backend.onrender.com/api/dashboard/business', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch data");
-        return res.json();
+    // 💡 api.get automatically attaches the HttpOnly cookie!
+    api.get('/dashboard/business')
+      .then(res => { 
+        setData(res.data); 
+        setLoading(false); 
       })
-      .then(d => { setData(d); setLoading(false); })
-      .catch((err) => { console.error(err); setLoading(false); });
+      .catch((err) => { 
+        console.error("Dashboard Fetch Error:", err); 
+        setLoading(false); 
+      });
   }, []);
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '900' }}>📊 LOADING ANALYTICS...</div>;
