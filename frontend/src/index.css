@@ -16,6 +16,7 @@ body {
 .app-container {
   display: flex;
   width: 100%;
+  position: relative;
 }
 
 .sidebar {
@@ -29,7 +30,7 @@ body {
   padding: 30px 20px;
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: 1000; /* Higher Z-index to stay on top of background */
 }
 
 .main-content {
@@ -38,12 +39,16 @@ body {
   min-height: 100vh;
   padding: 40px;
   width: calc(100% - 260px);
+  position: relative;
+  z-index: 1; /* Explicitly set layer */
 }
 
 /* Dashboard Component Styles */
 .container {
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10; /* Ensures content is above any background layers */
 }
 
 .title {
@@ -71,6 +76,8 @@ body {
   padding: 24px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
+  position: relative;
+  z-index: 5;
 }
 
 .card-title {
@@ -111,4 +118,14 @@ body {
 .sidebar-link:hover, .sidebar-link.active {
   background-color: #1e293b;
   color: #ffffff;
+}
+
+/* Smooth Fade In Animation */
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
