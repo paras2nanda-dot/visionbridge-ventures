@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// 🔌 Correct path: go up (..) then into services
 import api from "../services/api";
 
 export default function Login() {
@@ -10,7 +9,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  // Modal State
   const [showReset, setShowReset] = useState(false);
   const [resetUser, setResetUser] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState(""); 
@@ -20,41 +18,39 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    console.log("🚀 Login button clicked. Attempting to reach backend...");
+    
+    // 🛠️ Normalization: Trim spaces and make lowercase
+    const cleanUsername = username.trim().toLowerCase();
+    console.log("🚀 Attempting login for normalized user:", cleanUsername);
 
     try {
-      // 📡 Axios uses the baseURL from your services/api.js
-      const res = await api.post("/auth/login", { username, password });
+      const res = await api.post("/auth/login", { 
+        username: cleanUsername, 
+        password 
+      });
 
-      console.log("📡 Server Response Status:", res.status);
       const data = res.data; 
-      
-      // 🛡️ Store session token and user info
       sessionStorage.setItem("token", data.token); 
-      sessionStorage.setItem("username", data.user?.full_name || username); 
+      sessionStorage.setItem("username", data.user?.full_name || cleanUsername); 
       
-      console.log("✅ Login success! Navigating...");
       navigate("/dashboard");
     } catch (err) {
-      console.error("🔥 Detailed Login Error:", err);
-      
-      // Extract the error message from the backend response
+      console.error("🔥 Login Error:", err);
       const serverMessage = err.response?.data?.message || err.response?.data?.error;
-      
-      if (err.code === "ERR_NETWORK") {
-        setError("Network Error: Backend is likely sleeping or CORS is blocking the request.");
-      } else {
-        setError(serverMessage || "Invalid username or password");
-      }
+      setError(err.code === "ERR_NETWORK" ? "Network Error: Backend unreachable." : (serverMessage || "Invalid credentials"));
     }
   };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setResetMessage("⌛ Processing reset...");
+    
+    // 🛠️ Normalization: Trim and lowercase reset username
+    const cleanResetUser = resetUser.trim().toLowerCase();
+
     try {
-      const res = await api.post("/auth/reset-password", { 
-        username: resetUser, 
+      await api.post("/auth/reset-password", { 
+        username: cleanResetUser, 
         securityAnswer, 
         newPassword 
       });
@@ -65,7 +61,6 @@ export default function Login() {
         setResetMessage("");
       }, 2500);
     } catch (err) {
-      console.error("🔥 Reset Error:", err);
       const msg = err.response?.data?.error || "Reset failed";
       setResetMessage(`❌ ${msg}`);
     }
@@ -73,38 +68,29 @@ export default function Login() {
 
   return (
     <div style={styles.pageWrapper}>
-      {/* LEFT PANEL */}
       <div style={styles.leftPanel}>
         <div style={styles.overlay}></div>
         <div style={styles.leftContent}>
           <div style={styles.tagline}>VISIONBRIDGE VENTURES</div>
           <h1 style={styles.mainHeading}>Smart Investing, <br />Brighter Future.</h1>
           <p style={styles.description}>
-            Manage portfolios, track active SIPs, and visualize wealth growth 
-            with India's most intuitive investment management platform.
+            Manage portfolios and visualize wealth growth with India's most intuitive platform.
           </p>
           <div style={styles.features}>
             <div style={styles.featureItem}>✔ Automated SIP Tracking</div>
             <div style={styles.featureItem}>✔ Real-time Portfolio Analytics</div>
-            <div style={styles.featureItem}>✔ Secure Client Database</div>
           </div>
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
       <div style={styles.rightPanel}>
         <div style={styles.loginFormContainer}>
           <div style={styles.logoContainer}>
-             <img 
-                src="/logo.jpeg" 
-                alt="VisionBridge Logo" 
-                style={styles.logoImage} 
-                onError={(e) => { e.target.src = "https://via.placeholder.com/241?text=VBV"; }} 
-             />
+             <img src="/logo.jpeg" alt="Logo" style={styles.logoImage} onError={(e) => { e.target.src = "https://via.placeholder.com/241?text=VBV"; }} />
           </div>
 
           <h2 style={styles.formTitle}>Welcome Back</h2>
-          <p style={styles.formSubtitle}>Enter your details to manage your financial practice.</p>
+          <p style={styles.formSubtitle}>Enter your details to manage your practice.</p>
 
           <form onSubmit={handleLogin} style={{width: '100%'}}>
             <label style={styles.label}>Username</label>
@@ -132,7 +118,7 @@ export default function Login() {
             </div>
 
             {error && <p style={styles.error}>{error}</p>}
-            <button type="submit" style={styles.loginBtn}>Sign In to Dashboard</button>
+            <button type="submit" style={styles.loginBtn}>Sign In</button>
           </form>
 
           <p style={styles.forgot} onClick={() => setShowReset(true)}>
@@ -141,28 +127,18 @@ export default function Login() {
         </div>
       </div>
 
-      {/* FORGOT PASSWORD MODAL */}
       {showReset && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
-            <h3 style={{marginTop: 0, color: '#0f172a'}}>Reset Password</h3>
-            <p style={{fontSize: '12px', color: '#64748b', marginBottom: '20px'}}>
-                <strong>Security Question:</strong> What is your birth city?
-            </p>
-            
+            <h3 style={{marginTop: 0}}>Reset Password</h3>
+            <p style={{fontSize: '12px', color: '#64748b'}}><strong>Security:</strong> What is your birth city?</p>
             <form onSubmit={handleResetPassword}>
               <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
-              <input style={styles.input} type="text" placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
+              <input style={styles.input} placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
               <input style={styles.input} type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-              
-              {resetMessage && (
-                <p style={{ fontSize: '13px', color: resetMessage.includes('❌') ? '#ef4444' : '#10b981', textAlign: 'center', fontWeight: 'bold', marginBottom: '15px' }}>
-                  {resetMessage}
-                </p>
-              )}
-              
-              <button type="submit" style={styles.loginBtn}>Verify & Reset</button>
-              <button type="button" style={styles.cancelBtn} onClick={() => setShowReset(false)}>Back to Login</button>
+              {resetMessage && <p style={{ fontSize: '13px', color: resetMessage.includes('❌') ? '#ef4444' : '#10b981' }}>{resetMessage}</p>}
+              <button type="submit" style={styles.loginBtn}>Reset</button>
+              <button type="button" style={styles.cancelBtn} onClick={() => setShowReset(false)}>Back</button>
             </form>
           </div>
         </div>
@@ -171,7 +147,6 @@ export default function Login() {
   );
 }
 
-// ... styles object remains exactly the same as your original ...
 const styles = {
   pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif" },
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://pixabay.com/images/download/nattanan23-money-2724241_1920.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
