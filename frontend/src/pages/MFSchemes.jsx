@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api'; // 💡 Imported the secure API instance
+import api from '../services/api'; 
+import { toast } from 'react-toastify'; // 💡 Added toast
 
 const MFSchemes = () => {
   const [schemes, setSchemes] = useState([]);
@@ -34,10 +35,12 @@ const MFSchemes = () => {
 
   const fetchSchemes = async () => {
     try {
-      // 💡 api.get automatically handles the token
       const res = await api.get('/mf-schemes');
       setSchemes(Array.isArray(res.data) ? res.data : []);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      toast.error("Failed to fetch MF Master data"); 
+    }
   };
 
   const totalEquity = Number(formData.large_cap || 0) + Number(formData.mid_cap || 0) + Number(formData.small_cap || 0);
@@ -47,7 +50,9 @@ const MFSchemes = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (grandTotal !== 100) return alert(`⚠️ Allocation must be exactly 100%. Current: ${grandTotal}%`);
+    if (grandTotal !== 100) {
+      return toast.warn(`⚠️ Allocation must be exactly 100%. Current: ${grandTotal}%`);
+    }
 
     const url = isEditing ? `/mf-schemes/${editingId}` : `/mf-schemes`;
 
@@ -65,15 +70,20 @@ const MFSchemes = () => {
     try {
       if (isEditing) {
         await api.put(url, payload);
+        toast.success("✅ Scheme Updated Successfully");
       } else {
         await api.post(url, payload);
+        toast.success("✅ New Scheme Added to Master");
       }
       
-      alert("✅ Scheme Saved Successfully");
-      setIsEditing(false); setEditingId(null); setFormData(initialState);
+      setIsEditing(false); 
+      setEditingId(null); 
+      setFormData(initialState);
       fetchSchemes();
       
-    } catch (err) { alert("❌ Network Error"); }
+    } catch (err) { 
+      toast.error(err.response?.data?.error || "❌ Network Error saving scheme"); 
+    }
   };
 
   const handleEdit = (s) => {
@@ -93,16 +103,19 @@ const MFSchemes = () => {
       commission_rate: s.commission_rate ?? '0.8',
       total_current_value: s.total_current_value ?? ''
     });
-    window.scrollTo(0,0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Permanently delete this scheme?")) {
+    // Custom logic: We use toast for info but confirm for destructive actions
+    if (window.confirm("Permanently delete this scheme from Master?")) {
       try {
         await api.delete(`/mf-schemes/${id}`);
+        toast.info("Scheme removed");
         fetchSchemes();
       } catch (err) {
         console.error("Delete error", err);
+        toast.error("Failed to delete scheme");
       }
     }
   };
@@ -122,7 +135,6 @@ const MFSchemes = () => {
 
       <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #6366f1', marginBottom: '30px' }}>
         <form onSubmit={handleSubmit}>
-          {/* Row 1: Basic Info */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '20px' }}>
             <div><label style={labelStyle}>AMC Name *</label><input style={inputStyle} value={formData.amc_name} onChange={e => setFormData({...formData, amc_name: e.target.value})} required /></div>
             <div style={{ gridColumn: 'span 2' }}><label style={labelStyle}>Scheme Name *</label><input style={inputStyle} value={formData.scheme_name} onChange={e => setFormData({...formData, scheme_name: e.target.value})} required /></div>
@@ -149,10 +161,7 @@ const MFSchemes = () => {
             </div>
           </div>
 
-          {/* Row 2: Market Snapshot & Asset Allocation */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-             
-             {/* Market Value Snapshot */}
              <div style={{ padding: '15px', background: '#eff6ff', borderRadius: '10px', border: '1px solid #3b82f6' }}>
                 <label style={{...labelStyle, color: '#1e40af'}}>Total Business Market Value (₹)</label>
                 <input 
@@ -163,10 +172,9 @@ const MFSchemes = () => {
                     onChange={e => setFormData({...formData, total_current_value: e.target.value})} 
                     placeholder="Enter aggregate from portal"
                 />
-                <small style={{display:'block', marginTop: '5px', color: '#60a5fa', fontSize: '10px'}}>Enter total AUM for this fund across all clients</small>
+                <small style={{display:'block', marginTop: '5px', color: '#60a5fa', fontSize: '10px'}}>Total AUM for this fund across all clients</small>
              </div>
 
-             {/* Allocations */}
              <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
                     <div><label style={labelStyle}>Large Cap %</label><input style={inputStyle} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
@@ -187,7 +195,6 @@ const MFSchemes = () => {
         </form>
       </div>
 
-      {/* Search and Table */}
       <div style={{ marginBottom: '15px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span>🔍</span>
         <input type="text" placeholder="Search Master..." style={{ width: '100%', border: 'none', outline: 'none' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />

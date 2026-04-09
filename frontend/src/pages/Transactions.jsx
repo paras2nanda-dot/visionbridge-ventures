@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api'; // 💡 Imported the secure API instance
+import api from '../services/api'; 
+import { toast } from 'react-toastify'; // 💡 Added toast
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -30,7 +31,6 @@ const Transactions = () => {
 
   const fetchInitialData = async () => {
     try {
-      // 💡 Clean api.get calls
       const [cRes, sRes, tRes] = await Promise.all([
         api.get('/clients'),
         api.get('/mf-schemes'),
@@ -56,7 +56,10 @@ const Transactions = () => {
         }
         setFormData(prev => ({ ...prev, transaction_id: `TID${nextNum.toString().padStart(5, '0')}` }));
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      toast.error("Failed to sync transactions from server");
+    }
   };
 
   const formatINR = (val) => {
@@ -66,12 +69,16 @@ const Transactions = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.client_id || !formData.scheme_id) return alert("⚠️ Please validate Client and Scheme.");
+    if (!formData.client_id || !formData.scheme_id) {
+      return toast.warn("⚠️ Please validate Client and Scheme.");
+    }
     
     const cleanAmount = formData.amount.toString().replace(/,/g, '');
 
     if (formData.transaction_type === 'Switch') {
-      if (!formData.switch_in_scheme_id) return alert("⚠️ Please select the 'Switch In' Scheme.");
+      if (!formData.switch_in_scheme_id) {
+        return toast.warn("⚠️ Please select the 'Switch In' Scheme.");
+      }
 
       try {
         const outPayload = { 
@@ -88,28 +95,36 @@ const Transactions = () => {
             amount: cleanAmount 
         };
 
-        // 💡 Sequential POST via Axios
         await api.post('/transactions', outPayload);
         await api.post('/transactions', inPayload);
 
-        alert("✅ Switch Transaction Completed (Two entries created)");
-        setFormData(initialState); fetchInitialData();
+        toast.success("✅ Switch Completed (Two entries created)");
+        setFormData(initialState); 
+        fetchInitialData();
         
-      } catch (err) { alert("❌ Error during Switch"); }
+      } catch (err) { 
+        toast.error("❌ Error during Switch transaction"); 
+      }
 
     } else {
       const url = isEditing ? `/transactions/${editingId}` : `/transactions`;
       try {
         if (isEditing) {
           await api.put(url, {...formData, amount: cleanAmount});
+          toast.success("✅ Transaction Updated");
         } else {
           await api.post(url, {...formData, amount: cleanAmount});
+          toast.success("✅ Transaction Saved");
         }
         
-        alert("✅ Transaction Saved");
-        setIsEditing(false); setEditingId(null); setClientName(''); setFormData(initialState);
+        setIsEditing(false); 
+        setEditingId(null); 
+        setClientName(''); 
+        setFormData(initialState);
         fetchInitialData();
-      } catch (err) { alert("❌ Network Error"); }
+      } catch (err) { 
+        toast.error(err.response?.data?.error || "❌ Network Error saving transaction"); 
+      }
     }
   };
 

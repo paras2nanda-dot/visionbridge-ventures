@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api'; // 💡 Imported the secure API instance
+import api from '../services/api'; 
+import { toast } from 'react-toastify'; // 💡 Added toast
 
 const Sips = () => {
   const [sips, setSips] = useState([]);
@@ -37,14 +38,12 @@ const Sips = () => {
 
   const fetchInitialData = async () => {
     try {
-      // 💡 api.get automatically handles the token and URL
       const [cRes, sRes, sipRes] = await Promise.all([
         api.get('/clients'),
         api.get('/mf-schemes'),
         api.get('/sips')
       ]);
       
-      // Axios stores the JSON in .data
       const cData = cRes.data;
       const sData = sRes.data;
       const sipData = sipRes.data;
@@ -62,7 +61,10 @@ const Sips = () => {
         }
         setFormData(prev => ({ ...prev, sip_id: `SID${nextNum.toString().padStart(5, '0')}` }));
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      toast.error("Failed to fetch SIP data from server"); // 💡 Added error feedback
+    }
   };
 
   const calculateSIPData = (sip) => {
@@ -85,7 +87,9 @@ const Sips = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.client_id || !formData.scheme_id) return alert("⚠️ Please validate Client and Scheme.");
+    if (!formData.client_id || !formData.scheme_id) {
+      return toast.warn("⚠️ Please validate Client and Scheme."); // 💡 Replaced alert
+    }
     
     const payload = { 
       ...formData, 
@@ -99,14 +103,20 @@ const Sips = () => {
     try {
       if (isEditing) {
         await api.put(url, payload);
+        toast.success("✅ SIP Updated Successfully"); // 💡 Replaced alert
       } else {
         await api.post(url, payload);
+        toast.success("✅ New SIP Saved"); // 💡 Replaced alert
       }
       
-      alert("✅ SIP Saved");
-      setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData();
+      setIsEditing(false); 
+      setFormData(initialState); 
+      setClientName(''); 
+      fetchInitialData();
       
-    } catch (err) { alert("❌ Error saving SIP"); }
+    } catch (err) { 
+      toast.error(err.response?.data?.error || "❌ Error saving SIP"); // 💡 Replaced alert
+    }
   };
 
   const filteredSips = sips.filter(s => 
