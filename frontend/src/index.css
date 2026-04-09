@@ -31,6 +31,15 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 1000; 
+  /* 💡 Hide scrollbar completely while keeping scroll functionality */
+  overflow-y: auto;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* 💡 Hide scrollbar for Chrome, Safari and Opera */
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .main-content {
