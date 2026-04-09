@@ -23,11 +23,12 @@ const Dashboard = () => {
     fontWeight: activeTab === tabName ? '900' : '600',
     color: activeTab === tabName ? '#0ea5e9' : 'var(--text-muted, #94a3b8)',
     borderBottom: activeTab === tabName ? '4px solid #0ea5e9' : '4px solid transparent',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition: 'all 0.3s ease',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
     outline: 'none',
+    whiteSpace: 'nowrap'
   });
 
   return (
@@ -37,7 +38,7 @@ const Dashboard = () => {
         Dashboard
       </h1>
       
-      {/* 💡 Tabs Container with 3 Options */}
+      {/* 💡 NAVIGATION TABS */}
       <div style={{ 
         display: 'flex', 
         gap: '5px', 
@@ -47,7 +48,8 @@ const Dashboard = () => {
         position: 'sticky',
         top: '0',
         zIndex: 100,
-        overflowX: 'auto'
+        overflowX: 'auto',
+        scrollbarWidth: 'none'
       }}>
         <button style={tabStyle('business')} onClick={() => handleTabChange('business')}>
           🏢 Business Analytics
@@ -64,7 +66,7 @@ const Dashboard = () => {
         {isSwitching ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px', gap: '15px' }}>
             <div className="sync-spinner"></div>
-            <p style={{ fontWeight: '800', color: 'var(--text-muted)', fontSize: '11px', letterSpacing: '1.5px' }}>SYNCING DATA...</p>
+            <p style={{ fontWeight: '800', color: 'var(--text-muted)', fontSize: '11px', letterSpacing: '1.5px' }}>REFRESHING VIEW...</p>
             <style>{`
               .sync-spinner {
                 width: 30px;
@@ -79,12 +81,21 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="fade-in">
-            {/* 💡 Conditional Rendering for all 3 Sections */}
-            {activeTab === 'business' && <BusinessDashboard />}
-            {activeTab === 'client' && <ClientDashboard />}
+            {/* 💡 EXCLUSIVE RENDERING: Only one of these will exist at a time */}
+            {activeTab === 'business' && (
+              <div key="business-view">
+                <BusinessDashboard />
+              </div>
+            )}
+
+            {activeTab === 'client' && (
+              <div key="client-view">
+                <ClientDashboard />
+              </div>
+            )}
             
             {activeTab === 'activity' && (
-              <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+              <div key="activity-view" style={{ maxWidth: '800px', margin: '0 auto' }}>
                 <ActivityFeed />
               </div>
             )}
