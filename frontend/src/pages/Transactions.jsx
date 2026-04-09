@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api'; // 💡 Imported the secure API instance
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -29,17 +30,15 @@ const Transactions = () => {
 
   const fetchInitialData = async () => {
     try {
-      const token = sessionStorage.getItem("token"); // 💡 Get Token
-      const headers = { 'Authorization': `Bearer ${token}` }; // 💡 Auth Header
-
+      // 💡 Clean api.get calls
       const [cRes, sRes, tRes] = await Promise.all([
-        fetch('https://visionbridge-backend.onrender.com/api/clients', { headers }),
-        fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers }),
-        fetch('https://visionbridge-backend.onrender.com/api/transactions', { headers })
+        api.get('/clients'),
+        api.get('/mf-schemes'),
+        api.get('/transactions')
       ]);
-      const cData = await cRes.json();
-      const sData = await sRes.json();
-      const tData = await tRes.json();
+      const cData = cRes.data;
+      const sData = sRes.data;
+      const tData = tRes.data;
 
       setClients(Array.isArray(cData) ? cData : []);
       setSchemes(Array.isArray(sData) ? sData : []);
@@ -70,11 +69,6 @@ const Transactions = () => {
     if (!formData.client_id || !formData.scheme_id) return alert("⚠️ Please validate Client and Scheme.");
     
     const cleanAmount = formData.amount.toString().replace(/,/g, '');
-    const token = sessionStorage.getItem("token"); // 💡 Get Token
-    const headers = { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` // 💡 Auth Header
-    };
 
     if (formData.transaction_type === 'Switch') {
       if (!formData.switch_in_scheme_id) return alert("⚠️ Please select the 'Switch In' Scheme.");
@@ -94,32 +88,27 @@ const Transactions = () => {
             amount: cleanAmount 
         };
 
-        const resOut = await fetch('https://visionbridge-backend.onrender.com/api/transactions', {
-          method: 'POST', headers, body: JSON.stringify(outPayload)
-        });
-        const resIn = await fetch('https://visionbridge-backend.onrender.com/api/transactions', {
-          method: 'POST', headers, body: JSON.stringify(inPayload)
-        });
+        // 💡 Sequential POST via Axios
+        await api.post('/transactions', outPayload);
+        await api.post('/transactions', inPayload);
 
-        if (resOut.ok && resIn.ok) {
-          alert("✅ Switch Transaction Completed (Two entries created)");
-          setFormData(initialState); fetchInitialData();
-        }
+        alert("✅ Switch Transaction Completed (Two entries created)");
+        setFormData(initialState); fetchInitialData();
+        
       } catch (err) { alert("❌ Error during Switch"); }
 
     } else {
-      const url = isEditing ? `https://visionbridge-backend.onrender.com/api/transactions/${editingId}` : `https://visionbridge-backend.onrender.com/api/transactions`;
+      const url = isEditing ? `/transactions/${editingId}` : `/transactions`;
       try {
-        const res = await fetch(url, {
-          method: isEditing ? 'PUT' : 'POST',
-          headers,
-          body: JSON.stringify({...formData, amount: cleanAmount})
-        });
-        if (res.ok) {
-          alert("✅ Transaction Saved");
-          setIsEditing(false); setEditingId(null); setClientName(''); setFormData(initialState);
-          fetchInitialData();
+        if (isEditing) {
+          await api.put(url, {...formData, amount: cleanAmount});
+        } else {
+          await api.post(url, {...formData, amount: cleanAmount});
         }
+        
+        alert("✅ Transaction Saved");
+        setIsEditing(false); setEditingId(null); setClientName(''); setFormData(initialState);
+        fetchInitialData();
       } catch (err) { alert("❌ Network Error"); }
     }
   };

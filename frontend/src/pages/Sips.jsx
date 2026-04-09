@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api'; // 💡 Imported the secure API instance
 
 const Sips = () => {
   const [sips, setSips] = useState([]);
@@ -36,17 +37,17 @@ const Sips = () => {
 
   const fetchInitialData = async () => {
     try {
-      const token = sessionStorage.getItem("token"); // 💡 Get Token
-      const headers = { 'Authorization': `Bearer ${token}` }; // 💡 Auth Header
-
+      // 💡 api.get automatically handles the token and URL
       const [cRes, sRes, sipRes] = await Promise.all([
-        fetch('https://visionbridge-backend.onrender.com/api/clients', { headers }),
-        fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers }),
-        fetch('https://visionbridge-backend.onrender.com/api/sips', { headers })
+        api.get('/clients'),
+        api.get('/mf-schemes'),
+        api.get('/sips')
       ]);
-      const cData = await cRes.json();
-      const sData = await sRes.json();
-      const sipData = await sipRes.json();
+      
+      // Axios stores the JSON in .data
+      const cData = cRes.data;
+      const sData = sRes.data;
+      const sipData = sipRes.data;
 
       setClients(Array.isArray(cData) ? cData : []);
       setSchemes(Array.isArray(sData) ? sData : []);
@@ -93,22 +94,18 @@ const Sips = () => {
       stopped_at: formData.status === 'Stopped' ? formData.end_date : null 
     };
 
-    const url = isEditing ? `https://visionbridge-backend.onrender.com/api/sips/${editingId}` : `https://visionbridge-backend.onrender.com/api/sips`;
-    const token = sessionStorage.getItem("token"); // 💡 Get Token
+    const url = isEditing ? `/sips/${editingId}` : `/sips`;
 
     try {
-      const res = await fetch(url, {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 💡 Auth Header 
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        alert("✅ SIP Saved");
-        setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData();
+      if (isEditing) {
+        await api.put(url, payload);
+      } else {
+        await api.post(url, payload);
       }
+      
+      alert("✅ SIP Saved");
+      setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData();
+      
     } catch (err) { alert("❌ Error saving SIP"); }
   };
 

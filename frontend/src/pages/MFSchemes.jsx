@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api'; // 💡 Imported the secure API instance
 
 const MFSchemes = () => {
   const [schemes, setSchemes] = useState([]);
@@ -33,12 +34,9 @@ const MFSchemes = () => {
 
   const fetchSchemes = async () => {
     try {
-      const token = sessionStorage.getItem("token"); // 💡 Get Token
-      const res = await fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', {
-        headers: { 'Authorization': `Bearer ${token}` } // 💡 Auth Header
-      });
-      const data = await res.json();
-      setSchemes(Array.isArray(data) ? data : []);
+      // 💡 api.get automatically handles the token
+      const res = await api.get('/mf-schemes');
+      setSchemes(Array.isArray(res.data) ? res.data : []);
     } catch (err) { console.error(err); }
   };
 
@@ -51,8 +49,7 @@ const MFSchemes = () => {
     e.preventDefault();
     if (grandTotal !== 100) return alert(`⚠️ Allocation must be exactly 100%. Current: ${grandTotal}%`);
 
-    const url = isEditing ? `https://visionbridge-backend.onrender.com/api/mf-schemes/${editingId}` : `https://visionbridge-backend.onrender.com/api/mf-schemes`;
-    const token = sessionStorage.getItem("token"); // 💡 Get Token
+    const url = isEditing ? `/mf-schemes/${editingId}` : `/mf-schemes`;
 
     const payload = {
         ...formData,
@@ -66,21 +63,16 @@ const MFSchemes = () => {
     };
 
     try {
-      const res = await fetch(url, {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 💡 Auth Header
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        alert("✅ Scheme Saved Successfully");
-        setIsEditing(false); setEditingId(null); setFormData(initialState);
-        fetchSchemes();
+      if (isEditing) {
+        await api.put(url, payload);
       } else {
-        alert("❌ Error saving scheme. Check backend terminal.");
+        await api.post(url, payload);
       }
+      
+      alert("✅ Scheme Saved Successfully");
+      setIsEditing(false); setEditingId(null); setFormData(initialState);
+      fetchSchemes();
+      
     } catch (err) { alert("❌ Network Error"); }
   };
 
@@ -106,12 +98,12 @@ const MFSchemes = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm("Permanently delete this scheme?")) {
-      const token = sessionStorage.getItem("token"); // 💡 Get Token
-      await fetch(`https://visionbridge-backend.onrender.com/api/mf-schemes/${id}`, { 
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` } // 💡 Auth Header
-      });
-      fetchSchemes();
+      try {
+        await api.delete(`/mf-schemes/${id}`);
+        fetchSchemes();
+      } catch (err) {
+        console.error("Delete error", err);
+      }
     }
   };
 
