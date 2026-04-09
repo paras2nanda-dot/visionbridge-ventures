@@ -1,7 +1,7 @@
 import { loginUser, resetPassword } from "../services/auth.service.js";
 
 export const login = async (req, res) => {
-  // 🛠️ Normalize: Trim and lowercase incoming username
+  // 🛠️ Normalize: Remove spaces and force lowercase
   const username = req.body.username?.trim().toLowerCase();
   const { password } = req.body;
 
@@ -14,7 +14,7 @@ export const login = async (req, res) => {
 };
 
 export const forgotPassword = async (req, res) => {
-  // 🛠️ Normalize: Trim and lowercase reset username
+  // 🛠️ Normalize: Remove spaces and force lowercase
   const username = req.body.username?.trim().toLowerCase();
   const { securityAnswer, newPassword } = req.body;
   
