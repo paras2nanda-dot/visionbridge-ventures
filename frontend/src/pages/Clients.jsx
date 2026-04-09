@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api from '../services/api'; // 💡 Imported the secure API instance
+import api from '../services/api'; 
+import { toast } from 'react-toastify'; // 💡 Added toast
 
 const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
@@ -42,12 +43,10 @@ const Clients = () => {
 
   const fetchClients = async () => {
     try {
-      // 💡 api.get handles the cookie automatically
       const res = await api.get('/clients');
       const validData = Array.isArray(res.data) ? res.data : [];
       setClients(validData);
       
-      // 💡 SMARTER ID GENERATION
       if (!isEditing) {
         let maxNum = 0;
         validData.forEach(c => {
@@ -59,7 +58,9 @@ const Clients = () => {
         const nextId = `C${(maxNum + 1).toString().padStart(3, '0')}`;
         setFormData(prev => ({ ...prev, client_code: nextId }));
       }
-    } catch (err) { console.error("Sync Error:", err); }
+    } catch (err) { 
+      toast.error("Failed to sync with database");
+    }
   };
 
   const formatINR = (val) => {
@@ -70,30 +71,29 @@ const Clients = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Final safety check before sending to backend
     if (formData.mobile_number.length !== 10) {
-      alert("Please enter a valid 10-digit mobile number.");
+      toast.warn("Mobile number must be 10 digits"); // 💡 Using toast.warn
       return;
     }
 
     const url = isEditing ? `/clients/${editingId}` : `/clients`;
 
     try {
-      // 💡 Axios handles the HTTP methods and cookies cleanly
       if (isEditing) {
         await api.put(url, formData);
+        toast.success("Client updated successfully!"); // 💡 Using toast.success
       } else {
         await api.post(url, formData);
+        toast.success("New client added to database!"); 
       }
 
-      alert(isEditing ? "✅ Client Updated Successfully!" : "✅ Client Added Successfully!");
       setIsEditing(false);
       setEditingId(null);
       setFormData(initialState); 
       fetchClients(); 
       setActiveSubTab('basic'); 
     } catch (err) { 
-      alert(`❌ Failed to save client:\n\n${err.response?.data?.error || 'Unauthorized'}`); 
+      toast.error(err.response?.data?.error || "Error saving client"); // 💡 Using toast.error
     }
   };
 
@@ -219,9 +219,10 @@ const Clients = () => {
                     if(window.confirm("Delete permanently?")) { 
                       try {
                         await api.delete(`/clients/${c.id}`); 
+                        toast.info("Client deleted"); // 💡 Using toast.info
                         fetchClients(); 
                       } catch (err) {
-                        alert("Failed to delete.");
+                        toast.error("Failed to delete client");
                       }
                     }
                   }} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '600' }}>Delete</button>

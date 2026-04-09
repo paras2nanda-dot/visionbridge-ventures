@@ -1,5 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify"; // 💡 Added this
+import "react-toastify/dist/ReactToastify.css"; // 💡 Added the styles
 
 // 📂 Core Components
 import Layout from "./components/Layout";
@@ -16,8 +18,6 @@ import Login from "./pages/Login";
 
 /**
  * 🛡️ 1. PROTECTED ROUTE
- * Purpose: Blocks guests from entering the app.
- * Uses 'username' from sessionStorage because the real token is hidden in an HttpOnly cookie.
  */
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = sessionStorage.getItem("username");
@@ -29,7 +29,6 @@ const ProtectedRoute = ({ children }) => {
 
 /**
  * 🛡️ 2. PUBLIC ROUTE
- * Purpose: Prevents logged-in users from going back to the Login page.
  */
 const PublicRoute = ({ children }) => {
   const isAuthenticated = sessionStorage.getItem("username");
@@ -41,47 +40,55 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   return (
-    <Routes>
-      {/* 🔐 LOGIN ROUTE - Wrapped in PublicRoute */}
-      <Route 
-        path="/login" 
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        } 
+    <>
+      {/* 💡 The ToastContainer lives here so it can show messages over any page */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
       />
 
-      {/* 🏠 MAIN APP - Wrapped in ProtectedRoute */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      }>
-        {/* Redirect base URL to dashboard */}
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        
-        {/* Legacy redirects for sub-dashboards */}
-        <Route path="/dashboard/business" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard/client" element={<Navigate to="/dashboard" replace />} />
-        
-        {/* Actual Pages */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/charts" element={<Charts />} />
-        <Route path="/clients" element={<ClientsDatabase />} />
-        <Route path="/schemes" element={<MFSchemes />} />
-        <Route path="/transactions" element={<Transactions />} />
-        <Route path="/sips" element={<Sips />} />
-        <Route path="/reports" element={<Reports />} />
-      </Route>
+      <Routes>
+        {/* 🔐 LOGIN ROUTE */}
+        <Route 
+          path="/login" 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
+        />
 
-      {/* 🚫 404 PAGE */}
-      <Route path="*" element={
-        <div style={{ padding: '100px', textAlign: 'center', fontSize: '24px', fontWeight: '900', color: '#1e293b' }}>
-          404 - PAGE NOT FOUND
-        </div>
-      } />
-    </Routes>
+        {/* 🏠 MAIN APP */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/charts" element={<Charts />} />
+          <Route path="/clients" element={<ClientsDatabase />} />
+          <Route path="/schemes" element={<MFSchemes />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/sips" element={<Sips />} />
+          <Route path="/reports" element={<Reports />} />
+        </Route>
+
+        <Route path="*" element={
+          <div style={{ padding: '100px', textAlign: 'center', fontSize: '24px', fontWeight: '900', color: '#1e293b' }}>
+            404 - PAGE NOT FOUND
+          </div>
+        } />
+      </Routes>
+    </>
   );
 }
 
