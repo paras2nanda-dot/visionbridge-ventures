@@ -20,11 +20,17 @@ export default function Login() {
     setError("");
     const cleanUsername = username.trim().toLowerCase();
 
+    // 🔍 DEBUG: Check the console to see the exact URL and data being sent
+    console.log("Attempting login for:", cleanUsername);
+
     try {
+      // This sends to: https://visionbridge-backend.onrender.com/api/auth/login
       const res = await api.post("/auth/login", { username: cleanUsername, password });
+      
       sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
       navigate("/dashboard");
     } catch (err) {
+      console.error("Login Error Details:", err.response);
       setError(err.response?.data?.error || "Invalid username or password");
     }
   };
