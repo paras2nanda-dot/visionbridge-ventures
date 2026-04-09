@@ -5,8 +5,6 @@ import api from '../services/api';
 const Sidebar = ({ closeMobileMenu }) => {
   const navigate = useNavigate();
   const userName = sessionStorage.getItem('username') || 'Advisor';
-  
-  // 💡 Track if the user is currently logging out
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const menuItems = [
@@ -20,8 +18,7 @@ const Sidebar = ({ closeMobileMenu }) => {
   ];
 
   const handleLogout = async () => {
-    setIsLoggingOut(true); // 💡 Start loading animation
-    
+    setIsLoggingOut(true); 
     try {
       await api.post('/auth/logout');
     } catch (err) {
@@ -33,14 +30,11 @@ const Sidebar = ({ closeMobileMenu }) => {
   };
 
   return (
-    // 💡 Sidebar background now uses the theme variable
     <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--sidebar, #1e293b)', transition: 'background 0.3s ease' }}>
       
       <style>{`
         .sidebar-nav::-webkit-scrollbar { display: none; }
         .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 💡 CSS for the spinning loading icon */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
       `}</style>
@@ -72,15 +66,10 @@ const Sidebar = ({ closeMobileMenu }) => {
           disabled={isLoggingOut}
           className="sidebar-link" 
           style={{ 
-            width: '100%', 
-            textAlign: 'left', 
-            border: 'none', 
-            background: 'none', 
-            cursor: isLoggingOut ? 'not-allowed' : 'pointer', 
-            fontWeight: '900', 
-            color: isLoggingOut ? '#fca5a5' : '#ef4444', 
-            transition: 'color 0.2s ease',
-            opacity: isLoggingOut ? 0.7 : 1
+            width: '100%', textAlign: 'left', border: 'none', background: 'none', 
+            cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', 
+            color: isLoggingOut ? '#fca5a5' : '#ef4444', transition: 'color 0.2s ease', 
+            opacity: isLoggingOut ? 0.7 : 1 
           }}
         >
           {isLoggingOut ? (

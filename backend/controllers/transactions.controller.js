@@ -5,8 +5,8 @@ export const getTransactions = async (req, res) => {
     const query = `
       SELECT t.*, c.client_code, c.full_name as client_name, s.scheme_name 
       FROM transactions t
-      JOIN clients c ON t.client_id = c.id
-      JOIN mf_schemes s ON t.scheme_id = s.id
+      JOIN clients c ON t.client_id::TEXT = c.id::TEXT
+      JOIN mf_schemes s ON t.scheme_id::TEXT = s.id::TEXT
       ORDER BY t.transaction_date DESC`;
     const result = await pool.query(query);
     res.json(result.rows);
