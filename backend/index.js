@@ -15,7 +15,9 @@ import sipRoutes from './routes/sips.routes.js';
 import mfschemeRoutes from './routes/mfSchemes.routes.js'; 
 import transactionRoutes from './routes/transactions.routes.js'; 
 import reportRoutes from './routes/reports.routes.js'; 
-import { pool } from './config/db.js'; // 💡 FIXED: Path updated to look in the config folder
+
+// 💡 Correct relative path: from root to config folder
+import { pool } from './config/db.js'; 
 
 dotenv.config();
 const app = express();
@@ -88,4 +90,4 @@ app.use('/api/reports', authMiddleware, reportRoutes);
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`✅ Server on port ${PORT}`));s
+app.listen(PORT, '0.0.0.0', () => console.log(`✅ Server on port ${PORT}`));
