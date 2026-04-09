@@ -33,7 +33,8 @@ const Sidebar = ({ closeMobileMenu }) => {
   };
 
   return (
-    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e293b' }}>
+    // 💡 Sidebar background now uses the theme variable
+    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--sidebar, #1e293b)', transition: 'background 0.3s ease' }}>
       
       <style>{`
         .sidebar-nav::-webkit-scrollbar { display: none; }
@@ -44,7 +45,7 @@ const Sidebar = ({ closeMobileMenu }) => {
         .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
       `}</style>
 
-      <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
+      <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid var(--border, #334155)', transition: 'border-color 0.3s ease' }}>
         <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
         <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px', fontWeight: '700' }}>
           WELCOME, {userName.toUpperCase()}
@@ -65,8 +66,7 @@ const Sidebar = ({ closeMobileMenu }) => {
         ))}
       </nav>
 
-      <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid #334155' }}>
-        {/* 💡 UPDATED LOGOUT BUTTON */}
+      <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid var(--border, #334155)', transition: 'border-color 0.3s ease' }}>
         <button 
           onClick={handleLogout} 
           disabled={isLoggingOut}
@@ -94,4 +94,4 @@ const Sidebar = ({ closeMobileMenu }) => {
   );
 };
 
-export default Sidebar;
+export default Sidebar;s

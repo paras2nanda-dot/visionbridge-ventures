@@ -3,6 +3,7 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AutoLogout from './AutoLogout';
 import CommandPalette from './CommandPalette';
+import ThemeSwitcher from './ThemeSwitcher'; // 💡 NEW: Import Theme Switcher
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -21,14 +22,15 @@ const Layout = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', position: 'relative' }}>
+    // 💡 Main background now respects the theme engine
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main, #f8fafc)', transition: 'background 0.3s ease', position: 'relative' }}>
       
       <AutoLogout timeoutMinutes={15} />
       <CommandPalette />
 
       <button 
         onClick={toggleSidebar}
-        style={{ position: 'fixed', top: '15px', left: '15px', zIndex: 1001, padding: '10px', background: '#1e293b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'block', fontSize: '20px' }}
+        style={{ position: 'fixed', top: '15px', left: '15px', zIndex: 1001, padding: '10px', background: 'var(--sidebar, #1e293b)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'block', fontSize: '20px' }}
         className="mobile-only-btn"
       >
         {isSidebarOpen ? '✕' : '☰'}
@@ -48,8 +50,8 @@ const Layout = () => {
         <div className="fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
           
           {/* 🍞 DYNAMIC BREADCRUMB UI */}
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: "'Inter', sans-serif" }}>
-            <Link to="/dashboard" style={{ color: '#64748b', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#0ea5e9'} onMouseOut={(e) => e.target.style.color = '#64748b'}>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted, #94a3b8)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: "'Inter', sans-serif", transition: 'color 0.3s ease' }}>
+            <Link to="/dashboard" style={{ color: 'var(--text-muted, #64748b)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#0ea5e9'} onMouseOut={(e) => e.target.style.color = 'var(--text-muted, #64748b)'}>
               🏠 Home
             </Link>
             
@@ -64,7 +66,7 @@ const Layout = () => {
                   {isLast ? (
                     <span style={{ color: '#0ea5e9', fontWeight: '800' }}>{title}</span>
                   ) : (
-                    <Link to={to} style={{ color: '#64748b', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#0ea5e9'} onMouseOut={(e) => e.target.style.color = '#64748b'}>
+                    <Link to={to} style={{ color: 'var(--text-muted, #64748b)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#0ea5e9'} onMouseOut={(e) => e.target.style.color = 'var(--text-muted, #64748b)'}>
                       {title}
                     </Link>
                   )}
@@ -73,25 +75,30 @@ const Layout = () => {
             })}
           </div>
 
-          {/* 🔍 TOP BAR SEARCH BUTTON */}
-          <button 
-            onClick={() => window.dispatchEvent(new Event('open-cmd-k'))}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '40px', padding: '10px 16px',
-              background: '#fff', border: '1px solid #cbd5e1', borderRadius: '10px',
-              color: '#64748b', fontSize: '14px', fontWeight: '500', cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'; }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>🔍</span> Search anything...
-            </span>
-            <span style={{ background: '#f8fafc', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', border: '1px solid #e2e8f0', color: '#475569' }}>
-              Ctrl K
-            </span>
-          </button>
+          {/* 💡 TOP BAR ACTIONS: Theme Switcher + Search */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            
+            <ThemeSwitcher />
+
+            <button 
+              onClick={() => window.dispatchEvent(new Event('open-cmd-k'))}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '40px', padding: '10px 16px',
+                background: 'var(--bg-card, #fff)', border: '1px solid var(--border, #cbd5e1)', borderRadius: '10px',
+                color: 'var(--text-muted, #64748b)', fontSize: '14px', fontWeight: '500', cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--text-main)'; e.currentTarget.style.color = 'var(--text-main)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border, #cbd5e1)'; e.currentTarget.style.color = 'var(--text-muted, #64748b)'; }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🔍</span> Search anything...
+              </span>
+              <span style={{ background: 'var(--bg-main, #f8fafc)', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', border: '1px solid var(--border, #e2e8f0)', color: 'var(--text-muted, #475569)', transition: 'all 0.3s ease' }}>
+                Ctrl K
+              </span>
+            </button>
+          </div>
         </div>
 
         <Outlet />
