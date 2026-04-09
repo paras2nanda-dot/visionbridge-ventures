@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { toast } from "react-toastify"; // 💡 Added toast
+import { toast } from "react-toastify";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,13 +24,11 @@ export default function Login() {
       sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
       sessionStorage.setItem("token", res.data.token); 
       
-      // 💡 Success Toast
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
-      
       navigate("/dashboard");
     } catch (err) {
+      // 💡 This will now work because api.js won't refresh the page on auth errors
       const errorMsg = err.response?.data?.error || "Invalid username or password";
-      // 💡 Error Toast
       toast.error(errorMsg);
     }
   };
