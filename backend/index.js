@@ -18,16 +18,18 @@ import reportRoutes from './routes/reports.routes.js';
 dotenv.config();
 const app = express();
 
+// Middlewares
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
 
 // Rate Limiter for Auth
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 20, 
+  max: 100, // Increased slightly for production testing
   message: { error: "Too many attempts. Please try again later." }
 });
 
+// Advanced CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
   'https://visionbridge-ventures.vercel.app',
@@ -46,7 +48,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
+// API Routes
+// Note: This makes your login URL: /api/auth/login
 app.use('/api/auth', authLimiter, authRoutes);
+
+// Protected Routes
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
@@ -55,6 +61,7 @@ app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes);
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
 
+// Health Check
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
 
 const PORT = process.env.PORT || 3000;

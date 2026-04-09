@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
+  // Ensure there is no trailing slash here
   baseURL: "https://visionbridge-backend.onrender.com/api",
-  withCredentials: true, // Allows HttpOnly cookies
+  withCredentials: true, 
   timeout: 10000, 
 });
 
