@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api'; // 💡 Imported the secure API instance
+import api from '../../services/api'; 
 
 const BusinessDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 💡 api.get automatically attaches the HttpOnly cookie!
     api.get('/dashboard/business')
       .then(res => { 
         setData(res.data); 
@@ -20,7 +19,7 @@ const BusinessDashboard = () => {
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '900' }}>📊 LOADING ANALYTICS...</div>;
 
-  if (!data) return <div style={{ padding: '100px', textAlign: 'center', color: '#ef4444', fontWeight: '900', fontSize: '20px' }}>❌ Error loading dashboard data. Please log in again or check the backend.</div>;
+  if (!data) return <div style={{ padding: '100px', textAlign: 'center', color: '#ef4444', fontWeight: '900', fontSize: '20px' }}>❌ Error loading dashboard data.</div>;
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(Number(val) || 0));
 
@@ -34,13 +33,26 @@ const BusinessDashboard = () => {
   };
 
   const cardStyle = (colorSet) => ({
-    background: colorSet.bg, border: `2px solid ${colorSet.border}`, padding: '24px', borderRadius: '20px',
-    display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', minHeight: '150px'
+    background: colorSet.bg, 
+    border: `2px solid ${colorSet.border}`, 
+    padding: '24px', 
+    borderRadius: '20px',
+    display: 'flex', 
+    flexDirection: 'column', 
+    justifyContent: 'space-between', 
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', 
+    minHeight: '150px'
   });
 
   return (
-    <div style={{ background: '#ffffff', fontFamily: "'Inter', sans-serif" }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '25px' }}>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* 📊 ROW 1: PRIMARY METRICS */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+        gap: '20px', 
+        marginBottom: '25px' 
+      }}>
         <div style={cardStyle(THEME.blue)}>
           <span style={{ fontSize: '12px', fontWeight: '900', color: THEME.blue.text }}>Total Clients</span>
           <div><h2 style={{ fontSize: '30px', fontWeight: '900' }}>{data.total_clients}</h2><p style={{ fontSize: '11px', fontWeight: '900', opacity: 0.7 }}>TOTAL DATABASE SIZE</p></div>
@@ -59,7 +71,13 @@ const BusinessDashboard = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '25px' }}>
+      {/* 📈 ROW 2: GROWTH & REVENUE */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+        gap: '20px', 
+        marginBottom: '25px' 
+      }}>
         <div style={cardStyle(THEME.rose)}>
           <span style={{ fontSize: '12px', fontWeight: '900', color: THEME.rose.text }}>New Clients (30D)</span>
           <div><h2 style={{ fontSize: '30px', fontWeight: '900' }}>{data.new_clients_30d}</h2><div style={{ background: '#e11d48', color: '#fff', padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: '900', marginTop: '10px', display: 'inline-block' }}>RECENT GROWTH</div></div>
@@ -78,11 +96,12 @@ const BusinessDashboard = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '20px' }}>
-        <div style={{ background: '#f8fafc', borderRadius: '24px', padding: '30px', border: '2px solid #cbd5e1' }}>
+      {/* 🏆 ROW 3: LISTS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+        <div style={{ background: '#ffffff', borderRadius: '24px', padding: '30px', border: '2px solid #cbd5e1' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '15px', fontWeight: '900', color: '#0f172a' }}>🏆 Best Selling Funds</h3>
           {data.topFunds?.map((fund, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', padding: '15px 20px', borderRadius: '12px', background: '#fff', border: '1px solid #cbd5e1', marginBottom: '10px' }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', padding: '15px 20px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #cbd5e1', marginBottom: '10px' }}>
               <div style={{ width: '30px', fontWeight: '900', color: '#1e40af' }}>0{idx + 1}</div>
               <div style={{ flex: 1, fontWeight: '900', color: '#0f172a' }}>{fund.scheme_name}</div>
               <div style={{ fontWeight: '900', color: '#166534' }}>₹{formatINR(fund.invested_value)}</div>

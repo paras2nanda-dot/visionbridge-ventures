@@ -19,24 +19,24 @@ const Dashboard = () => {
     alignItems: 'center',
     gap: '10px',
     outline: 'none',
-    position: 'relative',
-    zIndex: 20 // 💡 Keeps buttons clickable and on top
   });
 
   return (
-    <div className="container fade-in" style={{ width: '100%', minHeight: '100vh' }}>
+    <div className="container fade-in" style={{ width: '100%', minHeight: '100vh', padding: '20px' }}>
       <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '25px' }}>
         Dashboard
       </h1>
       
-      {/* Sub-Tabs Switcher */}
+      {/* 💡 Tabs Container */}
       <div style={{ 
         display: 'flex', 
         gap: '10px', 
-        marginBottom: '30px', 
+        marginBottom: '0', 
         borderBottom: '2px solid #e2e8f0',
-        position: 'relative',
-        zIndex: 15 
+        background: '#f8fafc',
+        position: 'sticky',
+        top: '0',
+        zIndex: 100
       }}>
         <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>
           🏢 Business Dashboard
@@ -46,8 +46,8 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* 💡 Content area with explicit z-index to stay above the background */}
-      <div style={{ position: 'relative', z-index: 10 }}>
+      {/* 💡 SPACER: This paddingTop pushes the data below the tab bar */}
+      <div style={{ paddingTop: '30px' }}>
         {activeTab === 'business' ? <BusinessDashboard /> : <ClientDashboard />}
       </div>
     </div>
