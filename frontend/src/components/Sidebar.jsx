@@ -30,15 +30,9 @@ const Sidebar = ({ closeMobileMenu }) => {
   return (
     <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e293b' }}>
       
-      {/* 💡 CSS to hide the scrollbar specifically for the navigation area */}
       <style>{`
-        .sidebar-nav::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Opera */
-        }
-        .sidebar-nav {
-          -ms-overflow-style: none; /* IE and Edge */
-          scrollbar-width: none; /* Firefox */
-        }
+        .sidebar-nav::-webkit-scrollbar { display: none; }
+        .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
@@ -48,32 +42,7 @@ const Sidebar = ({ closeMobileMenu }) => {
         </div>
       </div>
       
-      {/* 💡 VISIBLE SEARCH BUTTON */}
-      <div style={{ padding: '15px 20px 5px 20px' }}>
-        <button 
-          onClick={() => {
-            window.dispatchEvent(new Event('open-cmd-k'));
-            if(closeMobileMenu) closeMobileMenu(); // Close sidebar on mobile when searching
-          }}
-          style={{ 
-            width: '100%', padding: '10px 12px', background: '#0f172a', border: '1px solid #334155', 
-            borderRadius: '8px', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', 
-            alignItems: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-            transition: 'border-color 0.2s'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.borderColor = '#64748b'}
-          onMouseOut={(e) => e.currentTarget.style.borderColor = '#334155'}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px' }}>🔍</span> Search...
-          </span>
-          <span style={{ background: '#1e293b', padding: '3px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '800', border: '1px solid #334155' }}>
-            Ctrl K
-          </span>
-        </button>
-      </div>
-
-      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '10px', overflowY: 'auto' }}>
+      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '15px', overflowY: 'auto' }}>
         {menuItems.map((item) => (
           <NavLink
             key={item.name}

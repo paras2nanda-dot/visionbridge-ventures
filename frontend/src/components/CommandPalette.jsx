@@ -28,9 +28,8 @@ const CommandPalette = () => {
   // 💡 Fetch ALL data silently in the background
   useEffect(() => {
     const fetchAllSearchData = async () => {
-      if (!sessionStorage.getItem('token')) return;
+      if (!sessionStorage.getItem('username')) return;
       
-      // We use individual try/catches so if one fails, the others still load
       try {
         api.get('/clients').then(res => setClients(Array.isArray(res.data) ? res.data : [])).catch(() => {});
         api.get('/sips').then(res => setSips(Array.isArray(res.data) ? res.data : [])).catch(() => {});
@@ -74,25 +73,25 @@ const CommandPalette = () => {
 
   const q = query.toLowerCase().trim();
 
-  // 💡 1. Filter standard navigation actions
+  // 💡 Filter standard navigation actions
   const filteredActions = actions.filter(action => action.name.toLowerCase().includes(q));
 
-  // 💡 2. Filter Live Database Clients
+  // 💡 Filter Live Database Clients
   const filteredClients = q === '' ? [] : clients.filter(c => 
     c.full_name?.toLowerCase().includes(q) || c.client_code?.toLowerCase().includes(q) || c.mobile_number?.includes(q)
   ).slice(0, 4); 
 
-  // 💡 3. Filter SIPs (Search by scheme name or client name)
+  // 💡 Filter SIPs
   const filteredSips = q === '' ? [] : sips.filter(s => 
     s.scheme_name?.toLowerCase().includes(q) || s.client_name?.toLowerCase().includes(q) || s.folio_number?.toLowerCase().includes(q)
   ).slice(0, 3);
 
-  // 💡 4. Filter Transactions
+  // 💡 Filter Transactions
   const filteredTxns = q === '' ? [] : transactions.filter(t => 
     t.scheme_name?.toLowerCase().includes(q) || t.client_name?.toLowerCase().includes(q) || t.transaction_type?.toLowerCase().includes(q)
   ).slice(0, 3);
 
-  // 💡 5. Filter Schemes
+  // 💡 Filter Schemes
   const filteredSchemes = q === '' ? [] : schemes.filter(s => 
     s.scheme_name?.toLowerCase().includes(q) || s.amc_name?.toLowerCase().includes(q)
   ).slice(0, 3);
