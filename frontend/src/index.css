@@ -24,23 +24,23 @@ body {
   background-color: #0f172a;
   color: #f8fafc;
   height: 100vh;
-  position: fixed; /* Keep it fixed on the left */
+  position: fixed; 
   left: 0;
   top: 0;
   padding: 30px 20px;
   display: flex;
   flex-direction: column;
-  z-index: 1000; /* Higher Z-index to stay on top of background */
+  z-index: 1000; 
 }
 
 .main-content {
   flex: 1;
-  margin-left: 260px; /* Pushes content to the right of the sidebar */
+  margin-left: 260px; 
   min-height: 100vh;
   padding: 40px;
   width: calc(100% - 260px);
   position: relative;
-  z-index: 1; /* Explicitly set layer */
+  z-index: 1; 
 }
 
 /* Dashboard Component Styles */
@@ -48,7 +48,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
-  z-index: 10; /* Ensures content is above any background layers */
+  z-index: 10; 
 }
 
 .title {
@@ -78,6 +78,14 @@ body {
   border: 1px solid #e2e8f0;
   position: relative;
   z-index: 5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ✨ NEW: Card Hover Animation */
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
 }
 
 .card-title {
@@ -120,12 +128,20 @@ body {
   color: #ffffff;
 }
 
-/* Smooth Fade In Animation */
+/* ✨ ENHANCED: Smooth Blur & Fade In Animation */
 .fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateY(15px);
+    filter: blur(5px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
