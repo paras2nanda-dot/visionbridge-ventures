@@ -1,8 +1,11 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import api from '../services/api'; // 💡 Import our secure API instance
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  // 💡 Grab the name we saved during login
+  const userName = sessionStorage.getItem('username') || 'Advisor';
 
   const menuItems = [
     { name: '📊 Dashboard', path: '/dashboard' },
@@ -14,26 +17,29 @@ const Sidebar = () => {
     { name: '📥 Download Reports', path: '/reports' },
   ];
 
-  const handleLogout = () => {
-    // 💡 THE FIX: Shred the session data
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('username');
-    
-    // 🧹 Also clear localStorage just in case old tokens are lingering
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('username');
-    
-    // Kick the user back to the login screen
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // 1. Tell backend to clear the HttpOnly cookie
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error("Logout failed on server", err);
+    } finally {
+      // 2. Always clear local data and redirect
+      sessionStorage.clear();
+      navigate('/login');
+    }
   };
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-logo" style={{ fontWeight: '900', fontSize: '20px', color: '#fff', padding: '20px' }}>
-        VisionBridge 📈
+    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
+        <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
+        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px', fontWeight: '700' }}>
+          WELCOME, {userName.toUpperCase()}
+        </div>
       </div>
       
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '10px' }}>
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
@@ -46,11 +52,11 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <div style={{ marginTop: 'auto', padding: '20px' }}>
+      <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid #334155' }}>
         <button 
           onClick={handleLogout} 
           className="sidebar-link" 
-          style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontWeight: '900', color: '#94a3b8' }}
+          style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontWeight: '900', color: '#ef4444' }}
         >
           🚪 Logout
         </button>
