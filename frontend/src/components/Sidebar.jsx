@@ -1,10 +1,9 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import api from '../services/api'; // 💡 Import our secure API instance
+import api from '../services/api';
 
-const Sidebar = () => {
+const Sidebar = ({ closeMobileMenu }) => {
   const navigate = useNavigate();
-  // 💡 Grab the name we saved during login
   const userName = sessionStorage.getItem('username') || 'Advisor';
 
   const menuItems = [
@@ -19,19 +18,17 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      // 1. Tell backend to clear the HttpOnly cookie
       await api.post('/auth/logout');
     } catch (err) {
       console.error("Logout failed on server", err);
     } finally {
-      // 2. Always clear local data and redirect
       sessionStorage.clear();
       navigate('/login');
     }
   };
 
   return (
-    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e293b' }}>
       <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
         <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
         <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px', fontWeight: '700' }}>
@@ -39,11 +36,12 @@ const Sidebar = () => {
         </div>
       </div>
       
-      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '10px' }}>
+      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '10px', overflowY: 'auto' }}>
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
+            onClick={closeMobileMenu} // 💡 Closes the menu on mobile after clicking
             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
             style={{ fontWeight: '900' }}
           >
