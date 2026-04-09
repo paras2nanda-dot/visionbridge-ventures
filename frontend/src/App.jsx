@@ -17,11 +17,11 @@ import Login from "./pages/Login";
 /**
  * 🛡️ 1. PROTECTED ROUTE
  * Purpose: Blocks guests from entering the app.
- * If no token exists, redirects to /login.
+ * Uses 'username' from sessionStorage because the real token is hidden in an HttpOnly cookie.
  */
 const ProtectedRoute = ({ children }) => {
-  const token = sessionStorage.getItem("token");
-  if (!token) {
+  const isAuthenticated = sessionStorage.getItem("username");
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;
@@ -30,11 +30,10 @@ const ProtectedRoute = ({ children }) => {
 /**
  * 🛡️ 2. PUBLIC ROUTE
  * Purpose: Prevents logged-in users from going back to the Login page.
- * If a token exists, redirects them straight to /dashboard.
  */
 const PublicRoute = ({ children }) => {
-  const token = sessionStorage.getItem("token");
-  if (token) {
+  const isAuthenticated = sessionStorage.getItem("username");
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -43,7 +42,7 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <Routes>
-      {/* 🔐 LOGIN ROUTE - Now wrapped in PublicRoute to prevent reverse-navigation */}
+      {/* 🔐 LOGIN ROUTE - Wrapped in PublicRoute */}
       <Route 
         path="/login" 
         element={

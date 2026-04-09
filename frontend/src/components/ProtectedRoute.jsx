@@ -1,9 +1,10 @@
 import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }) => {
-  const token = sessionStorage.getItem("token");
+  // Check for username instead of token due to HttpOnly security
+  const isAuthenticated = sessionStorage.getItem("username");
 
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
