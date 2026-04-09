@@ -7,7 +7,6 @@ const ThemeSwitcher = () => {
     const root = document.documentElement;
     localStorage.setItem('vb-theme', theme);
 
-    // 🎨 The 4 Themes
     const themes = {
       light: { main: '#f8fafc', card: '#ffffff', text: '#0f172a', textMuted: '#64748b', border: '#e2e8f0', sidebar: '#1e293b' },
       slate: { main: '#0f172a', card: '#1e293b', text: '#f8fafc', textMuted: '#94a3b8', border: '#334155', sidebar: '#020617' },
@@ -15,9 +14,9 @@ const ThemeSwitcher = () => {
       forest: { main: '#052e16', card: '#14532d', text: '#ecfdf5', textMuted: '#a7f3d0', border: '#065f46', sidebar: '#022c22' }
     };
 
-    const active = themes[theme];
+    // Fallback to light if something goes wrong
+    const active = themes[theme] || themes.light; 
     
-    // Inject variables globally
     root.style.setProperty('--bg-main', active.main);
     root.style.setProperty('--bg-card', active.card);
     root.style.setProperty('--text-main', active.text);
@@ -25,7 +24,6 @@ const ThemeSwitcher = () => {
     root.style.setProperty('--border', active.border);
     root.style.setProperty('--sidebar', active.sidebar);
 
-    // Smooth transition for the body
     document.body.style.transition = 'background 0.3s ease, color 0.3s ease';
     document.body.style.backgroundColor = active.main;
     document.body.style.color = active.text;
@@ -48,7 +46,7 @@ const ThemeSwitcher = () => {
         outline: 'none',
         boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
         transition: 'all 0.2s',
-        appearance: 'none' // Cleans up the default browser arrow
+        appearance: 'none'
       }}
     >
       <option value="light">☀️ Light</option>
