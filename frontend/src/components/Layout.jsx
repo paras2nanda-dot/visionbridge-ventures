@@ -24,7 +24,7 @@ const Layout = () => {
           border: 'none',
           borderRadius: '8px',
           cursor: 'pointer',
-          display: 'block', // Default visible
+          display: 'block',
           fontSize: '20px'
         }}
         className="mobile-only-btn"
@@ -32,7 +32,7 @@ const Layout = () => {
         {isSidebarOpen ? '✕' : '☰'}
       </button>
 
-      {/* 🌑 MOBILE OVERLAY (Blur background when menu is open) */}
+      {/* 🌑 MOBILE OVERLAY */}
       {isSidebarOpen && (
         <div 
           onClick={toggleSidebar}
@@ -58,7 +58,7 @@ const Layout = () => {
         bottom: 0, 
         zIndex: 100,
         transition: 'transform 0.3s ease',
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)', // Hidden by default on mobile
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
       }}
       className="sidebar-wrapper"
       >
@@ -71,22 +71,35 @@ const Layout = () => {
         padding: '40px',
         minHeight: '100vh',
         width: '100%',
-        transition: 'margin 0.3s ease'
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        zIndex: 1 // 💡 Ensures content sits in its own layer
       }}
       className="main-content-layout"
       >
         <Outlet />
       </main>
 
-      {/* 💡 CSS INJECTOR (Simple way to handle media queries without a separate CSS file) */}
+      {/* 💡 CSS FIXED: Changed camelCase to kebab-case for CSS syntax */}
       <style>{`
         @media (min-width: 1024px) {
-          .sidebar-wrapper { transform: translateX(0) !important; }
-          .main-content-layout { marginLeft: 260px !important; width: calc(100% - 260px) !important; }
-          .mobile-only-btn { display: none !important; }
+          .sidebar-wrapper { 
+            transform: translateX(0) !important; 
+          }
+          .main-content-layout { 
+            margin-left: 260px !important; 
+            width: calc(100% - 260px) !important; 
+          }
+          .mobile-only-btn { 
+            display: none !important; 
+          }
         }
         @media (max-width: 1023px) {
-          .main-content-layout { padding: 80px 20px 40px 20px !important; }
+          .main-content-layout { 
+            padding: 80px 20px 40px 20px !important; 
+            margin-left: 0 !important;
+            width: 100% !important;
+          }
         }
       `}</style>
     </div>
