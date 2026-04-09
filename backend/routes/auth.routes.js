@@ -1,9 +1,5 @@
-import express from "express";
-import { login, forgotPassword } from "../controllers/auth.controller.js";
-
-const router = express.Router();
-
-router.post("/login", login);
-router.post("/reset-password", forgotPassword);
-
-export default router;
+// Inside loginUser in auth.service.js
+const result = await pool.query(
+  `SELECT * FROM users WHERE LOWER(username) = LOWER($1)`,
+  [username]
+);

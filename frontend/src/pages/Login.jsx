@@ -23,17 +23,25 @@ export default function Login() {
     const cleanUsername = username.trim().toLowerCase();
 
     try {
+      // 📡 Requesting login. Cookies are handled automatically due to withCredentials in api.js
       const res = await api.post("/auth/login", { 
         username: cleanUsername, 
         password 
       });
 
       const data = res.data; 
-      sessionStorage.setItem("token", data.token); 
+      
+      /**
+       * 🛡️ SECURITY UPDATE:
+       * We NO LONGER store the token in sessionStorage. 
+       * It is now a secure HttpOnly cookie.
+       */
       sessionStorage.setItem("username", data.user?.full_name || cleanUsername); 
       
+      console.log("✅ Login successful. Session managed by secure cookies.");
       navigate("/dashboard");
     } catch (err) {
+      console.error("🔥 Login Error:", err);
       const serverMessage = err.response?.data?.error || err.response?.data?.message;
       setError(serverMessage || "Invalid username or password");
     }

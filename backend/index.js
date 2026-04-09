@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 
 // 🔐 Auth Imports
 import authRoutes from './routes/auth.routes.js';
@@ -23,7 +25,18 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
-// --- 🌐 ENHANCED CORS CONFIGURATION ---
+// --- 🛡️ SECURITY MIDDLEWARE ---
+app.use(express.json({ limit: '10kb' })); // Prevents large body attacks
+app.use(cookieParser()); // Required for HttpOnly cookies
+
+// --- 🚦 RATE LIMITING (Brute Force Protection) ---
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 login/reset attempts per window
+  message: { error: "Too many attempts. Please try again in 15 minutes." }
+});
+
+// --- 🌐 RESTRICTED CORS ---
 const allowedOrigins = [
   'http://localhost:5173',
   'https://visionbridge-ventures.vercel.app',
@@ -39,22 +52,16 @@ app.use(cors({
     if (isWhitelisted || isVercel) {
       callback(null, true);
     } else {
-      console.log("❌ CORS Blocked Origin:", origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: true // Required to allow cookies to be sent
 }));
 
-app.use(express.json());
-
-// --- Home Route ---
-app.get('/', (req, res) => res.send('✅ VisionBridge API is active'));
-
 // --- 🔓 PUBLIC API ROUTES ---
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authLimiter, authRoutes); 
 
 // --- 🔐 PROTECTED API ROUTES ---
 app.use('/api/dashboard', authMiddleware, dashboardRoutes); 
@@ -65,15 +72,14 @@ app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes);
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
 
-// Global Error Handler
+app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
+
 app.use((err, req, res, next) => {
   console.error("❌ SERVER ERROR:", err.stack);
-  res.status(500).json({ error: "Internal Server Error", details: err.message });
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
-// --- 🚀 START SERVER ---
 const PORT = process.env.PORT || 3000;
-// Using '0.0.0.0' allows Render to bind to the port correctly
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ VisionBridge Backend running on port ${PORT}`);
+  console.log(`✅ Secure Backend running on port ${PORT}`);
 });
