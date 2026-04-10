@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { logActivity } from './activityController.js';
 
 export const getTransactions = async (req, res) => {
   try {
@@ -23,6 +24,12 @@ export const createTransaction = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [transaction_id, transaction_date, client_id, scheme_id, transaction_type, amount, platform, notes]
     );
+
+    // Log Activity
+    const schemeNameRes = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id = $1', [scheme_id]);
+    const schemeName = schemeNameRes.rows[0]?.scheme_name || 'Mutual Fund';
+    await logActivity('txn', 'Lumpsum Invested', `₹${new Intl.NumberFormat('en-IN').format(amount)} ${transaction_type} in ${schemeName}.`);
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -39,6 +46,9 @@ export const updateTransaction = async (req, res) => {
        WHERE id = $8 RETURNING *`,
       [transaction_date, client_id, scheme_id, transaction_type, amount, platform, notes, id]
     );
+    
+    await logActivity('txn', 'Transaction Modified', `A past investment entry was updated.`);
+    
     res.json(result.rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -46,8 +56,10 @@ export const updateTransaction = async (req, res) => {
 };
 
 export const deleteTransaction = async (req, res) => {
+  const { id } = req.params;
   try {
-    await pool.query('DELETE FROM transactions WHERE id = $1', [req.params.id]);
+    await pool.query('DELETE FROM transactions WHERE id = $1', [id]);
+    await logActivity('txn', 'Transaction Deleted', `An investment entry was removed from the history.`);
     res.json({ message: "Transaction deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

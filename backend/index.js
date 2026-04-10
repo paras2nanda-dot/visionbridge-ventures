@@ -15,6 +15,7 @@ import sipRoutes from './routes/sips.routes.js';
 import mfschemeRoutes from './routes/mfSchemes.routes.js'; 
 import transactionRoutes from './routes/transactions.routes.js'; 
 import reportRoutes from './routes/reports.routes.js'; 
+import activityRoutes from './routes/activity.routes.js'; // 🔔 Added Activity Routes
 
 // 💡 Correct relative path: from root to config folder
 import { pool } from './config/db.js'; 
@@ -64,7 +65,8 @@ app.use(cors({
 // 🛡️ 5. BACKUP ROUTE (The Safety Net)
 app.get('/api/backup', authMiddleware, async (req, res) => {
   try {
-    const tables = ['users', 'clients', 'sips', 'mf_schemes', 'transactions'];
+    // 🔔 Added 'activities' to the backup tables list
+    const tables = ['users', 'clients', 'sips', 'mf_schemes', 'transactions', 'activities'];
     let backupData = {};
 
     for (const table of tables) {
@@ -90,6 +92,7 @@ app.use('/api/sips', authMiddleware, sipRoutes);
 app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes); 
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
+app.use('/api/activities', authMiddleware, activityRoutes); // 🔔 Registered Activity Feed
 
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
 

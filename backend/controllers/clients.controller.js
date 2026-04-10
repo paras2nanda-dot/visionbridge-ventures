@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { logActivity } from './activityController.js';
 
 // GET ALL CLIENTS
 export const getClients = async (req, res) => {
@@ -35,13 +36,17 @@ export const createClient = async (req, res) => {
     ];
 
     const result = await pool.query(query, values);
+    
+    // Log Activity
+    await logActivity('client', 'New Client Onboarded', `${c.full_name} (${c.client_code}) was added to the database.`);
+    
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-// UPDATE EXISTING CLIENT (This fixes your Edit Screen)
+// UPDATE EXISTING CLIENT
 export const updateClient = async (req, res) => {
   const { id } = req.params;
   const c = req.body;
@@ -68,6 +73,10 @@ export const updateClient = async (req, res) => {
 
     const result = await pool.query(query, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
+    
+    // Log Activity
+    await logActivity('client', 'Client Updated', `Profile details for ${c.full_name} were updated.`);
+    
     res.json(result.rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -78,8 +87,15 @@ export const updateClient = async (req, res) => {
 export const deleteClient = async (req, res) => {
   const { id } = req.params;
   try {
+    const clientData = await pool.query('SELECT full_name FROM clients WHERE id = $1', [id]);
     const result = await pool.query('DELETE FROM clients WHERE id = $1 RETURNING *', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
+    
+    // Log Activity
+    if (clientData.rows[0]) {
+        await logActivity('client', 'Client Deleted', `${clientData.rows[0].full_name} was removed.`);
+    }
+
     res.json({ message: 'Client deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
