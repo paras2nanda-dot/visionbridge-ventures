@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api'; 
-import { toast } from 'react-toastify'; // 💡 Added toast
+import { toast } from 'react-toastify'; 
 
 const Sips = () => {
   const [sips, setSips] = useState([]);
@@ -63,7 +63,7 @@ const Sips = () => {
       }
     } catch (err) { 
       console.error(err);
-      toast.error("Failed to fetch SIP data from server"); // 💡 Added error feedback
+      toast.error("Failed to fetch SIP data from server");
     }
   };
 
@@ -88,7 +88,7 @@ const Sips = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.client_id || !formData.scheme_id) {
-      return toast.warn("⚠️ Please validate Client and Scheme."); // 💡 Replaced alert
+      return toast.warn("⚠️ Please validate Client and Scheme.");
     }
     
     const payload = { 
@@ -103,10 +103,10 @@ const Sips = () => {
     try {
       if (isEditing) {
         await api.put(url, payload);
-        toast.success("✅ SIP Updated Successfully"); // 💡 Replaced alert
+        toast.success("✅ SIP Updated Successfully");
       } else {
         await api.post(url, payload);
-        toast.success("✅ New SIP Saved"); // 💡 Replaced alert
+        toast.success("✅ New SIP Saved");
       }
       
       setIsEditing(false); 
@@ -115,7 +115,7 @@ const Sips = () => {
       fetchInitialData();
       
     } catch (err) { 
-      toast.error(err.response?.data?.error || "❌ Error saving SIP"); // 💡 Replaced alert
+      toast.error(err.response?.data?.error || "❌ Error saving SIP");
     }
   };
 
@@ -128,29 +128,30 @@ const Sips = () => {
   const monthlyBookValue = sips.filter(s => s.status === 'Active' && s.frequency === 'MONTHLY').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
   const totalAumValue = sips.reduce((sum, s) => sum + calculateSIPData(s).aum, 0);
 
-  const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '12px', color: '#475569' };
-  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' };
+  // Theme-ready styles
+  const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '800', fontSize: '12px', color: 'var(--text-muted)' };
+  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', outline: 'none', fontSize: '13px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 className="title" style={{ margin: 0 }}>SIP Tracker</h1>
+        <h1 className="title" style={{ margin: 0, color: 'var(--text-main)' }}>SIP Tracker</h1>
         <div style={{ display: 'flex', gap: '15px' }}>
-          <div style={{ background: '#ecfdf5', border: '2px solid #10b981', padding: '12px 20px', borderRadius: '10px' }}>
-             <span style={{ fontSize: '11px', color: '#047857', fontWeight: 'bold' }}>Monthly SIP Book</span>
-             <h2 style={{ margin: 0, color: '#065f46' }}>₹{formatINR(monthlyBookValue)}</h2>
+          <div style={{ background: 'var(--bg-card)', border: '2px solid #10b981', padding: '12px 20px', borderRadius: '10px' }}>
+             <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>Monthly SIP Book</span>
+             <h2 style={{ margin: 0, color: 'var(--text-main)' }}>₹{formatINR(monthlyBookValue)}</h2>
           </div>
-          <div style={{ background: '#eff6ff', border: '2px solid #3b82f6', padding: '12px 20px', borderRadius: '10px' }}>
-             <span style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: 'bold' }}>TOTAL SIP AUM</span>
-             <h2 style={{ margin: 0, color: '#1e40af' }}>₹{formatINR(totalAumValue)}</h2>
+          <div style={{ background: 'var(--bg-card)', border: '2px solid #3b82f6', padding: '12px 20px', borderRadius: '10px' }}>
+             <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 'bold' }}>TOTAL SIP AUM</span>
+             <h2 style={{ margin: 0, color: 'var(--text-main)' }}>₹{formatINR(totalAumValue)}</h2>
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #3b82f6', marginBottom: '30px' }}>
+      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #3b82f6', marginBottom: '30px', background: 'var(--bg-card)' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
-            <div><label style={labelStyle}>SID</label><input style={{...inputStyle, background: '#f8fafc', fontWeight:'bold'}} value={formData.sip_id} readOnly /></div>
+            <div><label style={labelStyle}>SID</label><input style={{...inputStyle, background: 'var(--bg-main)', fontWeight:'bold'}} value={formData.sip_id} readOnly /></div>
             <div>
               <label style={labelStyle}>Client ID *</label>
               <input style={inputStyle} value={formData.client_code_input} onChange={(e) => {
@@ -160,7 +161,7 @@ const Sips = () => {
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
               }} required />
             </div>
-            <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, background: '#f1f5f9'}} value={clientName} readOnly /></div>
+            <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, background: 'var(--bg-main)'}} value={clientName} readOnly /></div>
             <div>
               <label style={labelStyle}>MF Scheme Name *</label>
               <select style={inputStyle} value={formData.scheme_id} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
@@ -193,7 +194,18 @@ const Sips = () => {
             </div>
 
             <div><label style={labelStyle}>Start Date</label><input style={inputStyle} type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} required /></div>
-            <div><label style={labelStyle}>End Date</label><input style={inputStyle} type="date" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} disabled={formData.status === 'Active'} /></div>
+            
+            {/* 💡 FIXED: End Date is now editable regardless of status, but visually cued */}
+            <div>
+              <label style={labelStyle}>End Date</label>
+              <input 
+                style={inputStyle} 
+                type="date" 
+                value={formData.end_date} 
+                onChange={e => setFormData({...formData, end_date: e.target.value})} 
+              />
+            </div>
+            
             <div>
                 <label style={labelStyle}>Platform</label>
                 <select style={inputStyle} value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})}>
@@ -203,34 +215,34 @@ const Sips = () => {
             <div><label style={labelStyle}>Notes</label><input style={inputStyle} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} /></div>
           </div>
           <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-            <button type="submit" className="btn-primary" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update" : "Add SIP"}</button>
-            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'white', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
+            <button type="submit" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update" : "Add SIP"}</button>
+            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
           </div>
         </form>
       </div>
 
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
         <span style={{ fontSize: '16px' }}>🔍</span>
-        <input type="text" placeholder="Filter SIPs by SID, Client ID, or Client Name..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input type="text" placeholder="Filter SIPs by SID, Client ID, or Client Name..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
+      <div className="card" style={{ padding: '0', overflowX: 'auto', background: 'var(--bg-card)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead style={{ background: '#f8fafc' }}>
-            <tr><th style={{padding:'12px', textAlign:'left'}}>SID</th><th style={{padding:'12px', textAlign:'left'}}>Client</th><th style={{padding:'12px', textAlign:'left'}}>Scheme</th><th style={{padding:'12px', textAlign:'center'}}>Status</th><th style={{padding:'12px', textAlign:'right'}}>Amount</th><th style={{padding:'12px', textAlign:'right'}}>AUM</th><th style={{padding:'12px', textAlign:'center'}}>Action</th></tr>
+          <thead style={{ background: 'var(--bg-main)' }}>
+            <tr><th style={{padding:'12px', textAlign:'left', color: 'var(--text-muted)'}}>SID</th><th style={{padding:'12px', textAlign:'left', color: 'var(--text-muted)'}}>Client</th><th style={{padding:'12px', textAlign:'left', color: 'var(--text-muted)'}}>Scheme</th><th style={{padding:'12px', textAlign:'center', color: 'var(--text-muted)'}}>Status</th><th style={{padding:'12px', textAlign:'right', color: 'var(--text-muted)'}}>Amount</th><th style={{padding:'12px', textAlign:'right', color: 'var(--text-muted)'}}>AUM</th><th style={{padding:'12px', textAlign:'center', color: 'var(--text-muted)'}}>Action</th></tr>
           </thead>
           <tbody>
             {filteredSips.map(s => {
               const d = calculateSIPData(s);
               return (
-                <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '12px', fontWeight: 'bold', color: '#3b82f6' }}>{s.sip_id}</td>
-                  <td style={{ padding: '12px' }}>{s.client_code} - {s.client_name}</td>
-                  <td style={{ padding: '12px' }}>{s.scheme_name} <br/><small style={{color:'#64748b'}}>{s.platform} • {s.frequency === 'MONTHLY' ? 'Monthly' : 'Weekly'}</small></td>
+                  <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.client_code} - {s.client_name}</td>
+                  <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.scheme_name} <br/><small style={{color:'var(--text-muted)'}}>{s.platform} • {s.frequency === 'MONTHLY' ? 'Monthly' : 'Weekly'}</small></td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', background: s.status === 'Active' ? '#d1fae5' : '#fee2e2', color: s.status === 'Active' ? '#065f46' : '#991b1b' }}>{s.status}</span>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', background: s.status === 'Active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: s.status === 'Active' ? '#10b981' : '#ef4444' }}>{s.status}</span>
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text-main)' }}>₹{formatINR(s.amount)}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 'bold' }}>₹{formatINR(d.aum)}</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     <button onClick={() => { setIsEditing(true); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
