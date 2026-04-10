@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify"; 
 import "react-toastify/dist/ReactToastify.css"; 
@@ -31,13 +31,36 @@ const PublicRoute = ({ children }) => {
 function App() {
   const location = useLocation();
 
+  // 🔊 AUDIO ENGINE logic
+  useEffect(() => {
+    // Using a subtle, high-quality UI "pop" sound
+    const clickSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3");
+    clickSound.volume = 0.15; // Keep it professional and low
+
+    const handleGlobalClick = (e) => {
+      // Find if the click was on a button, link, or tab item
+      const isInteractable = e.target.closest('button, a, [role="button"], .sidebar-item');
+      
+      if (isInteractable) {
+        clickSound.currentTime = 0; // Reset to start if clicked rapidly
+        clickSound.play().catch(() => {
+          // Browsers block audio until first interaction; 
+          // this catch prevents console errors on the very first click
+        });
+      }
+    };
+
+    window.addEventListener('mousedown', handleGlobalClick);
+    return () => window.removeEventListener('mousedown', handleGlobalClick);
+  }, []);
+
+  // 🌌 THEME ENGINE logic
   useEffect(() => {
     const isLoginPage = location.pathname === '/login';
     const savedTheme = isLoginPage ? 'light' : (localStorage.getItem('vb-theme') || 'midnight');
     
     const root = document.documentElement;
     const themes = {
-      // 🌌 Obsidian uses 'invert(1)' to turn black icons into white
       midnight: { main: '#000000', card: '#0d0d0d', text: '#ffffff', muted: '#a1a1aa', border: '#3f3f46', icon: 'invert(1)' },
       light: { main: '#f8fafc', card: '#ffffff', text: '#0f172a', muted: '#64748b', border: '#e2e8f0', icon: 'none' }
     };
@@ -49,7 +72,7 @@ function App() {
     root.style.setProperty('--text-main', active.text);
     root.style.setProperty('--text-muted', active.muted);
     root.style.setProperty('--border', active.border);
-    root.style.setProperty('--icon-filter', active.icon); // 🔔 New Variable
+    root.style.setProperty('--icon-filter', active.icon);
     
     document.body.style.backgroundColor = active.main;
     document.body.style.color = active.text;
