@@ -131,9 +131,9 @@ const MFSchemes = () => {
 
   return (
     <div className="container fade-in">
-      <h1 className="title">Mutual Fund Master</h1>
+      <h1 className="title" style={{ color: 'var(--text-main)' }}>Mutual Fund Master</h1>
 
-      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #6366f1', marginBottom: '30px' }}>
+      <div className="card" style={{ background: 'var(--bg-card)', borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #6366f1', marginBottom: '30px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '20px' }}>
             <div><label style={labelStyle}>AMC Name *</label><input style={inputStyle} value={formData.amc_name} onChange={e => setFormData({...formData, amc_name: e.target.value})} required /></div>
@@ -200,7 +200,7 @@ const MFSchemes = () => {
         <input type="text" placeholder="Search Master..." style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
+      <div className="card" style={{ background: 'var(--bg-card)', padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead style={{ background: 'var(--bg-main)' }}>
             <tr style={{ borderBottom: '2px solid var(--border)' }}>
@@ -231,4 +231,4 @@ const MFSchemes = () => {
   );
 };
 
-export default MFSchemes;s
+export default MFSchemes;
