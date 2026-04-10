@@ -25,16 +25,16 @@ const ThemeSwitcher = () => {
         sidebar: '#020617' 
       },
       midnight: { 
-        main: '#020617', // Deep Navy/Black
-        card: '#0f172a', // Slightly lighter card surface
-        text: '#f8fafc', // Crisp white text
-        textMuted: '#94a3b8', 
-        border: '#1e293b', // Visible border
+        main: '#000000',      // 🌌 True Obsidian Black
+        card: '#111111',      // 🌑 Lighter card surface for elevation
+        text: '#ffffff',      // ⚪ Pure white for high-contrast numbers
+        textMuted: '#a1a1aa', // 🩶 Brighter muted text for visibility
+        border: '#27272a',    // 🔲 Subtle zinc borders
         sidebar: '#000000' 
       },
       forest: { 
-        main: '#052e16', 
-        card: '#14532d', 
+        main: '#022c22', 
+        card: '#064e3b', 
         text: '#ecfdf5', 
         textMuted: '#a7f3d0', 
         border: '#065f46', 
@@ -58,11 +58,12 @@ const ThemeSwitcher = () => {
   }, [theme]);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', width: '100%' }}>
       <select
         value={theme}
         onChange={(e) => setTheme(e.target.value)}
         style={{
+          width: '100%',
           padding: '10px 30px 10px 14px',
           borderRadius: '10px',
           background: 'var(--bg-card, #fff)',
@@ -78,11 +79,19 @@ const ThemeSwitcher = () => {
         }}
       >
         <option value="light">☀️ Light Mode</option>
-        <option value="slate">🌙 Slate</option>
-        <option value="midnight">🌌 Midnight</option>
-        <option value="forest">🌲 Forest</option>
+        <option value="slate">🌙 Slate Dark</option>
+        <option value="midnight">🌌 Obsidian Black</option>
+        <option value="forest">🌲 Forest Green</option>
       </select>
-      <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: '10px', color: 'var(--text-muted)' }}>▼</div>
+      <div style={{ 
+        position: 'absolute', 
+        right: '12px', 
+        top: '50%', 
+        transform: 'translateY(-50%)', 
+        pointerEvents: 'none', 
+        fontSize: '10px', 
+        color: 'var(--text-muted)' 
+      }}>▼</div>
     </div>
   );
 };
