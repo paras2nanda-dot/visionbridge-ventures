@@ -6,8 +6,7 @@ const BusinessDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 💡 Fetching data that includes your specific logic:
-    // Total Clients, Invested AUM (Transactions + SIP Served), Monthly SIP Book, etc.
+    // 💡 Fetching data including SIP end alerts, AUM, and birthdays
     api.get('/dashboard/business')
       .then(res => { 
         setData(res.data); 
@@ -50,9 +49,40 @@ const BusinessDashboard = () => {
   return (
     <div className="fade-in" style={{ fontFamily: "'Inter', sans-serif" }}>
       
+      {/* 🔔 SIP END ALERT BANNER */}
+      {data.sipsEndingSoon && data.sipsEndingSoon.length > 0 && (
+        <div style={{
+          background: '#fff7ed',
+          border: '2px solid #fdba74',
+          borderRadius: '16px',
+          padding: '16px 24px',
+          marginBottom: '25px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '15px',
+          animation: 'pulse-alert 2s infinite'
+        }}>
+          <span style={{ fontSize: '24px' }}>⚠️</span>
+          <div>
+            <div style={{ fontWeight: '900', color: '#9a3412', fontSize: '15px' }}>
+              {data.sipsEndingSoon.length} SIP ending in next {data.sipsEndingSoon[0].days_left} days
+            </div>
+            <div style={{ fontSize: '12px', color: '#c2410c', fontWeight: '700' }}>
+              Client: {data.sipsEndingSoon[0].full_name} | Scheme: {data.sipsEndingSoon[0].scheme_name}
+            </div>
+          </div>
+          <style>{`
+            @keyframes pulse-alert {
+              0% { box-shadow: 0 0 0 0 rgba(253, 186, 116, 0.4); }
+              70% { box-shadow: 0 0 0 10px rgba(253, 186, 116, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(253, 186, 116, 0); }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* 🟦 TOP ROW: Core Business Metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '25px' }}>
-        
         <div style={cardStyle('#0ea5e9')}>
           <span style={labelStyle('#0ea5e9')}>Total Clients</span>
           <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)' }}>{data.total_clients}</h2>
@@ -80,7 +110,6 @@ const BusinessDashboard = () => {
 
       {/* 🟧 MIDDLE ROW: Revenue & Forecasts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '25px' }}>
-        
         <div style={cardStyle('#065f46')}>
           <span style={labelStyle('#10b981')}>Expected Commission (Monthly)</span>
           <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)' }}>₹{formatINR((data.total_invested_aum * 0.008) / 12)}</h2>
@@ -102,8 +131,6 @@ const BusinessDashboard = () => {
 
       {/* 🟨 BOTTOM ROW: Detailed Insights */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-        
-        {/* 🏆 Best Selling Fund Section */}
         <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '30px', border: '1px solid var(--border)' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '15px', fontWeight: '900', color: 'var(--text-main)' }}>🏆 Best Selling Funds</h3>
           {data.topFunds?.map((fund, idx) => (
@@ -115,7 +142,6 @@ const BusinessDashboard = () => {
           ))}
         </div>
 
-        {/* 🎂 Upcoming Birthdays Section */}
         <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '30px', border: '1px solid var(--border)' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '15px', fontWeight: '900', color: 'var(--text-main)' }}>🎂 Birthdays (Next 7 Days)</h3>
           {data.upcomingBirthdays?.length > 0 ? data.upcomingBirthdays.map((client, idx) => {
@@ -123,7 +149,6 @@ const BusinessDashboard = () => {
             const day = dob.getDate();
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             
-            // Ordinal suffix (1st, 2nd, 3rd, 4th...)
             const suffix = (day) => {
               if (day > 3 && day < 21) return 'th';
               switch (day % 10) {
