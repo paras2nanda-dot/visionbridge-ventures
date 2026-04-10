@@ -26,10 +26,10 @@ const ThemeSwitcher = () => {
       },
       midnight: { 
         main: '#000000',      // 🌌 True Black
-        card: '#0a0a0a',      // 🌑 Deepest Grey for elevation
+        card: '#0d0d0d',      // 🌑 Slightly elevated card surface
         text: '#ffffff',      // ⚪ Pure White
         textMuted: '#a1a1aa', // 🩶 Brighter Muted Text
-        border: '#262626',    // 🔲 Subtle Dark Border
+        border: '#3f3f46',    // 🔲 High-visibility Zinc Border
         sidebar: '#000000' 
       },
       forest: { 
@@ -68,7 +68,7 @@ const ThemeSwitcher = () => {
           borderRadius: '8px',
           background: 'var(--bg-card)',
           color: 'var(--text-main)',
-          border: '1px solid var(--border)',
+          border: '2px solid var(--border)', // Thicker border for dropdown
           cursor: 'pointer',
           fontWeight: '700',
           fontSize: '12px',

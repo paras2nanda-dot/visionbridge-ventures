@@ -41,6 +41,7 @@ h1, h2, h3, h4, .title {
   -ms-overflow-style: none;
   scrollbar-width: none;
   transition: background 0.3s ease;
+  border-right: 1.5px solid var(--border);
 }
 
 .sidebar::-webkit-scrollbar {
@@ -64,13 +65,13 @@ h1, h2, h3, h4, .title {
   font-size: 16px;
 }
 
-/* Card Overrides */
+/* Card Overrides - Increased Border Thickness and added Shadow for Obsidian Visibility */
 .card, [style*="background: white"], [style*="background: rgb(255, 255, 255)"] {
   background: var(--bg-card) !important;
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important; /* Deeper shadow for elevation */
+  border: 1.5px solid var(--border) !important; /* Thicker, sharper border */
   color: var(--text-main) !important;
 }
 
@@ -89,27 +90,29 @@ h1, h2, h3, h4, .title {
   color: var(--text-main);
 }
 
-/* Table Themes */
+/* Table Themes - Visible Grid Lines */
 table {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
+  border: 1.5px solid var(--border) !important;
 }
 
 th {
   background: var(--bg-main) !important;
   color: var(--text-muted) !important;
-  border-bottom: 2px solid var(--border) !important;
+  border-bottom: 2.5px solid var(--border) !important; /* Thick header separator */
 }
 
 td {
-  border-bottom: 1px solid var(--border) !important;
+  border-bottom: 1.5px solid var(--border) !important;
 }
 
-/* Input & Form Themes */
+/* Input & Form Themes - Clear outlines */
 input, select, textarea {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
-  border: 1px solid var(--border) !important;
+  border: 1.5px solid var(--border) !important;
+  padding: 12px;
 }
 
 label, [style*="color: #64748b"] {
@@ -119,6 +122,8 @@ label, [style*="color: #64748b"] {
 /* Chart Container Fixes */
 .chart-container, [style*="background-color: #fff"] {
   background-color: var(--bg-card) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 16px;
 }
 
 .fade-in {
@@ -138,7 +143,7 @@ label, [style*="color: #64748b"] {
   }
 }
 
-/* 💡 Responsive fixes and Input Zoom Prevention */
+/* Responsive fixes and Input Zoom Prevention */
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 0 !important;
