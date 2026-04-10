@@ -104,7 +104,9 @@ const ClientDashboard = () => {
             {clients
               .filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.client_code || '').toLowerCase().includes(searchTerm.toLowerCase()))
               .map(c => (
-                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '12px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border, #f1f5f9)', fontWeight: '500', color: 'var(--text-main, #334155)' }}>
+                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '12px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border, #f1f5f9)', fontWeight: '500', color: 'var(--text-main, #334155)' }}
+                     onMouseOver={(e) => e.target.style.background = 'var(--bg-main)'}
+                     onMouseOut={(e) => e.target.style.background = 'transparent'}>
                   <span style={{ color: '#38bdf8', marginRight: '10px' }}>{c.client_code || 'C'+c.id}</span> {c.full_name}
                 </div>
               ))}
