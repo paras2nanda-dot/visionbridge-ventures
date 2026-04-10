@@ -201,12 +201,12 @@ const Reports = () => {
       <div style={{ 
         ...cardStyle, 
         border: '2px solid #991b1b', 
-        background: 'rgba(153, 27, 27, 0.1)', 
+        background: 'rgba(153, 27, 27, 0.2)', 
         marginTop: '40px' 
       }}>
         <div>
           <h3 style={{ margin: 0, fontWeight: '800', color: '#ef4444' }}>System Maintenance</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-main)', fontSize: '13px' }}>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-main)', fontSize: '13px', opacity: 0.9 }}>
             <strong>Admin Only:</strong> Full database JSON backup for disaster recovery.
           </p>
         </div>
