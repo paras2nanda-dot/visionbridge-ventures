@@ -25,11 +25,11 @@ const ThemeSwitcher = () => {
         sidebar: '#020617' 
       },
       midnight: { 
-        main: '#000000',      // 🌌 True Obsidian Black
-        card: '#111111',      // 🌑 Lighter card surface for elevation
-        text: '#ffffff',      // ⚪ Pure white for high-contrast numbers
-        textMuted: '#a1a1aa', // 🩶 Brighter muted text for visibility
-        border: '#27272a',    // 🔲 Subtle zinc borders
+        main: '#000000',      // 🌌 True Black
+        card: '#0a0a0a',      // 🌑 Deepest Grey for elevation
+        text: '#ffffff',      // ⚪ Pure White
+        textMuted: '#a1a1aa', // 🩶 Brighter Muted Text
+        border: '#262626',    // 🔲 Subtle Dark Border
         sidebar: '#000000' 
       },
       forest: { 
@@ -64,24 +64,23 @@ const ThemeSwitcher = () => {
         onChange={(e) => setTheme(e.target.value)}
         style={{
           width: '100%',
-          padding: '10px 30px 10px 14px',
-          borderRadius: '10px',
-          background: 'var(--bg-card, #fff)',
-          color: 'var(--text-main, #0f172a)',
-          border: '1px solid var(--border, #cbd5e1)',
+          padding: '10px 12px',
+          borderRadius: '8px',
+          background: 'var(--bg-card)',
+          color: 'var(--text-main)',
+          border: '1px solid var(--border)',
           cursor: 'pointer',
           fontWeight: '700',
-          fontSize: '13px',
+          fontSize: '12px',
           outline: 'none',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-          transition: 'all 0.2s',
           appearance: 'none',
+          transition: 'all 0.2s'
         }}
       >
-        <option value="light">☀️ Light Mode</option>
-        <option value="slate">🌙 Slate Dark</option>
-        <option value="midnight">🌌 Obsidian Black</option>
-        <option value="forest">🌲 Forest Green</option>
+        <option value="light">☀️ Light</option>
+        <option value="slate">🌙 Slate</option>
+        <option value="midnight">🌌 Obsidian</option>
+        <option value="forest">🌲 Forest</option>
       </select>
       <div style={{ 
         position: 'absolute', 
