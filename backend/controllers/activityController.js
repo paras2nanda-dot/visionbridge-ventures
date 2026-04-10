@@ -1,6 +1,5 @@
 import { pool } from '../config/db.js';
 
-// FETCH ALL ACTIVITIES
 export const getActivities = async (req, res) => {
   try {
     const query = `
@@ -19,7 +18,6 @@ export const getActivities = async (req, res) => {
   }
 };
 
-// REUSABLE LOGGER (This records the actions)
 export const logActivity = async (type, title, description) => {
   const configs = {
     client: { icon: '👤', color: '#0ea5e9' },
