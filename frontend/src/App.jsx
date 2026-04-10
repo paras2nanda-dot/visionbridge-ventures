@@ -31,42 +31,32 @@ const PublicRoute = ({ children }) => {
 function App() {
   const location = useLocation();
 
-  // 🔊 ENHANCED AUDIO ENGINE
+  // 🔊 BRUTE FORCE AUDIO ENGINE
   useEffect(() => {
-    const clickSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3");
+    // Subtle High-Quality Click
+    const audioUrl = "https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3";
+    const clickSound = new Audio(audioUrl);
     clickSound.volume = 0.2;
 
-    let audioUnlocked = false;
+    const playSound = () => {
+      clickSound.currentTime = 0;
+      clickSound.play().catch(() => {
+        // Silent catch: console errors are normal until the first interaction
+      });
+    };
 
-    const unlockAudio = () => {
-      if (!audioUnlocked) {
-        clickSound.play().then(() => {
-          clickSound.pause();
-          clickSound.currentTime = 0;
-          audioUnlocked = true;
-          // After unlocking, we remove this specific listener
-          window.removeEventListener('click', unlockAudio);
-        }).catch(() => {});
+    const handleInteraction = (e) => {
+      // Check if clicked element is a button, link, icon, or menu item
+      const isClickable = e.target.closest('button, a, select, input[type="submit"], span, .sidebar-link, [role="button"]');
+      
+      if (isClickable) {
+        playSound();
       }
     };
 
-    const handleGlobalClick = (e) => {
-      const isInteractable = e.target.closest('button, a, [role="button"], .sidebar-link');
-      if (isInteractable) {
-        clickSound.currentTime = 0;
-        clickSound.play().catch(() => {
-          console.log("Audio playback blocked. Click page once to enable.");
-        });
-      }
-    };
-
-    window.addEventListener('click', unlockAudio); // Unlocks on first click
-    window.addEventListener('mousedown', handleGlobalClick);
-    
-    return () => {
-      window.removeEventListener('click', unlockAudio);
-      window.removeEventListener('mousedown', handleGlobalClick);
-    };
+    // Attach to 'pointerdown' for faster response on touch/mobile
+    window.addEventListener('pointerdown', handleInteraction);
+    return () => window.removeEventListener('pointerdown', handleInteraction);
   }, []);
 
   // 🌌 THEME ENGINE logic

@@ -16,8 +16,16 @@ export default function Login() {
   const [newPassword, setNewPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false); 
 
+  // 🔊 Helper to play sound immediately on button press
+  const playClick = () => {
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3");
+    audio.volume = 0.2;
+    audio.play().catch(() => {}); // Ignore errors if blocked
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    playClick(); // 🔊 Trigger sound
     setIsLoggingIn(true); 
     const cleanUsername = username.trim().toLowerCase();
 
@@ -39,6 +47,7 @@ export default function Login() {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    playClick(); // 🔊 Trigger sound
     setIsResetting(true);
     const cleanResetUser = resetUser.trim().toLowerCase();
 
@@ -68,7 +77,7 @@ export default function Login() {
       <div style={styles.rightPanel} className="login-right-panel">
         <div style={styles.loginFormContainer} className="login-form-container">
           <div style={styles.logoContainer}>
-             <img src="/logo.jpeg" alt="Logo" style={styles.logoImage} />
+              <img src="/logo.jpeg" alt="Logo" style={styles.logoImage} />
           </div>
           <h2 style={styles.formTitle}>Welcome Back</h2>
           <form onSubmit={handleLogin} style={{width: '100%'}}>
@@ -92,14 +101,14 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
               />
-              <span style={styles.eyeIcon} onClick={() => setShowPassword(!showPassword)}>{showPassword ? "🙈" : "👁️"}</span>
+              <span style={styles.eyeIcon} onClick={() => { playClick(); setShowPassword(!showPassword); }}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
             
             <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>
               {isLoggingIn ? "Authenticating..." : "Sign In"}
             </button>
           </form>
-          <p style={styles.forgot} onClick={() => setShowReset(true)}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
+          <p style={styles.forgot} onClick={() => { playClick(); setShowReset(true); }}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
         </div>
       </div>
 
@@ -114,36 +123,18 @@ export default function Login() {
               <button type="submit" style={styles.loginBtn} disabled={isResetting}>
                 {isResetting ? "UPDATING..." : "Reset"}
               </button>
-              <button type="button" style={styles.cancelBtn} onClick={() => setShowReset(false)}>Back</button>
+              <button type="button" style={styles.cancelBtn} onClick={() => { playClick(); setShowReset(false); }}>Back</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* 📱 CSS Overrides for Hero Text Visibility and Mobile Layout */}
       <style>{`
-        /* Force hero text to be high-contrast white */
-        .login-hero-heading {
-          color: #ffffff !important;
-          text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        .login-hero-tagline {
-          color: #10b981 !important;
-          font-weight: 900 !important;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
+        .login-hero-heading { color: #ffffff !important; text-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .login-hero-tagline { color: #10b981 !important; font-weight: 900 !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         @media (max-width: 850px) {
           .login-left-panel { display: none !important; }
-          .login-right-panel { 
-            width: 100% !important; 
-            flex: none !important; 
-            padding: 40px 24px !important; 
-            background: var(--bg-card) !important; 
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
+          .login-right-panel { width: 100% !important; flex: none !important; padding: 40px 24px !important; background: var(--bg-card) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
           .login-page-container { background: var(--bg-main) !important; }
           .login-form-container { max-width: 100% !important; padding: 0 !important; }
           .login-field { background: var(--bg-card) !important; color: var(--text-main) !important; border: 1.5px solid var(--border) !important; }
