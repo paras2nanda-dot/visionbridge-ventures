@@ -54,7 +54,7 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.pageWrapper} className="login-page">
+    <div style={styles.pageWrapper} className="login-page-container">
       <div style={styles.leftPanel} className="login-left-panel">
         <div style={styles.overlay}></div>
         <div style={styles.leftContent}>
@@ -93,7 +93,7 @@ export default function Login() {
       {showReset && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard} className="modal-card">
-            <h3>Reset Password</h3>
+            <h3 style={{color: 'var(--text-main)', marginBottom: '20px'}}>Reset Password</h3>
             <form onSubmit={handleResetPassword}>
               <input style={styles.input} className="login-input" placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
               <input style={styles.input} className="login-input" placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
@@ -107,7 +107,7 @@ export default function Login() {
         </div>
       )}
 
-      {/* 💡 Mobile Layout & Spinner CSS Injector */}
+      {/* 💡 CSS Overrides for Mobile and Obsidian Theme */}
       <style>{`
         .login-spinner {
           width: 18px;
@@ -119,12 +119,30 @@ export default function Login() {
         }
         @keyframes spin-login { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 💡 Media Queries for Mobile Compactness */
-        @media (max-width: 900px) {
-          .login-left-panel { display: none !important; }
-          .login-right-panel { padding: 20px !important; }
-          .login-form-container { max-width: 100% !important; padding: 20px 0 !important; }
-          .modal-card { width: 90% !important; padding: 25px !important; }
+        /* 📱 MOBILE FIXES: Ensure single column and compact form */
+        @media (max-width: 850px) {
+          .login-page-container {
+            flex-direction: column !important;
+            overflow-y: auto !important;
+          }
+          .login-left-panel {
+            display: none !important;
+          }
+          .login-right-panel {
+            width: 100% !important;
+            min-height: 100vh !important;
+            padding: 30px 20px !important;
+            display: flex !important;
+            align-items: center !important;
+          }
+          .login-form-container {
+            max-width: 100% !important;
+            box-shadow: none !important;
+          }
+          .modal-card {
+            width: 92% !important;
+            padding: 25px !important;
+          }
         }
       `}</style>
     </div>
@@ -132,27 +150,27 @@ export default function Login() {
 }
 
 const styles = {
-  pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif" },
+  pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif", background: "var(--bg-main)" },
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2071&auto=format&fit=crop')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.7) 100%)' },
   leftContent: { position: 'relative', zIndex: 2, color: '#fff', maxWidth: '520px' },
   tagline: { fontSize: '13px', fontWeight: '800', letterSpacing: '2px', color: '#10b981', marginBottom: '20px' },
   mainHeading: { fontSize: '48px', fontWeight: '900', lineHeight: '1.2', marginBottom: '20px' },
-  rightPanel: { flex: 1, background: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
-  loginFormContainer: { width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  logoContainer: { marginBottom: '15px' },
-  logoImage: { width: '180px', height: 'auto', borderRadius: '12px', objectFit: 'contain' },
-  formTitle: { fontSize: '26px', fontWeight: '800', color: '#0f172a', margin: '15px 0' },
-  label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px' },
-  input: { width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "10px", border: "1.5px solid #e2e8f0", fontSize: "16px" },
-  passwordContainer: { position: "relative", width: "100%", marginBottom: "35px" },
-  passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e2e8f0", fontSize: "16px" },
+  rightPanel: { flex: 1, background: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
+  loginFormContainer: { width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+  logoContainer: { marginBottom: '10px' },
+  logoImage: { width: '180px', height: 'auto', borderRadius: '15px', objectFit: 'contain', background: '#fff', padding: '8px' },
+  formTitle: { fontSize: '26px', fontWeight: '900', color: 'var(--text-main)', margin: '15px 0 25px 0' },
+  label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' },
+  input: { width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "10px", border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: "16px" },
+  passwordContainer: { position: "relative", width: "100%", marginBottom: "30px" },
+  passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: "16px" },
   eyeIcon: { position: "absolute", right: "15px", top: "15px", cursor: "pointer", fontSize: "18px" },
-  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "800", display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.2s', fontSize: "16px" },
+  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "900", display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.2s', fontSize: "16px" },
   loaderContainer: { display: 'flex', alignItems: 'center', gap: '10px' },
-  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "#64748b", border: "none", cursor: "pointer", marginTop: "10px", fontWeight: "600" },
-  forgot: { marginTop: "20px", fontSize: "14px", color: "#64748b", cursor: "pointer" },
-  resetLink: { color: "#2563eb", fontWeight: '800' },
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(5px)' },
-  modalCard: { background: "#fff", padding: "40px", borderRadius: "24px", width: "380px" }
+  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "var(--text-muted)", border: "none", cursor: "pointer", marginTop: "10px", fontWeight: '700' },
+  forgot: { marginTop: "20px", fontSize: "14px", color: "var(--text-muted)", cursor: "pointer" },
+  resetLink: { color: "#2563eb", fontWeight: '900' },
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(8px)' },
+  modalCard: { background: "var(--bg-card)", padding: "40px", borderRadius: "24px", width: "400px", border: '1px solid var(--border)' }
 };
