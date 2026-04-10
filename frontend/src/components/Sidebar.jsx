@@ -34,27 +34,28 @@ const Sidebar = ({ closeMobileMenu }) => {
     <div className="sidebar" style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      height: '100vh', // 💡 Fixed height to prevent overflow
+      height: '100vh', 
       background: 'var(--sidebar, #1e293b)', 
       transition: 'background 0.3s ease',
-      position: 'relative'
+      overflow: 'hidden' // 💡 Force-remove any external scrollbars
     }}>
       
       <style>{`
-        .sidebar-nav::-webkit-scrollbar { width: 4px; }
-        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        .sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+        /* Hide scrollbar but allow scrolling if absolutely needed on tiny screens */
+        .sidebar-nav::-webkit-scrollbar { display: none; }
+        .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
         
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
         
         .sidebar-link {
           display: block;
-          padding: 12px 20px;
+          padding: 10px 20px; /* 💡 Reduced vertical padding from 12px to 10px */
           color: #94a3b8;
           text-decoration: none;
           transition: all 0.2s;
           font-weight: 900;
+          font-size: 14px; /* 💡 Standardized font size */
         }
         .sidebar-link.active {
           background: rgba(14, 165, 233, 0.1);
@@ -63,20 +64,19 @@ const Sidebar = ({ closeMobileMenu }) => {
         }
       `}</style>
 
-      {/* TOP: LOGO */}
-      <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
-        <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
-        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px', fontWeight: '700' }}>
+      {/* TOP: LOGO (More compact padding) */}
+      <div className="sidebar-logo" style={{ padding: '15px 20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
+        <div style={{ fontWeight: '900', fontSize: '18px', color: '#fff' }}>VisionBridge 📈</div>
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px', fontWeight: '700' }}>
           WELCOME, {userName.toUpperCase()}
         </div>
       </div>
       
-      {/* MIDDLE: NAV LINKS (NOW SCROLLABLE) */}
+      {/* MIDDLE: NAV LINKS (Tightened spacing) */}
       <nav className="sidebar-nav" style={{ 
         flex: 1, 
-        paddingTop: '15px', 
-        overflowY: 'auto', // 💡 This allows scrolling if menu is long
-        overflowX: 'hidden'
+        paddingTop: '10px', 
+        overflowY: 'auto' 
       }}>
         {menuItems.map((item) => (
           <NavLink
@@ -90,30 +90,32 @@ const Sidebar = ({ closeMobileMenu }) => {
         ))}
       </nav>
 
-      {/* BOTTOM: SETTINGS & LOGOUT (PINNED) */}
+      {/* BOTTOM: SETTINGS & LOGOUT (Slimmed down) */}
       <div style={{ 
-        marginTop: 'auto', 
-        padding: '20px', 
+        padding: '15px 20px', 
         borderTop: '1px solid var(--border, #334155)', 
-        transition: 'border-color 0.3s ease',
         flexShrink: 0,
         background: 'var(--sidebar, #1e293b)' 
       }}>
         
-        <div style={{ marginBottom: '20px' }}>
-          <p style={{ color: '#94a3b8', fontSize: '10px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1.5px' }}>APPEARANCE</p>
+        <div style={{ marginBottom: '15px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '8px', letterSpacing: '1px' }}>APPEARANCE</p>
+          {/* We use a smaller version of the switcher if possible, or just standard */}
           <ThemeSwitcher />
         </div>
 
         <button 
           onClick={handleLogout} 
           disabled={isLoggingOut}
-          className="sidebar-link" 
           style={{ 
             width: '100%', textAlign: 'left', border: 'none', background: 'none', 
             cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', 
             color: isLoggingOut ? '#fca5a5' : '#ef4444', opacity: isLoggingOut ? 0.7 : 1,
-            padding: '10px 0'
+            padding: '5px 0',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
           {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
