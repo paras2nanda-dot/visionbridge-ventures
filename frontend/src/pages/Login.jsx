@@ -8,17 +8,17 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false); // 💡 New Loading State
+  const [isLoggingIn, setIsLoggingIn] = useState(false); 
 
   const [showReset, setShowReset] = useState(false);
   const [resetUser, setResetUser] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState(""); 
   const [newPassword, setNewPassword] = useState("");
-  const [isResetting, setIsResetting] = useState(false); // 💡 New Reset Loading State
+  const [isResetting, setIsResetting] = useState(false); 
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoggingIn(true); // 🚀 Start Loading
+    setIsLoggingIn(true); 
     const cleanUsername = username.trim().toLowerCase();
 
     try {
@@ -33,7 +33,7 @@ export default function Login() {
       const errorMsg = err.response?.data?.error || "Invalid username or password";
       toast.error(errorMsg);
     } finally {
-      setIsLoggingIn(false); // 🛑 Stop Loading
+      setIsLoggingIn(false); 
     }
   };
 
@@ -54,8 +54,8 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.pageWrapper}>
-      <div style={styles.leftPanel}>
+    <div style={styles.pageWrapper} className="login-page">
+      <div style={styles.leftPanel} className="login-left-panel">
         <div style={styles.overlay}></div>
         <div style={styles.leftContent}>
           <div style={styles.tagline}>VISIONBRIDGE VENTURES</div>
@@ -63,18 +63,18 @@ export default function Login() {
         </div>
       </div>
 
-      <div style={styles.rightPanel}>
-        <div style={styles.loginFormContainer}>
+      <div style={styles.rightPanel} className="login-right-panel">
+        <div style={styles.loginFormContainer} className="login-form-container">
           <div style={styles.logoContainer}>
              <img src="/logo.jpeg" alt="Logo" style={styles.logoImage} onError={(e) => { e.target.src = "https://via.placeholder.com/241?text=VBV"; }} />
           </div>
           <h2 style={styles.formTitle}>Welcome Back</h2>
           <form onSubmit={handleLogin} style={{width: '100%'}}>
             <label style={styles.label}>Username</label>
-            <input style={styles.input} placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <input style={styles.input} className="login-input" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
             <label style={styles.label}>Password</label>
             <div style={styles.passwordContainer}>
-              <input type={showPassword ? "text" : "password"} style={styles.passwordInput} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input type={showPassword ? "text" : "password"} style={styles.passwordInput} className="login-input" value={password} onChange={(e) => setPassword(e.target.value)} required />
               <span style={styles.eyeIcon} onClick={() => setShowPassword(!showPassword)}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
             
@@ -92,12 +92,12 @@ export default function Login() {
 
       {showReset && (
         <div style={styles.modalOverlay}>
-          <div style={styles.modalCard}>
+          <div style={styles.modalCard} className="modal-card">
             <h3>Reset Password</h3>
             <form onSubmit={handleResetPassword}>
-              <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
-              <input style={styles.input} placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
-              <input style={styles.input} type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              <input style={styles.input} className="login-input" placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
+              <input style={styles.input} className="login-input" placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
+              <input style={styles.input} className="login-input" type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
               <button type="submit" style={styles.loginBtn} disabled={isResetting}>
                 {isResetting ? "UPDATING..." : "Reset"}
               </button>
@@ -107,7 +107,7 @@ export default function Login() {
         </div>
       )}
 
-      {/* 💡 Spinner CSS Injector */}
+      {/* 💡 Mobile Layout & Spinner CSS Injector */}
       <style>{`
         .login-spinner {
           width: 18px;
@@ -118,13 +118,20 @@ export default function Login() {
           animation: spin-login 0.8s linear infinite;
         }
         @keyframes spin-login { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 💡 Media Queries for Mobile Compactness */
+        @media (max-width: 900px) {
+          .login-left-panel { display: none !important; }
+          .login-right-panel { padding: 20px !important; }
+          .login-form-container { max-width: 100% !important; padding: 20px 0 !important; }
+          .modal-card { width: 90% !important; padding: 25px !important; }
+        }
       `}</style>
     </div>
   );
 }
 
 const styles = {
-  // ... existing styles ...
   pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif" },
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2071&auto=format&fit=crop')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.7) 100%)' },
@@ -132,18 +139,19 @@ const styles = {
   tagline: { fontSize: '13px', fontWeight: '800', letterSpacing: '2px', color: '#10b981', marginBottom: '20px' },
   mainHeading: { fontSize: '48px', fontWeight: '900', lineHeight: '1.2', marginBottom: '20px' },
   rightPanel: { flex: 1, background: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
-  loginFormContainer: { width: '100%', maxWidth: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  logoImage: { width: '241.5px', height: 'auto', borderRadius: '18px', objectFit: 'contain' },
-  formTitle: { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: '20px 0' },
+  loginFormContainer: { width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+  logoContainer: { marginBottom: '15px' },
+  logoImage: { width: '180px', height: 'auto', borderRadius: '12px', objectFit: 'contain' },
+  formTitle: { fontSize: '26px', fontWeight: '800', color: '#0f172a', margin: '15px 0' },
   label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px' },
-  input: { width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "10px", border: "1.5px solid #e2e8f0" },
+  input: { width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "10px", border: "1.5px solid #e2e8f0", fontSize: "16px" },
   passwordContainer: { position: "relative", width: "100%", marginBottom: "35px" },
-  passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e2e8f0" },
-  eyeIcon: { position: "absolute", right: "15px", top: "15px", cursor: "pointer" },
-  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "800", display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.2s' },
+  passwordInput: { width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e2e8f0", fontSize: "16px" },
+  eyeIcon: { position: "absolute", right: "15px", top: "15px", cursor: "pointer", fontSize: "18px" },
+  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "800", display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.2s', fontSize: "16px" },
   loaderContainer: { display: 'flex', alignItems: 'center', gap: '10px' },
-  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "#64748b", border: "none", cursor: "pointer", marginTop: "10px" },
-  forgot: { marginTop: "30px", fontSize: "14px", color: "#64748b", cursor: "pointer" },
+  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "#64748b", border: "none", cursor: "pointer", marginTop: "10px", fontWeight: "600" },
+  forgot: { marginTop: "20px", fontSize: "14px", color: "#64748b", cursor: "pointer" },
   resetLink: { color: "#2563eb", fontWeight: '800' },
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(5px)' },
   modalCard: { background: "#fff", padding: "40px", borderRadius: "24px", width: "380px" }
