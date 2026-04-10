@@ -18,7 +18,7 @@ h1, h2, h3, h4, .title {
   color: var(--text-main) !important;
 }
 
-/* 📅 DATE ICON FIX: Forces browser calendar icon to white in Dark Mode */
+/* 📅 DATE ICON FIX */
 ::-webkit-calendar-picker-indicator {
     filter: var(--icon-filter, none);
     cursor: pointer;
@@ -30,42 +30,10 @@ h1, h2, h3, h4, .title {
     opacity: 0.8;
 }
 
-/* THE FIX: Proper Side-by-Side Layout */
-.app-container {
-  display: flex;
-  width: 100%;
-  position: relative;
-}
-
-.sidebar {
-  width: 260px;
-  background-color: var(--sidebar, #0f172a);
-  color: #f8fafc;
-  height: 100vh;
-  position: fixed; 
-  left: 0;
-  top: 0;
-  padding: 30px 20px;
-  display: flex;
-  flex-direction: column;
-  z-index: 1000; 
-  overflow-y: auto;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  transition: background 0.3s ease;
-  border-right: 1.5px solid var(--border);
-}
-
-.sidebar::-webkit-scrollbar {
-  display: none;
-}
-
 .main-content {
   flex: 1;
-  margin-left: 260px; 
   min-height: 100vh;
   padding: 40px;
-  width: calc(100% - 260px);
   position: relative;
   z-index: 1; 
   background-color: var(--bg-main);
@@ -143,30 +111,8 @@ label, [style*="color: #64748b"] {
 }
 
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(15px);
-    filter: blur(5px);
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-@media (max-width: 1024px) {
-  .main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
-    padding: 20px !important;
-  }
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  .sidebar.open {
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateY(15px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
 input, select, textarea {

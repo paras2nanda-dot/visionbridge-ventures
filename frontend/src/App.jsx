@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify"; 
 import "react-toastify/dist/ReactToastify.css"; 
@@ -31,27 +31,42 @@ const PublicRoute = ({ children }) => {
 function App() {
   const location = useLocation();
 
-  // 🔊 AUDIO ENGINE logic
+  // 🔊 ENHANCED AUDIO ENGINE
   useEffect(() => {
-    // Using a subtle, high-quality UI "pop" sound
     const clickSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3");
-    clickSound.volume = 0.15; // Keep it professional and low
+    clickSound.volume = 0.2;
+
+    let audioUnlocked = false;
+
+    const unlockAudio = () => {
+      if (!audioUnlocked) {
+        clickSound.play().then(() => {
+          clickSound.pause();
+          clickSound.currentTime = 0;
+          audioUnlocked = true;
+          // After unlocking, we remove this specific listener
+          window.removeEventListener('click', unlockAudio);
+        }).catch(() => {});
+      }
+    };
 
     const handleGlobalClick = (e) => {
-      // Find if the click was on a button, link, or tab item
-      const isInteractable = e.target.closest('button, a, [role="button"], .sidebar-item');
-      
+      const isInteractable = e.target.closest('button, a, [role="button"], .sidebar-link');
       if (isInteractable) {
-        clickSound.currentTime = 0; // Reset to start if clicked rapidly
+        clickSound.currentTime = 0;
         clickSound.play().catch(() => {
-          // Browsers block audio until first interaction; 
-          // this catch prevents console errors on the very first click
+          console.log("Audio playback blocked. Click page once to enable.");
         });
       }
     };
 
+    window.addEventListener('click', unlockAudio); // Unlocks on first click
     window.addEventListener('mousedown', handleGlobalClick);
-    return () => window.removeEventListener('mousedown', handleGlobalClick);
+    
+    return () => {
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('mousedown', handleGlobalClick);
+    };
   }, []);
 
   // 🌌 THEME ENGINE logic
@@ -80,13 +95,7 @@ function App() {
 
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease' }}>
-      <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        theme="colored"
-        style={{ zIndex: 99999 }} 
-      />
-
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" style={{ zIndex: 99999 }} />
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

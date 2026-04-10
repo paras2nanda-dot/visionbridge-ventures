@@ -39,13 +39,13 @@ const Sidebar = ({ closeMobileMenu }) => {
       background: 'var(--sidebar, #1e293b)', 
       transition: 'background 0.3s ease',
       overflow: 'hidden',
-      borderRight: '1.5px solid var(--border, #334155)'
+      borderRight: '1.5px solid var(--border, #334155)',
+      zIndex: 999999 // Critical for Mobile Visibility
     }}>
       
       <style>{`
         .sidebar-nav::-webkit-scrollbar { display: none; }
         .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
-        
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
         
@@ -63,65 +63,31 @@ const Sidebar = ({ closeMobileMenu }) => {
           color: #0ea5e9;
           border-right: 4px solid #0ea5e9;
         }
-        .sidebar-link:hover {
-          color: #f8fafc;
-          background: rgba(255,255,255,0.05);
-        }
       `}</style>
 
-      {/* TOP: LOGO */}
       <div className="sidebar-logo" style={{ padding: '25px 20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
-        <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff', letterSpacing: '-0.5px' }}>VisionBridge 📈</div>
-        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '700', opacity: 0.8 }}>
+        <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '700' }}>
           WELCOME, {userName.toUpperCase()}
         </div>
       </div>
       
-      {/* MIDDLE: NAV LINKS */}
-      <nav className="sidebar-nav" style={{ 
-        flex: 1, 
-        paddingTop: '15px', 
-        overflowY: 'auto' 
-      }}>
+      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '15px', overflowY: 'auto' }}>
         {menuItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            onClick={closeMobileMenu} 
-            className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
-          >
+          <NavLink key={item.name} to={item.path} onClick={closeMobileMenu} 
+            className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}>
             {item.name}
           </NavLink>
         ))}
       </nav>
 
-      {/* BOTTOM: SETTINGS & LOGOUT */}
-      <div style={{ 
-        padding: '20px', 
-        borderTop: '1px solid var(--border, #334155)', 
-        flexShrink: 0,
-        background: 'rgba(0,0,0,0.1)' 
-      }}>
-        
+      <div style={{ padding: '20px', borderTop: '1px solid var(--border, #334155)', flexShrink: 0, background: 'rgba(0,0,0,0.1)' }}>
         <div style={{ marginBottom: '20px' }}>
           <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1px' }}>APPEARANCE</p>
           <ThemeSwitcher />
         </div>
-
-        <button 
-          onClick={handleLogout} 
-          disabled={isLoggingOut}
-          style={{ 
-            width: '100%', textAlign: 'left', border: 'none', background: 'none', 
-            cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', 
-            color: isLoggingOut ? '#fca5a5' : '#ef4444', opacity: isLoggingOut ? 0.7 : 1,
-            padding: '8px 0',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
+        <button onClick={handleLogout} disabled={isLoggingOut}
+          style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', color: isLoggingOut ? '#fca5a5' : '#ef4444', opacity: isLoggingOut ? 0.7 : 1, padding: '8px 0', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
         </button>
       </div>

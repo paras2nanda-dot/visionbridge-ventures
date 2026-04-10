@@ -11,15 +11,7 @@ const Layout = () => {
   const pathnames = location.pathname.split('/').filter((x) => x);
 
   const formatBreadcrumb = (path) => {
-    const titles = { 
-      dashboard: 'Dashboard', 
-      clients: 'Clients Database', 
-      sips: 'SIP Tracker', 
-      transactions: 'Transactions', 
-      schemes: 'MF Schemes', 
-      charts: 'Charts & Analytics', 
-      reports: 'Download Reports' 
-    };
+    const titles = { dashboard: 'Dashboard', clients: 'Clients Database', sips: 'SIP Tracker', transactions: 'Transactions', schemes: 'MF Schemes', charts: 'Charts & Analytics', reports: 'Download Reports' };
     return titles[path] || (path.charAt(0).toUpperCase() + path.slice(1));
   };
 
@@ -28,44 +20,24 @@ const Layout = () => {
       <AutoLogout timeoutMinutes={15} />
       <CommandPalette />
 
-      {/* MOBILE HAMBURGER BUTTON (Increased z-index) */}
-      <button 
-        onClick={toggleSidebar} 
-        style={{ 
-          position: 'fixed', top: '15px', left: '15px', zIndex: 9999, 
-          padding: '12px', background: 'var(--sidebar, #1e293b)', color: 'white', 
-          border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '20px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }} 
-        className="mobile-only-btn"
-      >
+      {/* MOBILE TRIGGER */}
+      <button onClick={toggleSidebar} style={{ position: 'fixed', top: '15px', left: '15px', zIndex: 999999, padding: '10px', background: 'var(--sidebar, #1e293b)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '20px' }} className="mobile-only-btn">
         {isSidebarOpen ? '✕' : '☰'}
       </button>
 
-      {/* MOBILE OVERLAY */}
-      {isSidebarOpen && (
-        <div 
-          onClick={toggleSidebar} 
-          style={{ 
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-            background: 'rgba(0,0,0,0.6)', zIndex: 1000, backdropFilter: 'blur(4px)' 
-          }} 
-        />
-      )}
+      {/* OVERLAY */}
+      {isSidebarOpen && <div onClick={toggleSidebar} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999997, backdropFilter: 'blur(4px)' }} />}
 
-      {/* SIDEBAR WRAPPER (Fixed transition and width) */}
-      <div 
-        style={{ 
-          width: '260px', position: 'fixed', top: 0, left: 0, bottom: 0, 
-          zIndex: 1001, transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)', 
-          transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' 
-        }} 
-        className="sidebar-wrapper"
-      >
+      {/* SIDEBAR WRAPPER */}
+      <div style={{ 
+        width: '260px', position: 'fixed', top: 0, left: 0, bottom: 0, 
+        zIndex: 999998, transition: 'transform 0.3s ease', 
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' 
+      }} className="sidebar-wrapper">
         <Sidebar closeMobileMenu={() => setIsSidebarOpen(false)} />
       </div>
 
-      <main style={{ flex: 1, padding: '40px', minHeight: '100vh', width: '100%', transition: 'all 0.3s ease', position: 'relative' }} className="main-content-layout">
+      <main style={{ flex: 1, padding: '40px', minHeight: '100vh', width: '100%', transition: 'all 0.3s ease', position: 'relative', zIndex: 1 }} className="main-content-layout">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted, #94a3b8)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link to="/dashboard" style={{ color: 'var(--text-muted, #64748b)', textDecoration: 'none' }}>🏠 Home</Link>
@@ -90,15 +62,8 @@ const Layout = () => {
       </main>
 
       <style>{`
-        @media (min-width: 1024px) { 
-          .sidebar-wrapper { transform: translateX(0) !important; } 
-          .main-content-layout { margin-left: 260px !important; width: calc(100% - 260px) !important; } 
-          .mobile-only-btn { display: none !important; } 
-        }
-        @media (max-width: 1023px) { 
-          .main-content-layout { padding: 80px 20px 40px 20px !important; margin-left: 0 !important; width: 100% !important; } 
-          .sidebar-wrapper { width: 280px !important; }
-        }
+        @media (min-width: 1024px) { .sidebar-wrapper { transform: translateX(0) !important; z-index: 100 !important; } .main-content-layout { margin-left: 260px !important; width: calc(100% - 260px) !important; } .mobile-only-btn { display: none !important; } }
+        @media (max-width: 1023px) { .main-content-layout { padding: 80px 20px 40px 20px !important; margin-left: 0 !important; width: 100% !important; } }
       `}</style>
     </div>
   );
