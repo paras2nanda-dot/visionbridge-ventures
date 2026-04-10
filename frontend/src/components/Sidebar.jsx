@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import ThemeSwitcher from './ThemeSwitcher'; // 💡 Ensure ThemeSwitcher.jsx is in the same folder
+import ThemeSwitcher from './ThemeSwitcher';
 
 const Sidebar = ({ closeMobileMenu }) => {
   const navigate = useNavigate();
@@ -31,11 +31,20 @@ const Sidebar = ({ closeMobileMenu }) => {
   };
 
   return (
-    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--sidebar, #1e293b)', transition: 'background 0.3s ease' }}>
+    <div className="sidebar" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh', // 💡 Fixed height to prevent overflow
+      background: 'var(--sidebar, #1e293b)', 
+      transition: 'background 0.3s ease',
+      position: 'relative'
+    }}>
       
       <style>{`
-        .sidebar-nav::-webkit-scrollbar { display: none; }
-        .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
+        .sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+        
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
         
@@ -45,6 +54,7 @@ const Sidebar = ({ closeMobileMenu }) => {
           color: #94a3b8;
           text-decoration: none;
           transition: all 0.2s;
+          font-weight: 900;
         }
         .sidebar-link.active {
           background: rgba(14, 165, 233, 0.1);
@@ -53,29 +63,42 @@ const Sidebar = ({ closeMobileMenu }) => {
         }
       `}</style>
 
-      <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid var(--border, #334155)' }}>
+      {/* TOP: LOGO */}
+      <div className="sidebar-logo" style={{ padding: '20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
         <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
         <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px', fontWeight: '700' }}>
           WELCOME, {userName.toUpperCase()}
         </div>
       </div>
       
-      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '15px', overflowY: 'auto' }}>
+      {/* MIDDLE: NAV LINKS (NOW SCROLLABLE) */}
+      <nav className="sidebar-nav" style={{ 
+        flex: 1, 
+        paddingTop: '15px', 
+        overflowY: 'auto', // 💡 This allows scrolling if menu is long
+        overflowX: 'hidden'
+      }}>
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             onClick={closeMobileMenu} 
             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
-            style={{ fontWeight: '900' }}
           >
             {item.name}
           </NavLink>
         ))}
       </nav>
 
-      {/* 💡 BOTTOM SECTION: Appearance + Logout */}
-      <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid var(--border, #334155)' }}>
+      {/* BOTTOM: SETTINGS & LOGOUT (PINNED) */}
+      <div style={{ 
+        marginTop: 'auto', 
+        padding: '20px', 
+        borderTop: '1px solid var(--border, #334155)', 
+        transition: 'border-color 0.3s ease',
+        flexShrink: 0,
+        background: 'var(--sidebar, #1e293b)' 
+      }}>
         
         <div style={{ marginBottom: '20px' }}>
           <p style={{ color: '#94a3b8', fontSize: '10px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1.5px' }}>APPEARANCE</p>
@@ -90,7 +113,7 @@ const Sidebar = ({ closeMobileMenu }) => {
             width: '100%', textAlign: 'left', border: 'none', background: 'none', 
             cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', 
             color: isLoggingOut ? '#fca5a5' : '#ef4444', opacity: isLoggingOut ? 0.7 : 1,
-            paddingLeft: '0'
+            padding: '10px 0'
           }}
         >
           {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
