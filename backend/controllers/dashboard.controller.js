@@ -71,7 +71,6 @@ export const getBusinessStats = async (req, res) => {
     const aum = aumRes.rows[0];
 
     // 3. 🎂 JAVASCRIPT-POWERED BIRTHDAY LOGIC WITH DIAGNOSTICS
-    // 💡 THE FIX: Asking for both 'dob' and 'date_of_birth' columns just to be absolutely sure.
     const clientsRes = await pool.query(`
       SELECT full_name, dob, date_of_birth 
       FROM clients 
@@ -79,50 +78,31 @@ export const getBusinessStats = async (req, res) => {
          OR (date_of_birth IS NOT NULL AND TRIM(date_of_birth::text) != '')
     `);
     
-    // Get today's exact date in India timezone
     const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
     today.setHours(0, 0, 0, 0);
 
     let upcomingBirthdays = [];
-
     console.log("\n---- 🕵️ BIRTHDAY DIAGNOSTICS START ----");
-    console.log(`Current Dashboard 'Today' Date: ${today.toDateString()}`);
-
     clientsRes.rows.forEach(client => {
-      // Safely grab whichever column actually holds the date
       const rawDate = client.dob || client.date_of_birth;
       const bday = parseSafeDate(rawDate);
+      if (!bday) return;
 
-      console.log(`👤 Client: ${client.full_name} | Raw DB Date: ${rawDate} | Parsed: ${bday ? bday.toDateString() : 'INVALID'}`);
-
-      if (!bday) return; // Skip if invalid date
-
-      // Create a date object for this year's birthday
       let nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+      if (nextBday < today) nextBday.setFullYear(today.getFullYear() + 1);
 
-      // If the birthday already happened this year, look at next year
-      if (nextBday < today) {
-        nextBday.setFullYear(today.getFullYear() + 1);
-      }
-
-      // Calculate the difference in absolute days
       const diffTime = nextBday - today;
       const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      console.log(`   👉 Next Bday: ${nextBday.toDateString()} | Days Left: ${daysLeft}`);
-
-      // If it falls within the next 7 days, push it to our array
       if (daysLeft >= 0 && daysLeft <= 7) {
         upcomingBirthdays.push({
           full_name: client.full_name,
-          dob: rawDate, // Send original for frontend display
+          dob: rawDate,
           days_left: daysLeft
         });
       }
     });
     console.log("---- 🕵️ BIRTHDAY DIAGNOSTICS END ----\n");
-
-    // Sort by soonest birthdays first
     upcomingBirthdays.sort((a, b) => a.days_left - b.days_left);
 
     // 4. Top Funds
@@ -133,6 +113,23 @@ export const getBusinessStats = async (req, res) => {
       ORDER BY total_current_value DESC LIMIT 3
     `);
 
+    // 5. 🔔 SIP END ALERTS (Logic restored for 60-day window)
+    const sipsEndingRes = await pool.query(`
+      SELECT 
+        c.full_name, 
+        m.scheme_name, 
+        s.end_date,
+        (s.end_date - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date)::INT as days_left
+      FROM sips s
+      JOIN clients c ON s.client_id::TEXT = c.id::TEXT
+      JOIN mf_schemes m ON s.scheme_id::TEXT = m.id::TEXT
+      WHERE LOWER(s.status) = 'active'
+        AND s.end_date IS NOT NULL
+        AND s.end_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date
+        AND s.end_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '60 days'
+      ORDER BY s.end_date ASC
+    `);
+
     res.json({
       ...basic,
       ...aum,
@@ -140,7 +137,8 @@ export const getBusinessStats = async (req, res) => {
       monthly_revenue: aum.comm_market_value || 0,
       annual_yield: (aum.comm_market_value || 0) * 12,
       topFunds: topFundsRes.rows,
-      upcomingBirthdays: upcomingBirthdays
+      upcomingBirthdays: upcomingBirthdays,
+      sipsEndingSoon: sipsEndingRes.rows 
     });
   } catch (err) {
     console.error("❌ Business Stats Error:", err.message);
