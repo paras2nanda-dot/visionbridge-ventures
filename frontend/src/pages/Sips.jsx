@@ -108,12 +108,10 @@ const Sips = () => {
         await api.post(url, payload);
         toast.success("✅ New SIP Saved");
       }
-      
       setIsEditing(false); 
       setFormData(initialState); 
       setClientName(''); 
       fetchInitialData();
-      
     } catch (err) { 
       toast.error(err.response?.data?.error || "❌ Error saving SIP");
     }
@@ -128,27 +126,26 @@ const Sips = () => {
   const monthlyBookValue = sips.filter(s => s.status === 'Active' && s.frequency === 'MONTHLY').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
   const totalAumValue = sips.reduce((sum, s) => sum + calculateSIPData(s).aum, 0);
 
-  // Theme-ready styles
   const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '800', fontSize: '12px', color: 'var(--text-muted)' };
   const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', outline: 'none', fontSize: '13px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 className="title" style={{ margin: 0, color: 'var(--text-main)' }}>SIP Tracker</h1>
+        <h1 className="title" style={{ margin: 0 }}>SIP Tracker</h1>
         <div style={{ display: 'flex', gap: '15px' }}>
           <div style={{ background: 'var(--bg-card)', border: '2px solid #10b981', padding: '12px 20px', borderRadius: '10px' }}>
              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>Monthly SIP Book</span>
-             <h2 style={{ margin: 0, color: 'var(--text-main)' }}>₹{formatINR(monthlyBookValue)}</h2>
+             <h2 style={{ margin: 0 }}>₹{formatINR(monthlyBookValue)}</h2>
           </div>
           <div style={{ background: 'var(--bg-card)', border: '2px solid #3b82f6', padding: '12px 20px', borderRadius: '10px' }}>
              <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 'bold' }}>TOTAL SIP AUM</span>
-             <h2 style={{ margin: 0, color: 'var(--text-main)' }}>₹{formatINR(totalAumValue)}</h2>
+             <h2 style={{ margin: 0 }}>₹{formatINR(totalAumValue)}</h2>
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #3b82f6', marginBottom: '30px', background: 'var(--bg-card)' }}>
+      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #3b82f6', marginBottom: '30px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
             <div><label style={labelStyle}>SID</label><input style={{...inputStyle, background: 'var(--bg-main)', fontWeight:'bold'}} value={formData.sip_id} readOnly /></div>
@@ -169,7 +166,6 @@ const Sips = () => {
                 {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select>
             </div>
-
             <div><label style={labelStyle}>SIP Amount (₹) *</label><input style={inputStyle} value={formatINR(formData.amount)} onChange={e => setFormData({...formData, amount: e.target.value.replace(/,/g, '')})} required /></div>
             <div>
               <label style={labelStyle}>Frequency</label>
@@ -192,20 +188,8 @@ const Sips = () => {
                 <option>Active</option><option>Stopped</option>
               </select>
             </div>
-
             <div><label style={labelStyle}>Start Date</label><input style={inputStyle} type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} required /></div>
-            
-            {/* 💡 FIXED: End Date is now editable regardless of status, but visually cued */}
-            <div>
-              <label style={labelStyle}>End Date</label>
-              <input 
-                style={inputStyle} 
-                type="date" 
-                value={formData.end_date} 
-                onChange={e => setFormData({...formData, end_date: e.target.value})} 
-              />
-            </div>
-            
+            <div><label style={labelStyle}>End Date</label><input style={inputStyle} type="date" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} /></div>
             <div>
                 <label style={labelStyle}>Platform</label>
                 <select style={inputStyle} value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})}>
@@ -222,27 +206,27 @@ const Sips = () => {
       </div>
 
       <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-        <span style={{ fontSize: '16px' }}>🔍</span>
-        <input type="text" placeholder="Filter SIPs by SID, Client ID, or Client Name..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <span className="search-icon-container" style={{ fontSize: '16px' }}>🔍</span>
+        <input type="text" placeholder="Filter SIPs..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <div className="card" style={{ padding: '0', overflowX: 'auto', background: 'var(--bg-card)' }}>
+      <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead style={{ background: 'var(--bg-main)' }}>
-            <tr><th style={{padding:'12px', textAlign:'left', color: 'var(--text-muted)'}}>SID</th><th style={{padding:'12px', textAlign:'left', color: 'var(--text-muted)'}}>Client</th><th style={{padding:'12px', textAlign:'left', color: 'var(--text-muted)'}}>Scheme</th><th style={{padding:'12px', textAlign:'center', color: 'var(--text-muted)'}}>Status</th><th style={{padding:'12px', textAlign:'right', color: 'var(--text-muted)'}}>Amount</th><th style={{padding:'12px', textAlign:'right', color: 'var(--text-muted)'}}>AUM</th><th style={{padding:'12px', textAlign:'center', color: 'var(--text-muted)'}}>Action</th></tr>
+          <thead>
+            <tr><th style={{padding:'12px', textAlign:'left'}}>SID</th><th style={{padding:'12px', textAlign:'left'}}>Client</th><th style={{padding:'12px', textAlign:'left'}}>Scheme</th><th style={{padding:'12px', textAlign:'center'}}>Status</th><th style={{padding:'12px', textAlign:'right'}}>Amount</th><th style={{padding:'12px', textAlign:'right'}}>AUM</th><th style={{padding:'12px', textAlign:'center'}}>Action</th></tr>
           </thead>
           <tbody>
             {filteredSips.map(s => {
               const d = calculateSIPData(s);
               return (
-                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr key={s.id}>
                   <td style={{ padding: '12px', fontWeight: 'bold', color: '#3b82f6' }}>{s.sip_id}</td>
-                  <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.client_code} - {s.client_name}</td>
-                  <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.scheme_name} <br/><small style={{color:'var(--text-muted)'}}>{s.platform} • {s.frequency === 'MONTHLY' ? 'Monthly' : 'Weekly'}</small></td>
+                  <td style={{ padding: '12px' }}>{s.client_code} - {s.client_name}</td>
+                  <td style={{ padding: '12px' }}>{s.scheme_name} <br/><small style={{color:'var(--text-muted)'}}>{s.platform} • {s.frequency === 'MONTHLY' ? 'Monthly' : 'Weekly'}</small></td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', background: s.status === 'Active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: s.status === 'Active' ? '#10b981' : '#ef4444' }}>{s.status}</span>
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text-main)' }}>₹{formatINR(s.amount)}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 'bold' }}>₹{formatINR(d.aum)}</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     <button onClick={() => { setIsEditing(true); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>

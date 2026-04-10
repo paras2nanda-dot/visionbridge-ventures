@@ -18,6 +18,18 @@ h1, h2, h3, h4, .title {
   color: var(--text-main) !important;
 }
 
+/* 📅 DATE ICON FIX: Forces browser calendar icon to white in Dark Mode */
+::-webkit-calendar-picker-indicator {
+    filter: var(--icon-filter, none);
+    cursor: pointer;
+}
+
+/* 🔍 SEARCH ICON FIX */
+.search-icon-container {
+    filter: var(--icon-filter, none);
+    opacity: 0.8;
+}
+
 /* THE FIX: Proper Side-by-Side Layout */
 .app-container {
   display: flex;
@@ -65,13 +77,13 @@ h1, h2, h3, h4, .title {
   font-size: 16px;
 }
 
-/* Card Overrides - Increased Border Thickness and added Shadow for Obsidian Visibility */
+/* Card Overrides */
 .card, [style*="background: white"], [style*="background: rgb(255, 255, 255)"] {
   background: var(--bg-card) !important;
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important; /* Deeper shadow for elevation */
-  border: 1.5px solid var(--border) !important; /* Thicker, sharper border */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important; 
+  border: 1.5px solid var(--border) !important; 
   color: var(--text-main) !important;
 }
 
@@ -90,7 +102,7 @@ h1, h2, h3, h4, .title {
   color: var(--text-main);
 }
 
-/* Table Themes - Visible Grid Lines */
+/* Table Themes */
 table {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
@@ -100,14 +112,14 @@ table {
 th {
   background: var(--bg-main) !important;
   color: var(--text-muted) !important;
-  border-bottom: 2.5px solid var(--border) !important; /* Thick header separator */
+  border-bottom: 2.5px solid var(--border) !important; 
 }
 
 td {
   border-bottom: 1.5px solid var(--border) !important;
 }
 
-/* Input & Form Themes - Clear outlines */
+/* Input & Form Themes */
 input, select, textarea {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
@@ -143,7 +155,6 @@ label, [style*="color: #64748b"] {
   }
 }
 
-/* Responsive fixes and Input Zoom Prevention */
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 0 !important;
