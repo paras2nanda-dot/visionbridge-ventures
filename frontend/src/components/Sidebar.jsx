@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ThemeSwitcher from './ThemeSwitcher';
 
 const Sidebar = ({ closeMobileMenu }) => {
   const navigate = useNavigate();
@@ -60,7 +61,14 @@ const Sidebar = ({ closeMobileMenu }) => {
         ))}
       </nav>
 
+      {/* 💡 BOTTOM SECTION: Settings & Logout */}
       <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid var(--border, #334155)', transition: 'border-color 0.3s ease' }}>
+        
+        <div style={{ marginBottom: '20px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '10px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1px' }}>SYSTEM THEME</p>
+          <ThemeSwitcher />
+        </div>
+
         <button 
           onClick={handleLogout} 
           disabled={isLoggingOut}

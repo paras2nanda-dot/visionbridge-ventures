@@ -3,7 +3,6 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AutoLogout from './AutoLogout';
 import CommandPalette from './CommandPalette';
-import ThemeSwitcher from './ThemeSwitcher'; // 💡 NEW: Import Theme Switcher
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,7 +21,6 @@ const Layout = () => {
   };
 
   return (
-    // 💡 Main background now respects the theme engine
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main, #f8fafc)', transition: 'background 0.3s ease', position: 'relative' }}>
       
       <AutoLogout timeoutMinutes={15} />
@@ -46,10 +44,8 @@ const Layout = () => {
 
       <main style={{ flex: 1, padding: '40px', minHeight: '100vh', width: '100%', transition: 'all 0.3s ease', position: 'relative', zIndex: 1 }} className="main-content-layout">
         
-        {/* 💡 TOP HEADER ROW: Breadcrumbs + Global Search */}
         <div className="fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
           
-          {/* 🍞 DYNAMIC BREADCRUMB UI */}
           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted, #94a3b8)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: "'Inter', sans-serif", transition: 'color 0.3s ease' }}>
             <Link to="/dashboard" style={{ color: 'var(--text-muted, #64748b)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#0ea5e9'} onMouseOut={(e) => e.target.style.color = 'var(--text-muted, #64748b)'}>
               🏠 Home
@@ -75,11 +71,7 @@ const Layout = () => {
             })}
           </div>
 
-          {/* 💡 TOP BAR ACTIONS: Theme Switcher + Search */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            
-            <ThemeSwitcher />
-
             <button 
               onClick={() => window.dispatchEvent(new Event('open-cmd-k'))}
               style={{ 
