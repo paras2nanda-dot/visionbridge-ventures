@@ -7,9 +7,10 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f8fafc;
-  color: #1e293b;
+  background-color: var(--bg-main, #f8fafc);
+  color: var(--text-main, #1e293b);
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* THE FIX: Proper Side-by-Side Layout */
@@ -21,7 +22,7 @@ body {
 
 .sidebar {
   width: 260px;
-  background-color: #0f172a;
+  background-color: var(--sidebar, #0f172a);
   color: #f8fafc;
   height: 100vh;
   position: fixed; 
@@ -31,13 +32,12 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 1000; 
-  /* 💡 Hide scrollbar completely while keeping scroll functionality */
   overflow-y: auto;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  transition: background 0.3s ease;
 }
 
-/* 💡 Hide scrollbar for Chrome, Safari and Opera */
 .sidebar::-webkit-scrollbar {
   display: none;
 }
@@ -52,45 +52,31 @@ body {
   z-index: 1; 
 }
 
-/* Dashboard Component Styles */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 10; 
-}
-
 .title {
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 8px;
-  color: #0f172a;
+  color: var(--text-main, #0f172a);
 }
 
 .subtitle {
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   margin-bottom: 40px;
   font-size: 16px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
-}
-
 .card {
-  background: white;
+  background: var(--bg-card, white);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border, #e2e8f0);
   position: relative;
   z-index: 5;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-main);
 }
 
-/* ✨ NEW: Card Hover Animation */
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
@@ -100,7 +86,7 @@ body {
 .card-title {
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.025em;
@@ -109,35 +95,32 @@ body {
 .card-value {
   font-size: 28px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main, #0f172a);
 }
 
-.sidebar-logo {
-  font-size: 22px;
-  font-weight: 800;
-  color: #38bdf8;
-  margin-bottom: 40px;
-  border-bottom: 1px solid #1e293b;
-  padding-bottom: 15px;
+/* Table Themes */
+table {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
 }
 
-.sidebar-link {
-  display: block;
-  padding: 12px 16px;
-  color: #94a3b8;
-  text-decoration: none;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  font-size: 15px;
-  transition: all 0.2s;
+th {
+  background: var(--bg-main) !important;
+  color: var(--text-muted) !important;
+  border-bottom: 2px solid var(--border) !important;
 }
 
-.sidebar-link:hover, .sidebar-link.active {
-  background-color: #1e293b;
-  color: #ffffff;
+td {
+  border-bottom: 1px solid var(--border) !important;
 }
 
-/* ✨ ENHANCED: Smooth Blur & Fade In Animation */
+/* Input Themes */
+input, select, textarea {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border) !important;
+}
+
 .fade-in {
   animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
