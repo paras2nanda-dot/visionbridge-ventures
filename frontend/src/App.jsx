@@ -31,35 +31,46 @@ const PublicRoute = ({ children }) => {
 function App() {
   const location = useLocation();
 
-  // 🔊 BRUTE FORCE AUDIO ENGINE
+  // 🔊 THE BUILT-IN "POP" SYNTHESIZER
   useEffect(() => {
-    // Subtle High-Quality Click
-    const audioUrl = "https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3";
-    const clickSound = new Audio(audioUrl);
-    clickSound.volume = 0.2;
+    const playPop = () => {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const context = new AudioContext();
+        const osc = context.createOscillator();
+        const gain = context.createGain();
 
-    const playSound = () => {
-      clickSound.currentTime = 0;
-      clickSound.play().catch(() => {
-        // Silent catch: console errors are normal until the first interaction
-      });
-    };
+        osc.type = 'sine';
+        // Start high and drop fast to create the "pop" effect
+        osc.frequency.setValueAtTime(800, context.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, context.currentTime + 0.1);
 
-    const handleInteraction = (e) => {
-      // Check if clicked element is a button, link, icon, or menu item
-      const isClickable = e.target.closest('button, a, select, input[type="submit"], span, .sidebar-link, [role="button"]');
-      
-      if (isClickable) {
-        playSound();
+        gain.gain.setValueAtTime(0.15, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+
+        osc.connect(gain);
+        gain.connect(context.destination);
+
+        osc.start();
+        osc.stop(context.currentTime + 0.1);
+      } catch (e) {
+        // Silently fail if audio context isn't supported
       }
     };
 
-    // Attach to 'pointerdown' for faster response on touch/mobile
+    const handleInteraction = (e) => {
+      // Listen for any button, link, tab, or clickable span
+      const target = e.target.closest('button, a, select, .sidebar-link, [role="button"], input[type="submit"]');
+      if (target) {
+        playPop();
+      }
+    };
+
     window.addEventListener('pointerdown', handleInteraction);
     return () => window.removeEventListener('pointerdown', handleInteraction);
   }, []);
 
-  // 🌌 THEME ENGINE logic
+  // 🌌 THEME ENGINE
   useEffect(() => {
     const isLoginPage = location.pathname === '/login';
     const savedTheme = isLoginPage ? 'light' : (localStorage.getItem('vb-theme') || 'midnight');

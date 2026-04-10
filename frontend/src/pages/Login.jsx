@@ -16,30 +16,39 @@ export default function Login() {
   const [newPassword, setNewPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false); 
 
-  // 🔊 Helper to play sound immediately on button press
-  const playClick = () => {
-    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3");
-    audio.volume = 0.2;
-    audio.play().catch(() => {}); // Ignore errors if blocked
+  // 🔊 Manual Internal Synth Trigger
+  const triggerPop = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const context = new AudioContext();
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, context.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, context.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(context.destination);
+      osc.start();
+      osc.stop(context.currentTime + 0.1);
+    } catch (e) {}
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    playClick(); // 🔊 Trigger sound
+    triggerPop(); // 🔊 Play sound
     setIsLoggingIn(true); 
     const cleanUsername = username.trim().toLowerCase();
 
     try {
       const res = await api.post("/auth/login", { username: cleanUsername, password });
-      
       sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
       sessionStorage.setItem("token", res.data.token); 
-      
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
       navigate("/dashboard");
     } catch (err) {
-      const errorMsg = err.response?.data?.error || "Invalid username or password";
-      toast.error(errorMsg);
+      toast.error(err.response?.data?.error || "Invalid username or password");
     } finally {
       setIsLoggingIn(false); 
     }
@@ -47,10 +56,9 @@ export default function Login() {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    playClick(); // 🔊 Trigger sound
+    triggerPop(); // 🔊 Play sound
     setIsResetting(true);
     const cleanResetUser = resetUser.trim().toLowerCase();
-
     try {
       await api.post("/auth/reset-password", { username: cleanResetUser, securityAnswer, newPassword });
       toast.success("✅ Password updated successfully!");
@@ -64,7 +72,7 @@ export default function Login() {
 
   return (
     <div style={styles.pageWrapper} className="login-page-container">
-      {/* 🖼️ LEFT PANEL: HERO */}
+      {/* LEFT PANEL */}
       <div style={styles.leftPanel} className="login-left-panel">
         <div style={styles.overlay}></div>
         <div style={styles.leftContent}>
@@ -73,7 +81,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* 📝 RIGHT PANEL: LOGIN FORM */}
+      {/* RIGHT PANEL */}
       <div style={styles.rightPanel} className="login-right-panel">
         <div style={styles.loginFormContainer} className="login-form-container">
           <div style={styles.logoContainer}>
@@ -82,33 +90,15 @@ export default function Login() {
           <h2 style={styles.formTitle}>Welcome Back</h2>
           <form onSubmit={handleLogin} style={{width: '100%'}}>
             <label style={styles.label}>Username</label>
-            <input 
-              style={styles.input} 
-              className="login-field" 
-              placeholder="Username" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
-            />
+            <input style={styles.input} className="login-field" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
             <label style={styles.label}>Password</label>
             <div style={styles.passwordContainer}>
-              <input 
-                type={showPassword ? "text" : "password"} 
-                style={styles.passwordInput} 
-                className="login-field" 
-                placeholder="Password"
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
-              />
-              <span style={styles.eyeIcon} onClick={() => { playClick(); setShowPassword(!showPassword); }}>{showPassword ? "🙈" : "👁️"}</span>
+              <input type={showPassword ? "text" : "password"} style={styles.passwordInput} className="login-field" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <span style={styles.eyeIcon} onClick={() => { triggerPop(); setShowPassword(!showPassword); }}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
-            
-            <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>
-              {isLoggingIn ? "Authenticating..." : "Sign In"}
-            </button>
+            <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>{isLoggingIn ? "Authenticating..." : "Sign In"}</button>
           </form>
-          <p style={styles.forgot} onClick={() => { playClick(); setShowReset(true); }}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
+          <p style={styles.forgot} onClick={() => { triggerPop(); setShowReset(true); }}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
         </div>
       </div>
 
@@ -120,10 +110,8 @@ export default function Login() {
               <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
               <input style={styles.input} placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
               <input style={styles.input} type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-              <button type="submit" style={styles.loginBtn} disabled={isResetting}>
-                {isResetting ? "UPDATING..." : "Reset"}
-              </button>
-              <button type="button" style={styles.cancelBtn} onClick={() => { playClick(); setShowReset(false); }}>Back</button>
+              <button type="submit" style={styles.loginBtn} disabled={isResetting}>{isResetting ? "UPDATING..." : "Reset"}</button>
+              <button type="button" style={styles.cancelBtn} onClick={() => { triggerPop(); setShowReset(false); }}>Back</button>
             </form>
           </div>
         </div>
