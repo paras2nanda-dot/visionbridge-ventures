@@ -35,13 +35,14 @@ const Sidebar = ({ closeMobileMenu }) => {
       display: 'flex', 
       flexDirection: 'column', 
       height: '100vh', 
+      width: '100%',
       background: 'var(--sidebar, #1e293b)', 
       transition: 'background 0.3s ease',
-      overflow: 'hidden' // 💡 Force-remove any external scrollbars
+      overflow: 'hidden',
+      borderRight: '1.5px solid var(--border, #334155)'
     }}>
       
       <style>{`
-        /* Hide scrollbar but allow scrolling if absolutely needed on tiny screens */
         .sidebar-nav::-webkit-scrollbar { display: none; }
         .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -50,32 +51,36 @@ const Sidebar = ({ closeMobileMenu }) => {
         
         .sidebar-link {
           display: block;
-          padding: 10px 20px; /* 💡 Reduced vertical padding from 12px to 10px */
+          padding: 14px 20px;
           color: #94a3b8;
           text-decoration: none;
           transition: all 0.2s;
           font-weight: 900;
-          font-size: 14px; /* 💡 Standardized font size */
+          font-size: 14px;
         }
         .sidebar-link.active {
-          background: rgba(14, 165, 233, 0.1);
+          background: rgba(14, 165, 233, 0.15);
           color: #0ea5e9;
           border-right: 4px solid #0ea5e9;
         }
+        .sidebar-link:hover {
+          color: #f8fafc;
+          background: rgba(255,255,255,0.05);
+        }
       `}</style>
 
-      {/* TOP: LOGO (More compact padding) */}
-      <div className="sidebar-logo" style={{ padding: '15px 20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
-        <div style={{ fontWeight: '900', fontSize: '18px', color: '#fff' }}>VisionBridge 📈</div>
-        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px', fontWeight: '700' }}>
+      {/* TOP: LOGO */}
+      <div className="sidebar-logo" style={{ padding: '25px 20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
+        <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff', letterSpacing: '-0.5px' }}>VisionBridge 📈</div>
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '700', opacity: 0.8 }}>
           WELCOME, {userName.toUpperCase()}
         </div>
       </div>
       
-      {/* MIDDLE: NAV LINKS (Tightened spacing) */}
+      {/* MIDDLE: NAV LINKS */}
       <nav className="sidebar-nav" style={{ 
         flex: 1, 
-        paddingTop: '10px', 
+        paddingTop: '15px', 
         overflowY: 'auto' 
       }}>
         {menuItems.map((item) => (
@@ -90,17 +95,16 @@ const Sidebar = ({ closeMobileMenu }) => {
         ))}
       </nav>
 
-      {/* BOTTOM: SETTINGS & LOGOUT (Slimmed down) */}
+      {/* BOTTOM: SETTINGS & LOGOUT */}
       <div style={{ 
-        padding: '15px 20px', 
+        padding: '20px', 
         borderTop: '1px solid var(--border, #334155)', 
         flexShrink: 0,
-        background: 'var(--sidebar, #1e293b)' 
+        background: 'rgba(0,0,0,0.1)' 
       }}>
         
-        <div style={{ marginBottom: '15px' }}>
-          <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '8px', letterSpacing: '1px' }}>APPEARANCE</p>
-          {/* We use a smaller version of the switcher if possible, or just standard */}
+        <div style={{ marginBottom: '20px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1px' }}>APPEARANCE</p>
           <ThemeSwitcher />
         </div>
 
@@ -111,7 +115,7 @@ const Sidebar = ({ closeMobileMenu }) => {
             width: '100%', textAlign: 'left', border: 'none', background: 'none', 
             cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', 
             color: isLoggingOut ? '#fca5a5' : '#ef4444', opacity: isLoggingOut ? 0.7 : 1,
-            padding: '5px 0',
+            padding: '8px 0',
             fontSize: '14px',
             display: 'flex',
             alignItems: 'center',
