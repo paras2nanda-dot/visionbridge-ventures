@@ -107,7 +107,6 @@ const MFSchemes = () => {
   };
 
   const handleDelete = async (id) => {
-    // Custom logic: We use toast for info but confirm for destructive actions
     if (window.confirm("Permanently delete this scheme from Master?")) {
       try {
         await api.delete(`/mf-schemes/${id}`);
@@ -126,11 +125,12 @@ const MFSchemes = () => {
     s.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '11px', color: '#475569' };
-  const inputStyle = { width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' };
+  // Updated styles to use Theme Variables
+  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '800', fontSize: '11px', color: 'var(--text-muted, #475569)' };
+  const inputStyle = { width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border, #cbd5e1)', outline: 'none', fontSize: '13px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
-    <div className="container">
+    <div className="container fade-in">
       <h1 className="title">Mutual Fund Master</h1>
 
       <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #6366f1', marginBottom: '30px' }}>
@@ -162,65 +162,65 @@ const MFSchemes = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-             <div style={{ padding: '15px', background: '#eff6ff', borderRadius: '10px', border: '1px solid #3b82f6' }}>
-                <label style={{...labelStyle, color: '#1e40af'}}>Total Business Market Value (₹)</label>
+              <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid #3b82f6' }}>
+                <label style={{...labelStyle, color: '#3b82f6'}}>Total Business Market Value (₹)</label>
                 <input 
-                    style={{...inputStyle, fontSize: '16px', fontWeight: 'bold'}} 
+                    style={{...inputStyle, fontSize: '16px', fontWeight: '900', background: 'var(--bg-card)'}} 
                     type="number" 
                     step="any"
                     value={formData.total_current_value} 
                     onChange={e => setFormData({...formData, total_current_value: e.target.value})} 
                     placeholder="Enter aggregate from portal"
                 />
-                <small style={{display:'block', marginTop: '5px', color: '#60a5fa', fontSize: '10px'}}>Total AUM for this fund across all clients</small>
-             </div>
+                <small style={{display:'block', marginTop: '5px', color: '#60a5fa', fontSize: '10px', fontWeight: '700'}}>Total AUM for this fund across all clients</small>
+              </div>
 
-             <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-                    <div><label style={labelStyle}>Large Cap %</label><input style={inputStyle} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
-                    <div><label style={labelStyle}>Mid Cap %</label><input style={inputStyle} type="number" step="any" value={formData.mid_cap} onChange={e => setFormData({...formData, mid_cap: e.target.value})} /></div>
-                    <div><label style={labelStyle}>Small Cap %</label><input style={inputStyle} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Large %</label><input style={inputStyle} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Mid %</label><input style={inputStyle} type="number" step="any" value={formData.mid_cap} onChange={e => setFormData({...formData, mid_cap: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Small %</label><input style={inputStyle} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Debt %</label><input style={inputStyle} type="number" step="any" value={formData.debt_allocation} onChange={e => setFormData({...formData, debt_allocation: e.target.value})} /></div>
                     <div><label style={labelStyle}>Gold %</label><input style={inputStyle} type="number" step="any" value={formData.gold_allocation} onChange={e => setFormData({...formData, gold_allocation: e.target.value})} /></div>
                 </div>
                 <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Equity: <strong>{totalEquity}%</strong></span>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: grandTotal === 100 ? '#10b981' : '#ef4444' }}>Grand Total: {grandTotal}%</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>Equity: <strong>{totalEquity}%</strong></span>
+                    <span style={{ fontSize: '12px', fontWeight: '900', color: grandTotal === 100 ? '#10b981' : '#ef4444' }}>Grand Total: {grandTotal}%</span>
                 </div>
-             </div>
+              </div>
           </div>
 
-          <button type="submit" className="btn-primary" style={{ marginTop: '20px', padding: '12px 40px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update Scheme" : "Add Scheme"}</button>
-          {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ marginLeft: '10px', color: '#64748b', cursor:'pointer', border:'none', background:'none', fontWeight: 'bold' }}>Cancel</button>}
+          <button type="submit" style={{ marginTop: '20px', padding: '12px 40px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '900' }}>{isEditing ? "Update Scheme" : "Add Scheme"}</button>
+          {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ marginLeft: '10px', color: 'var(--text-muted)', cursor:'pointer', border:'none', background:'none', fontWeight: '900' }}>Cancel</button>}
         </form>
       </div>
 
-      <div style={{ marginBottom: '15px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span>🔍</span>
-        <input type="text" placeholder="Search Master..." style={{ width: '100%', border: 'none', outline: 'none' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      <div style={{ marginBottom: '15px', background: 'var(--bg-card)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{color: 'var(--text-muted)'}}>🔍</span>
+        <input type="text" placeholder="Search Master..." style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead style={{ background: '#f8fafc' }}>
-            <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-              <th style={{ padding: '12px', textAlign: 'left' }}>AMC / Scheme</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Category</th>
-              <th style={{ padding: '12px', textAlign: 'right' }}>Comm. %</th>
-              <th style={{ padding: '12px', textAlign: 'right' }}>Total Market Value</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>Action</th>
+          <thead style={{ background: 'var(--bg-main)' }}>
+            <tr style={{ borderBottom: '2px solid var(--border)' }}>
+              <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)' }}>AMC / Scheme</th>
+              <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)' }}>Category</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: 'var(--text-muted)' }}>Comm. %</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: 'var(--text-muted)' }}>Total Market Value</th>
+              <th style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredSchemes.map(s => (
-              <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px' }}><strong>{s.amc_name}</strong><br/><span style={{color: '#64748b'}}>{s.scheme_name}</span></td>
-                <td style={{ padding: '12px' }}>{s.category}<br/><small style={{color: '#94a3b8'}}>{s.sub_category}</small></td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight:'600', color: '#6366f1' }}>{s.commission_rate || '0.8'}%</td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#1e40af' }}>₹{formatINR(s.total_current_value)}</td>
+              <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <td style={{ padding: '12px' }}><strong style={{color: 'var(--text-main)'}}>{s.amc_name}</strong><br/><span style={{color: 'var(--text-muted)'}}>{s.scheme_name}</span></td>
+                <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.category}<br/><small style={{color: 'var(--text-muted)'}}>{s.sub_category}</small></td>
+                <td style={{ padding: '12px', textAlign: 'right', fontWeight:'900', color: '#6366f1' }}>{s.commission_rate || '0.8'}%</td>
+                <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#6366f1', background: 'none', cursor: 'pointer', fontWeight: 'bold', marginRight: '10px' }}>Edit</button>
-                  <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                  <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#3b82f6', background: 'none', cursor: 'pointer', fontWeight: '900', marginRight: '10px' }}>Edit</button>
+                  <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '900' }}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -231,4 +231,4 @@ const MFSchemes = () => {
   );
 };
 
-export default MFSchemes;
+export default MFSchemes;s

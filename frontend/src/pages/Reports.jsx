@@ -70,9 +70,10 @@ const Reports = () => {
     }
   };
 
+  // UPDATED Card Style to use Theme Variables
   const cardStyle = {
-    background: '#ffffff',
-    border: '2px solid #cbd5e1',
+    background: 'var(--bg-card, #ffffff)',
+    border: '2px solid var(--border, #cbd5e1)',
     borderRadius: '16px',
     padding: '25px',
     display: 'flex',
@@ -84,15 +85,15 @@ const Reports = () => {
 
   return (
     <div className="fade-in" style={{ padding: '20px', paddingBottom: '50px' }}>
-      <h2 style={{ fontWeight: '900', color: '#0f172a', marginBottom: '30px', borderLeft: '8px solid #3b82f6', paddingLeft: '15px' }}>
+      <h2 style={{ fontWeight: '900', color: 'var(--text-main, #0f172a)', marginBottom: '30px', borderLeft: '8px solid #3b82f6', paddingLeft: '15px' }}>
         DOWNLOAD REPORTS
       </h2>
 
       {/* CARD 1: CLIENT-WISE INVESTED AUM */}
       <div style={cardStyle}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>Client-wise Invested AUM</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '14px' }}>Client metrics including SIP ratios and Risk Profiles.</p>
+          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Client-wise Invested AUM</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Client metrics including SIP ratios and Risk Profiles.</p>
         </div>
         <button 
           onClick={() => handleDownload('client-aum', 'Client_AUM_Report.xlsx')}
@@ -109,8 +110,8 @@ const Reports = () => {
       {/* CARD 2: SCHEME-WISE AUM */}
       <div style={cardStyle}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>Scheme-wise AUM</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '14px' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
+          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Scheme-wise AUM</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
         </div>
         <button 
           onClick={() => handleDownload('scheme-aum', 'Scheme_AUM_Report.xlsx')}
@@ -127,8 +128,8 @@ const Reports = () => {
       {/* CARD 3: MONTHLY SIP BOOK */}
       <div style={cardStyle}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>Monthly SIP Book</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '14px' }}>Active SIP counts and amounts aggregated by scheme.</p>
+          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Monthly SIP Book</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Active SIP counts and amounts aggregated by scheme.</p>
         </div>
         <button 
           onClick={() => handleDownload('sip-book', 'Monthly_SIP_Book_Report.xlsx')}
@@ -145,8 +146,8 @@ const Reports = () => {
       {/* CARD 4: MONTHLY COMMISSION REPORT */}
       <div style={cardStyle}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>Monthly Commission Report</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '14px' }}>Revenue projections based on Invested and Market AUM.</p>
+          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Monthly Commission Report</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Revenue projections based on Invested and Market AUM.</p>
         </div>
         <button 
           onClick={() => handleDownload('commission-report', 'Monthly_Commission_Report.xlsx')}
@@ -163,8 +164,8 @@ const Reports = () => {
       {/* CARD 5: CLIENTS DATABASE (FULL) */}
       <div style={cardStyle}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>Clients Database (Full)</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '14px' }}>Export all client records with complete KYC and contact details.</p>
+          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Clients Database (Full)</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Export all client records with complete KYC and contact details.</p>
         </div>
         <button 
           onClick={() => handleDownload('clients-database', 'Full_Clients_Database.xlsx')}
@@ -181,8 +182,8 @@ const Reports = () => {
       {/* CARD 6: MF SCHEMES DATABASE (FULL) */}
       <div style={cardStyle}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>MF Schemes Database (Full)</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '14px' }}>Master export of all mutual fund schemes and their allocations.</p>
+          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>MF Schemes Database (Full)</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Master export of all mutual fund schemes and their allocations.</p>
         </div>
         <button 
           onClick={() => handleDownload('schemes-database', 'Full_MF_Schemes_Database.xlsx')}
@@ -196,11 +197,16 @@ const Reports = () => {
         </button>
       </div>
 
-      {/* 🛡️ NEW SECTION: SYSTEM MAINTENANCE */}
-      <div style={{ ...cardStyle, border: '2px solid #fecaca', background: '#fff1f2', marginTop: '40px' }}>
+      {/* 🛡️ SYSTEM MAINTENANCE: FIXED COLORS FOR DARK MODE */}
+      <div style={{ 
+        ...cardStyle, 
+        border: '2px solid #991b1b', 
+        background: 'rgba(153, 27, 27, 0.1)', 
+        marginTop: '40px' 
+      }}>
         <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#991b1b' }}>System Maintenance</h3>
-          <p style={{ margin: '5px 0 0 0', color: '#b91c1c', fontSize: '13px' }}>
+          <h3 style={{ margin: 0, fontWeight: '800', color: '#ef4444' }}>System Maintenance</h3>
+          <p style={{ margin: '5px 0 0 0', color: 'var(--text-main)', fontSize: '13px' }}>
             <strong>Admin Only:</strong> Full database JSON backup for disaster recovery.
           </p>
         </div>
