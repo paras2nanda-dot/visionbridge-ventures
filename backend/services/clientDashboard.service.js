@@ -2,7 +2,7 @@ import { pool } from "../config/db.js";
 
 export async function buildClientDashboard(clientId) {
   try {
-    // 1. Fetch Client Profile (Keeping the Age calculation that is working)
+    // 1. Fetch Client Profile (Keeping your confirmed working Age and Date logic)
     const clientRes = await pool.query(
       `SELECT *, 
        TO_CHAR(created_at, 'DD/MM/YYYY') as since_formatted,
@@ -12,6 +12,7 @@ export async function buildClientDashboard(clientId) {
     if (clientRes.rows.length === 0) throw new Error("Client not found");
 
     // 2. Fetch Merged Portfolio Logic
+    // FIXED: Added UPPER and TRIM to transaction_type matching to prevent incorrect negative AUM
     const portfolioRes = await pool.query(`
       WITH all_client_schemes AS (
         SELECT scheme_id FROM transactions WHERE client_id::TEXT = $1
@@ -25,8 +26,13 @@ export async function buildClientDashboard(clientId) {
       FROM all_client_schemes acs
       JOIN mf_schemes mf ON acs.scheme_id::TEXT = mf.id::TEXT
       LEFT JOIN (
-        SELECT scheme_id, SUM(CASE WHEN transaction_type IN ('PURCHASE','SWITCH_IN') THEN amount ELSE -amount END) as net_aum
-        FROM transactions WHERE client_id::TEXT = $1
+        SELECT scheme_id, 
+               SUM(CASE 
+                 WHEN UPPER(TRIM(transaction_type)) IN ('PURCHASE', 'SWITCH_IN') THEN amount 
+                 WHEN UPPER(TRIM(transaction_type)) IN ('REDEMPTION', 'SWITCH_OUT') THEN -amount 
+                 ELSE 0 END) as net_aum
+        FROM transactions 
+        WHERE client_id::TEXT = $1
         GROUP BY scheme_id
       ) txn ON mf.id::TEXT = txn.scheme_id::TEXT
       LEFT JOIN (
@@ -34,7 +40,7 @@ export async function buildClientDashboard(clientId) {
         FROM sips WHERE client_id::TEXT = $1 AND is_active = true
         GROUP BY scheme_id
       ) sip ON mf.id::TEXT = sip.scheme_id::TEXT
-      WHERE COALESCE(txn.net_aum, 0) > 0 OR COALESCE(sip.sip_total, 0) > 0
+      WHERE COALESCE(txn.net_aum, 0) != 0 OR COALESCE(sip.sip_total, 0) > 0
     `, [clientId]);
 
     const sipRes = await pool.query(
