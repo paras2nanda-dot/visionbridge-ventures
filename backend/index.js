@@ -21,7 +21,6 @@ import { pool } from './config/db.js';
 dotenv.config();
 const app = express();
 
-// 🚀 THE FIX: Tell Express to trust the Render proxy for rate limiting
 app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } })); 
@@ -31,7 +30,7 @@ app.use(cookieParser());
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 1000, 
-  message: { error: "Too many requests from this IP." }
+  message: { error: "Too many requests." }
 });
 app.use('/api', globalLimiter); 
 
@@ -53,34 +52,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// BACKUP ROUTE
-app.get('/api/backup', authMiddleware, async (req, res) => {
-  try {
-    const tables = ['users', 'clients', 'sips', 'mf_schemes', 'transactions', 'activities'];
-    let backupData = {};
-    for (const table of tables) {
-      const result = await pool.query(`SELECT * FROM ${table}`);
-      backupData[table] = result.rows;
-    }
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    res.setHeader('Content-disposition', `attachment; filename=visionbridge_backup_${timestamp}.json`);
-    res.setHeader('Content-type', 'application/json');
-    res.send(JSON.stringify(backupData, null, 2));
-  } catch (err) {
-    res.status(500).json({ error: 'Backup failed' });
-  }
-});
-
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
 app.use('/api/sips', authMiddleware, sipRoutes);
-
-// 🚀 DUAL ROUTE FIX: This ensures both /mf-schemes and /schemes work to stop 404s
 app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes); 
 app.use('/api/schemes', authMiddleware, mfschemeRoutes); 
-
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
 app.use('/api/activities', authMiddleware, activityRoutes);

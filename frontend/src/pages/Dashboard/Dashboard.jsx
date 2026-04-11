@@ -24,7 +24,7 @@ const Dashboard = () => {
   });
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', padding: '20px', background: '#f8fafc' }}>
+    <div style={{ width: '100%', minHeight: '100vh', padding: '25px', background: '#f8fafc' }}>
       
       <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '25px' }}>
         Dashboard
@@ -52,12 +52,12 @@ const Dashboard = () => {
         </button>
       </div>
 
-      <div style={{ paddingTop: '30px' }}>
+      <div style={{ paddingTop: '35px' }}>
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
         
         {activeTab === 'activity' && (
-          <div style={{ maxWidth: '900px', margin: '0 auto', display: 'block' }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'block' }}>
             <ActivityFeed />
           </div>
         )}

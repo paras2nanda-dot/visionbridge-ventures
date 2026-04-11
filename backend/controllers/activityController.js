@@ -1,6 +1,5 @@
 import { pool } from '../config/db.js';
 
-// 🕒 Fetches the most recent 20 activities
 export const getActivities = async (req, res) => {
   try {
     const query = `
@@ -17,7 +16,6 @@ export const getActivities = async (req, res) => {
   }
 };
 
-// 🛡️ Helper to save logs (Matches the 4-argument logic in routes)
 export const logActivity = async (user, type, entity, details) => {
   try {
     const query = `
