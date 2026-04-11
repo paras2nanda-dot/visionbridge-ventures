@@ -4,12 +4,12 @@ export async function getClientDashboard(req, res) {
   try {
     const { clientId } = req.params;
 
+    // The service buildClientDashboard should fetch 'monthly_income' 
+    // from the clients table and include it in the 'profile' object.
     const data = await buildClientDashboard(clientId);
 
-    res.json({
-      success: true,
-      data
-    });
+    // Sending data directly as the frontend .then(data => ...) expects the object
+    res.json(data);
   } catch (error) {
     console.error("Client Dashboard Controller Error:", error);
     res.status(500).json({

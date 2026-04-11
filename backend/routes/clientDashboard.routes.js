@@ -1,9 +1,9 @@
 import express from 'express';
-import { getClientDashboardStats } from '../controllers/dashboard.controller.js';
+import { getClientDashboard } from '../controllers/clientDashboard.controller.js';
 
 const router = express.Router();
 
-// This matches the function name in your dashboard.controller.js
-router.get('/:id', getClientDashboardStats);
+// Matches the controller function name for consistency
+router.get('/:clientId', getClientDashboard);
 
 export default router;
