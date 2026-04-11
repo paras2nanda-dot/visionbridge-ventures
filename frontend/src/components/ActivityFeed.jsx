@@ -8,6 +8,7 @@ const ActivityFeed = () => {
   const fetchActivities = async () => {
     try {
       const res = await api.get('/activities');
+      console.log("📊 LOGS RECEIVED:", res.data); // 👈 Check F12 Console for this!
       setActivities(res.data);
       setLoading(false);
     } catch (err) {
@@ -18,12 +19,12 @@ const ActivityFeed = () => {
 
   useEffect(() => {
     fetchActivities();
-    const interval = setInterval(fetchActivities, 60000);
+    const interval = setInterval(fetchActivities, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // 🕒 Logic to fix time interpretation
   const getTimeLabel = (dateString) => {
+    if (!dateString) return '...';
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
@@ -35,55 +36,70 @@ const ActivityFeed = () => {
   };
 
   const getActionStyles = (type) => {
-    switch (type) {
-      case 'DELETE': return { color: '#ef4444', icon: '🗑️', label: 'Removed' };
-      case 'UPDATE': return { color: '#f59e0b', icon: '📝', label: 'Modified' };
-      default: return { color: '#10b981', icon: '➕', label: 'Added' };
+    switch (type?.toUpperCase()) {
+      case 'DELETE': return { color: '#ef4444', icon: '🗑️' };
+      case 'UPDATE': return { color: '#f59e0b', icon: '📝' };
+      case 'CREATE': return { color: '#10b981', icon: '➕' };
+      default: return { color: '#0ea5e9', icon: '🔔' };
     }
   };
 
   if (loading) return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-       <div className="sync-spinner" style={{ margin: '0 auto' }}></div>
-       <p style={{ marginTop: '10px', fontWeight: '800', fontSize: '12px', color: 'var(--text-muted)' }}>SYNCING AUDIT LOG...</p>
+    <div style={{ padding: '60px', textAlign: 'center' }}>
+       <div className="sync-spinner" style={{ margin: '0 auto', width: '30px', height: '30px', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+       <p style={{ marginTop: '15px', fontWeight: '800', color: '#94a3b8', fontSize: '11px' }}>FETCHING AUDIT TRAIL...</p>
+       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   return (
-    <div style={{ background: 'var(--bg-card, #fff)', padding: '25px', borderRadius: '16px', border: '1.5px solid var(--border, #e2e8f0)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-      <h3 style={{ marginTop: 0, marginBottom: '25px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px' }}>
-        <span>🕒</span> Recent Activity Feed
-      </h3>
+    <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '800' }}>
+          <span>🕒</span> Recent Activity Feed
+        </h3>
+        <button onClick={fetchActivities} style={{ background: 'none', border: 'none', color: '#0ea5e9', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>REFRESH</button>
+      </div>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {activities.length > 0 ? activities.map(act => {
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {activities.length > 0 ? activities.map((act) => {
           const style = getActionStyles(act.action_type);
           return (
-            <div key={act.id} style={{ display: 'flex', gap: '15px', alignItems: 'center', padding: '12px', borderRadius: '12px', background: 'var(--bg-main, #f8fafc)', border: '1px solid var(--border)' }}>
-              <div style={{ background: `${style.color}20`, color: style.color, width: '45px', height: '45px', borderRadius: '10px', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div key={act.id} style={{ 
+              display: 'flex', gap: '12px', alignItems: 'center', padding: '12px', borderRadius: '12px', 
+              background: '#f8fafc', border: '1px solid #e2e8f0' 
+            }}>
+              <div style={{ 
+                background: `${style.color}15`, color: style.color, width: '40px', height: '40px', 
+                borderRadius: '10px', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
+              }}>
                 {style.icon}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '14px' }}>
-                  {act.details}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {act.details || "Activity recorded"}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#0ea5e9', border: '1px solid #0ea5e9', padding: '1px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
-                    User: {act.user_name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: '900', color: '#0ea5e9', border: '1px solid #0ea5e9', padding: '0px 5px', borderRadius: '3px', textTransform: 'uppercase' }}>
+                    {act.user_name || 'System'}
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
                     • {act.entity_name}
                   </span>
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--text-main)' }}>{getTimeLabel(act.created_at)}</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>{new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>{getTimeLabel(act.created_at)}</div>
+                <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '600' }}>
+                  {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
               </div>
             </div>
           );
         }) : (
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No activity logs recorded.</div>
+          <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px', fontSize: '13px', fontWeight: '600' }}>
+            No activity logs found. Perform an action to see it here!
+          </div>
         )}
       </div>
     </div>
