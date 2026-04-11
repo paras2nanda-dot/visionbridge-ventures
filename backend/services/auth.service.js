@@ -8,7 +8,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
  * 🔑 Authenticate User (Case-Insensitive)
  */
 export const loginUser = async (username, password) => {
-  // 🛠️ LOWER() ensures we match regardless of DB casing
   const result = await pool.query(
     `SELECT * FROM users WHERE LOWER(username) = LOWER($1)`,
     [username]
@@ -18,10 +17,10 @@ export const loginUser = async (username, password) => {
 
   const user = result.rows[0];
   
-  // 🛡️ Using bcryptjs to check password
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new Error("Invalid credentials");
 
+  // 🛡️ Token payload includes username for the activity logger
   const token = jwt.sign(
     { id: user.id, username: user.username, full_name: user.full_name },
     JWT_SECRET,
@@ -32,7 +31,7 @@ export const loginUser = async (username, password) => {
 };
 
 /**
- * 🔒 Reset Password (Case-Insensitive)
+ * 🔒 Reset Password
  */
 export const resetPassword = async (username, securityAnswer, newPassword) => {
   const result = await pool.query(

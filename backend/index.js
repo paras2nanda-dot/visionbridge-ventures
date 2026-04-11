@@ -76,7 +76,11 @@ app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
 app.use('/api/sips', authMiddleware, sipRoutes);
+
+// 🚀 DUAL ROUTE FIX: This ensures both /mf-schemes and /schemes work to stop 404s
+app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes); 
 app.use('/api/schemes', authMiddleware, mfschemeRoutes); 
+
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
 app.use('/api/activities', authMiddleware, activityRoutes);

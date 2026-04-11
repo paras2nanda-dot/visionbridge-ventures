@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { logActivity } from './activityController.js';
 
 export const getSchemes = async (req, res) => {
   try {
@@ -11,12 +12,8 @@ export const getSchemes = async (req, res) => {
 };
 
 export const createScheme = async (req, res) => {
-  console.log("📥 CREATE Payload Received:", req.body);
-  const { 
-    scheme_name, amc_name, category, sub_category, 
-    large_cap, mid_cap, small_cap, debt_allocation, gold_allocation,
-    commission_rate, total_current_value 
-  } = req.body;
+  const s = req.body;
+  const user = req.user?.username || "System";
   
   try {
     const result = await pool.query(
@@ -24,28 +21,26 @@ export const createScheme = async (req, res) => {
       (scheme_name, amc_name, category, sub_category, large_cap, mid_cap, small_cap, debt_allocation, gold_allocation, commission_rate, total_current_value) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [
-        scheme_name, amc_name, category, sub_category, 
-        Number(large_cap || 0), Number(mid_cap || 0), Number(small_cap || 0), 
-        Number(debt_allocation || 0), Number(gold_allocation || 0),
-        Number(commission_rate || 0.8), Number(total_current_value || 0)
+        s.scheme_name, s.amc_name, s.category, s.sub_category, 
+        Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
+        Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
+        Number(s.commission_rate || 0.8), Number(s.total_current_value || 0)
       ]
     );
-    console.log("✅ Saved to DB successfully!");
+
+    // 🕒 Log Activity
+    await logActivity(user, 'CREATE', s.scheme_name, `Added new Mutual Fund scheme: ${s.scheme_name} (${s.amc_name})`);
+
     res.status(201).json(result.rows[0]);
   } catch (err) { 
-    console.error("❌ CREATE SQL Error:", err.message);
     res.status(400).json({ error: err.message }); 
   }
 };
 
 export const updateScheme = async (req, res) => {
-  console.log("📥 UPDATE Payload Received:", req.body);
   const { id } = req.params;
-  const { 
-    scheme_name, amc_name, category, sub_category, 
-    large_cap, mid_cap, small_cap, debt_allocation, gold_allocation,
-    commission_rate, total_current_value 
-  } = req.body;
+  const s = req.body;
+  const user = req.user?.username || "System";
 
   try {
     const result = await pool.query(
@@ -55,27 +50,37 @@ export const updateScheme = async (req, res) => {
         gold_allocation = $9, commission_rate = $10, total_current_value = $11
        WHERE id = $12 RETURNING *`,
       [
-        scheme_name, amc_name, category, sub_category, 
-        Number(large_cap || 0), Number(mid_cap || 0), Number(small_cap || 0), 
-        Number(debt_allocation || 0), Number(gold_allocation || 0),
-        Number(commission_rate || 0.8), Number(total_current_value || 0),
+        s.scheme_name, s.amc_name, s.category, s.sub_category, 
+        Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
+        Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
+        Number(s.commission_rate || 0.8), Number(s.total_current_value || 0),
         id
       ]
     );
-    console.log("✅ Updated in DB successfully!");
+
+    // 🕒 Log Activity
+    await logActivity(user, 'UPDATE', s.scheme_name, `Updated allocations/details for ${s.scheme_name}`);
+
     res.json(result.rows[0]);
   } catch (err) { 
-    console.error("❌ UPDATE SQL Error:", err.message);
     res.status(400).json({ error: err.message }); 
   }
 };
 
 export const deleteScheme = async (req, res) => {
+  const { id } = req.params;
+  const user = req.user?.username || "System";
   try {
-    await pool.query('DELETE FROM mf_schemes WHERE id = $1', [req.params.id]);
+    const schemeData = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id = $1', [id]);
+    const schemeName = schemeData.rows[0]?.scheme_name || "Scheme";
+
+    await pool.query('DELETE FROM mf_schemes WHERE id = $1', [id]);
+
+    // 🕒 Log Activity
+    await logActivity(user, 'DELETE', schemeName, `Permanently removed ${schemeName} from the scheme master list`);
+
     res.json({ message: "Scheme deleted" });
   } catch (err) { 
-    console.error("❌ DELETE Error:", err.message);
     res.status(500).json({ error: err.message }); 
   }
-};
+};s
