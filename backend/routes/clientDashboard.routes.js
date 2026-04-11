@@ -4,7 +4,6 @@ import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Aligning route parameter name with the controller
-router.get('/:clientId', authMiddleware, getClientDashboard);
+router.get('/:id', authMiddleware, getClientDashboard);
 
 export default router;

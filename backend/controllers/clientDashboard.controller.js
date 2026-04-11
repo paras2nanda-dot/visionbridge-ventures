@@ -5,7 +5,7 @@ export async function getClientDashboard(req, res) {
     const { clientId } = req.params;
     const data = await buildClientDashboard(clientId);
 
-    // 🛡️ Return the object directly to match frontend .then(data => ...) logic
+    // Return the object directly so frontend .json() gets the profile/summary/portfolio
     res.json(data);
   } catch (error) {
     console.error("Client Dashboard Controller Error:", error);

@@ -29,7 +29,7 @@ const ClientDashboard = () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {
-        if (!res.ok) throw new Error("Unauthorized or Network error");
+        if (!res.ok) throw new Error("Network error");
         return res.json();
       })
       .then(data => {
@@ -40,7 +40,7 @@ const ClientDashboard = () => {
         setIsLoading(false);
       })
       .catch(err => {
-        console.error("Error fetching portfolio:", err);
+        console.error("Error fetching data:", err);
         setIsLoading(false);
       });
   };
@@ -57,18 +57,18 @@ const ClientDashboard = () => {
       <div style={{ position: 'relative', marginBottom: '30px' }}>
         <input 
           type="text" 
-          placeholder="🔍 Search by Client ID or Name..." 
-          style={{ width: '100%', padding: '16px 20px', fontSize: '15px', borderRadius: '12px', border: '1px solid var(--border, #cbd5e1)', background: 'var(--bg-card, #fff)', color: 'var(--text-main, #0f172a)', outline: 'none' }}
+          placeholder="🔍 Search Client..." 
+          style={{ width: '100%', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border, #cbd5e1)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' }}
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setSelectedClient(null); }}
         />
         {searchTerm && !selectedClient?.full_name && (
-          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card, #fff)', zIndex: 100, border: '1px solid var(--border, #e2e8f0)', borderRadius: '8px', marginTop: '5px', maxHeight: '250px', overflowY: 'auto' }}>
+          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '1px solid var(--border)', borderRadius: '8px', marginTop: '5px', maxHeight: '200px', overflowY: 'auto' }}>
             {clients
-              .filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.client_code || '').toLowerCase().includes(searchTerm.toLowerCase()))
+              .filter(c => c.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
               .map(c => (
-                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '12px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border, #f1f5f9)', color: 'var(--text-main, #334155)' }}>
-                  <span style={{ color: '#38bdf8', marginRight: '10px' }}>{c.client_code || 'C'+c.id}</span> {c.full_name}
+                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '12px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
+                  {c.full_name}
                 </div>
               ))}
           </div>
@@ -79,7 +79,7 @@ const ClientDashboard = () => {
         <div style={{ textAlign: 'center', padding: '50px' }}>⏳ Loading...</div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          <div style={{ background: 'var(--bg-card, #fff)', padding: '20px', borderRadius: '12px', borderLeft: '6px solid #0ea5e9', marginBottom: '25px', border: '1px solid var(--border)' }}>
+          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', borderLeft: '6px solid #0ea5e9', marginBottom: '25px', border: '1px solid var(--border)' }}>
             <h2 style={{ margin: '0' }}>{selectedClient.full_name} ({selectedClient.client_code || 'C' + selectedClient.id})</h2>
             <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: 'var(--text-muted)', marginTop: '5px' }}>
               <span>Age: <strong>{selectedClient.age || 'N/A'}</strong></span>
@@ -93,11 +93,10 @@ const ClientDashboard = () => {
             <div style={cardStyle}><div style={labelStyle}>Active SIPs</div><div style={valStyle}>{summary.sipCount}</div></div>
             <div style={cardStyle}><div style={labelStyle}>Client Since</div><div style={valStyle}>{selectedClient.since_formatted}</div></div>
           </div>
-          {/* Table and Asset charts below as per your standard design */}
         </>
       ) : (
-        <div style={{ textAlign: 'center', padding: '80px 20px', background: 'var(--bg-main)', borderRadius: '16px', border: '2px dashed var(--border)' }}>
-          <h3 style={{ color: 'var(--text-muted)' }}>Select a client to view insights.</h3>
+        <div style={{ textAlign: 'center', padding: '100px', border: '2px dashed var(--border)', borderRadius: '16px' }}>
+          Select a client to view insights.
         </div>
       )}
     </div>
