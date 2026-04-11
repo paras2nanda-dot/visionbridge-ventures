@@ -60,7 +60,7 @@ const Transactions = () => {
       else await api.post(url, {...formData, amount: cleanAmount});
       toast.success("✅ Saved Successfully");
       setIsEditing(false); setClientName(''); setFormData(initialState); fetchInitialData();
-    } catch (err) { toast.error("Save Error: " + (err.response?.data?.error || "Check Connection")); }
+    } catch (err) { toast.error("Save Error"); }
   };
 
   const filteredTransactions = transactions.filter(t => 
@@ -86,15 +86,12 @@ const Transactions = () => {
               }} required />
             </div>
             <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Client Name</label><input style={{width:'100%', padding:'8px', background:'#f1f5f9'}} value={clientName} readOnly /></div>
-            
             <div style={{ gridColumn: 'span 2' }}>
               <label style={{fontSize:'12px', fontWeight:'bold'}}>Scheme Name *</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.scheme_id} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
-                <option value="">Select Scheme...</option>
-                {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+                <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select>
             </div>
-            
             <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Type</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.transaction_type} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
                 <option>Purchase</option><option>Redemption</option><option>Switch</option>
@@ -102,16 +99,9 @@ const Transactions = () => {
             </div>
             <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Amount (₹)</label><input style={{width:'100%', padding:'8px'}} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
           </div>
-          
           <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-            <button type="submit" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-              {isEditing ? "Update" : "Save"}
-            </button>
-            {isEditing && (
-              <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'white', border:'1px solid #ccc', borderRadius:'6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                Cancel
-              </button>
-            )}
+            <button type="submit" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update" : "Save"}</button>
+            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'white', border:'1px solid #ccc', borderRadius:'6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
           </div>
         </form>
       </div>
@@ -119,8 +109,9 @@ const Transactions = () => {
       <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
-            <tr style={{background:'#f8fafc'}}>
+            <tr style={{background:'#f8fafc', borderBottom: '2px solid #e2e8f0'}}>
               <th style={{padding:'10px', textAlign:'left'}}>TID</th>
+              <th style={{padding:'10px', textAlign:'left'}}>Date</th>
               <th style={{padding:'10px', textAlign:'left'}}>Client</th>
               <th style={{padding:'10px', textAlign:'left'}}>Scheme</th>
               <th style={{padding:'10px', textAlign:'right'}}>Amount</th>
@@ -131,6 +122,7 @@ const Transactions = () => {
             {filteredTransactions.map(t => (
               <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '10px' }}>{t.transaction_id}</td>
+                <td style={{ padding: '10px' }}>{t.transaction_date}</td>
                 <td style={{ padding: '10px' }}>{t.client_code} - {t.client_name}</td>
                 <td style={{ padding: '10px' }}>{t.scheme_name}</td>
                 <td style={{ padding: '10px', textAlign: 'right' }}>₹{formatINR(t.amount)}</td>
@@ -138,17 +130,15 @@ const Transactions = () => {
                   <button onClick={() => { 
                     setIsEditing(true); 
                     setEditingId(t.id); 
-                    // 💡 THE FIX: Formatting the date string so the input box can read it
                     setFormData({
                       ...t, 
                       client_code_input: t.client_code, 
+                      // Split is used as a safety fallback if the backend sends a timestamp
                       transaction_date: t.transaction_date?.split('T')[0] 
                     }); 
                     setClientName(t.client_name); 
                     window.scrollTo(0,0); 
-                  }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>
-                    Edit
-                  </button>
+                  }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
                 </td>
               </tr>
             ))}

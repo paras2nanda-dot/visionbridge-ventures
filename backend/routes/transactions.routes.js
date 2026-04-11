@@ -1,10 +1,27 @@
 import express from 'express';
-import { getTransactions, createTransaction } from '../controllers/transactions.controller.js';
+import { createTransaction } from '../controllers/transactions.controller.js';
 import { pool } from '../config/db.js';
 
 const router = express.Router();
 
-router.get('/', getTransactions);
+// 💡 FIXED: Now formats the date string so the frontend doesn't have to
+router.get('/', async (req, res) => {
+  try {
+    const query = `
+      SELECT t.*, 
+             TO_CHAR(t.transaction_date, 'YYYY-MM-DD') as transaction_date,
+             c.client_code, c.full_name as client_name, s.scheme_name 
+      FROM transactions t
+      JOIN clients c ON t.client_id::TEXT = c.id::TEXT
+      JOIN mf_schemes s ON t.scheme_id::TEXT = s.id::TEXT
+      ORDER BY t.transaction_date DESC`;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/', createTransaction);
 
 // UPDATE TRANSACTION
@@ -14,7 +31,6 @@ router.put('/:id', async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
-    // 💡 THE FIX: Added scheme_id and client_id to the query
     const query = `
       UPDATE transactions SET 
         amount=$1, 
@@ -28,12 +44,12 @@ router.put('/:id', async (req, res) => {
     
     const values = [
       t.amount.toString().replace(/,/g, ''), 
-      t.transaction_date || t.date, 
+      t.transaction_date, 
       t.transaction_type, 
       t.platform, 
       t.notes,
-      t.scheme_id, // Added this
-      t.client_id, // Added this
+      t.scheme_id,
+      t.client_id,
       id
     ];
 
