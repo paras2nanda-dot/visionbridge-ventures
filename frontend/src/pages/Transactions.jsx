@@ -105,7 +105,10 @@ const Transactions = () => {
             </div>
             <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Amount</label><input style={{width:'100%', padding:'8px'}} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
           </div>
-          <button type="submit" style={{ marginTop: '15px', padding: '10px 30px', background: isEditing ? '#f59e0b' : '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight:'bold' }}>{isEditing ? "Update" : "Save"}</button>
+          <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+            <button type="submit" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update" : "Save"}</button>
+            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'white', border:'1px solid #ccc', borderRadius:'6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
+          </div>
         </form>
       </div>
 
@@ -114,12 +117,25 @@ const Transactions = () => {
           <thead><tr style={{background:'#f8fafc'}}><th style={{padding:'10px', textAlign:'left'}}>TID</th><th style={{padding:'10px', textAlign:'left'}}>Client</th><th style={{padding:'10px', textAlign:'left'}}>Scheme</th><th style={{padding:'10px', textAlign:'right'}}>Amount</th><th style={{padding:'10px', textAlign:'center'}}>Action</th></tr></thead>
           <tbody>
             {filteredTransactions.map(t => (
-              <tr key={t.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '10px', fontWeight: 'bold' }}>{t.transaction_id}</td>
-                <td style={{ padding: '10px' }}>{t.client_name}</td>
+              <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '10px' }}>{t.transaction_id}</td>
+                <td style={{ padding: '10px' }}>{t.client_code} - {t.client_name}</td>
                 <td style={{ padding: '10px' }}>{t.scheme_name}</td>
                 <td style={{ padding: '10px', textAlign: 'right' }}>₹{formatINR(t.amount)}</td>
-                <td style={{ padding: '10px', textAlign: 'center' }}><button onClick={() => { setIsEditing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer'}}>Edit</button></td>
+                <td style={{ padding: '10px', textAlign: 'center' }}>
+                  {/* 💡 THE FIX IS HERE: split('T')[0] ensures the date displays correctly in the form */}
+                  <button onClick={() => { 
+                    setIsEditing(true); 
+                    setEditingId(t.id); 
+                    setFormData({
+                      ...t, 
+                      client_code_input: t.client_code, 
+                      transaction_date: t.transaction_date?.split('T')[0] 
+                    }); 
+                    setClientName(t.client_name); 
+                    window.scrollTo(0,0); 
+                  }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                </td>
               </tr>
             ))}
           </tbody>
