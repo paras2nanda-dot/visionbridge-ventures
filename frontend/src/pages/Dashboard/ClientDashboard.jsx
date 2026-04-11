@@ -41,7 +41,7 @@ const ClientDashboard = () => {
       })
       .catch(err => {
         console.error("Error fetching portfolio:", err);
-        alert("❌ Error: Could not fetch client data. Please check if you are logged in.");
+        alert("❌ Error: Could not fetch client data.");
         setSelectedClient(null);
         setIsLoading(false);
       });
@@ -112,7 +112,7 @@ const ClientDashboard = () => {
           <div style={{ background: 'var(--bg-card, #fff)', padding: '20px', borderRadius: '12px', borderLeft: '6px solid #0ea5e9', marginBottom: '25px', border: '1px solid var(--border, #e0f2fe)' }}>
             <h2 style={{ margin: '0 0 8px 0', color: 'var(--text-main, #0f172a)', fontSize: '26px' }}>{selectedClient.full_name} <span style={{fontSize: '16px', color: 'var(--text-muted, #64748b)', fontWeight: '500'}}>({selectedClient.client_code || 'C' + selectedClient.id})</span></h2>
             <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: 'var(--text-muted, #475569)' }}>
-              <span>Age: <strong style={{ color: 'var(--text-main, #0f172a)' }}>{selectedClient.age === 'N/A' || !selectedClient.age ? 'Not Set' : `${selectedClient.age} years`}</strong></span>
+              <span>Age: <strong style={{ color: 'var(--text-main, #0f172a)' }}>{selectedClient.age ? `${selectedClient.age} years` : 'Not Set'}</strong></span>
               <span style={{ color: 'var(--border, #cbd5e1)' }}>|</span>
               <span>Risk Profile: <strong style={{ color: selectedClient.risk_profile === 'High' ? '#ef4444' : selectedClient.risk_profile === 'Medium' ? '#f59e0b' : '#10b981' }}>{selectedClient.risk_profile || 'Not Set'}</strong></span>
             </div>
