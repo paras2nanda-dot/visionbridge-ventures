@@ -1,4 +1,4 @@
-=import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AutoLogout from './AutoLogout';
