@@ -36,7 +36,7 @@ export const updateSip = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System";
   try {
-    // 💡 FIXED: Added scheme_id to the update query
+    // 💡 FIXED: Added scheme_id to the UPDATE query
     const query = `UPDATE sips SET amount=$1, start_date=$2, end_date=$3, frequency=$4, sip_day=$5, status=$6, platform=$7, notes=$8, is_active=$9, scheme_id=$10 WHERE id=$11 RETURNING *`;
     const values = [s.amount, s.start_date, s.end_date || null, s.frequency, s.sip_day, s.status, s.platform, s.notes, s.status === 'Active', s.scheme_id, id];
     const result = await pool.query(query, values);
@@ -55,7 +55,7 @@ export const deleteSip = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-// 💡 NEW: Bulk Delete Function
+// 💡 NEW: Bulk Delete Handler
 export const bulkDeleteSips = async (req, res) => {
   const { ids } = req.body;
   const user = req.user?.username || "System";

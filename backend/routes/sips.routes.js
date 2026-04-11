@@ -9,7 +9,7 @@ router.post('/', authMiddleware, createSip);
 router.put('/:id', authMiddleware, updateSip);
 router.delete('/:id', authMiddleware, deleteSip);
 
-// 💡 NEW: Route for Bulk Deletion
+// 💡 NEW: Bulk Delete Endpoint
 router.post('/bulk-delete', authMiddleware, bulkDeleteSips);
 
 export default router;
