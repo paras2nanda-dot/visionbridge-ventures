@@ -72,6 +72,19 @@ const Transactions = () => {
     }
   };
 
+  // 🗑️ DELETE FUNCTION
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this transaction?")) {
+      try {
+        await api.delete(`/transactions/${id}`);
+        toast.success("🗑️ Transaction Deleted");
+        fetchInitialData();
+      } catch (err) {
+        toast.error("Error deleting transaction");
+      }
+    }
+  };
+
   const filteredTransactions = transactions.filter(t => 
     t.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -82,7 +95,6 @@ const Transactions = () => {
     <div className="container">
       <h1 className="title">Transactions</h1>
       
-      {/* FORM SECTION */}
       <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #10b981', marginBottom: '30px', padding: '25px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
@@ -102,11 +114,9 @@ const Transactions = () => {
             <div style={{ gridColumn: 'span 2' }}>
               <label style={{fontSize:'12px', fontWeight:'bold'}}>Scheme Name *</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.scheme_id} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
-                <option value="">Select Scheme...</option>
-                {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+                <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select>
             </div>
-            
             <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Type</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.transaction_type} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
                 <option>Purchase</option><option>Redemption</option><option>Switch In</option><option>Switch Out</option>
@@ -121,13 +131,11 @@ const Transactions = () => {
         </form>
       </div>
 
-      {/* SEARCH SECTION */}
       <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <span style={{ fontSize: '16px' }}>🔍</span>
         <input type="text" placeholder="Filter by TID, Client, or Scheme..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      {/* TABLE SECTION */}
       <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
@@ -136,6 +144,7 @@ const Transactions = () => {
               <th style={{padding:'12px', textAlign:'left'}}>Date</th>
               <th style={{padding:'12px', textAlign:'left'}}>Client</th>
               <th style={{padding:'12px', textAlign:'left'}}>Scheme</th>
+              <th style={{padding:'12px', textAlign:'center'}}>Type</th>
               <th style={{padding:'12px', textAlign:'right'}}>Amount</th>
               <th style={{padding:'12px', textAlign:'center'}}>Action</th>
             </tr>
@@ -148,23 +157,24 @@ const Transactions = () => {
                 <td style={{ padding: '12px' }}>{t.client_code} - {t.client_name}</td>
                 <td style={{ padding: '12px' }}>
                     <div style={{fontWeight:'500'}}>{t.scheme_name}</div>
-                    <div style={{fontSize:'10px', color:'#64748b'}}>{t.platform} • {t.transaction_type}</div>
+                    <div style={{fontSize:'10px', color:'#64748b'}}>{t.platform}</div>
+                </td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', background: t.transaction_type.includes('Purchase') || t.transaction_type.includes('In') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: t.transaction_type.includes('Purchase') || t.transaction_type.includes('In') ? '#10b981' : '#ef4444' }}>{t.transaction_type}</span>
                 </td>
                 <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(t.amount)}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <button onClick={() => { 
-                    setIsEditing(true); 
-                    setEditingId(t.id); 
-                    // 💡 THE FIX: Split ensures the date box isn't blank even if timestamp is sent
-                    const cleanDate = t.transaction_date?.split('T')[0];
-                    setFormData({
-                      ...t, 
-                      client_code_input: t.client_code, 
-                      transaction_date: cleanDate 
-                    }); 
-                    setClientName(t.client_name); 
-                    window.scrollTo({top: 0, behavior: 'smooth'}); 
-                  }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                  <div style={{display: 'flex', gap: '8px', justifyContent: 'center'}}>
+                    <button onClick={() => { 
+                      setIsEditing(true); 
+                      setEditingId(t.id); 
+                      const cleanDate = t.transaction_date?.split('T')[0];
+                      setFormData({ ...t, client_code_input: t.client_code, transaction_date: cleanDate }); 
+                      setClientName(t.client_name); 
+                      window.scrollTo({top: 0, behavior: 'smooth'}); 
+                    }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                    <button onClick={() => handleDelete(t.id)} style={{color:'#ef4444', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Delete</button>
+                  </div>
                 </td>
               </tr>
             ))}
