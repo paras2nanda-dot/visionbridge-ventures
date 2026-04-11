@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ThemeSwitcher from './ThemeSwitcher';
 
-const Sidebar = ({ closeMobileMenu }) => {
+const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
   const navigate = useNavigate();
   const userName = sessionStorage.getItem('username') || 'Advisor';
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -40,7 +40,7 @@ const Sidebar = ({ closeMobileMenu }) => {
       transition: 'background 0.3s ease',
       overflow: 'hidden',
       borderRight: '1.5px solid var(--border, #334155)',
-      zIndex: 999999 // Critical for Mobile Visibility
+      zIndex: 999999
     }}>
       
       <style>{`
@@ -65,11 +65,38 @@ const Sidebar = ({ closeMobileMenu }) => {
         }
       `}</style>
 
-      <div className="sidebar-logo" style={{ padding: '25px 20px', borderBottom: '1px solid var(--border, #334155)', flexShrink: 0 }}>
-        <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff' }}>VisionBridge 📈</div>
-        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '700' }}>
-          WELCOME, {userName.toUpperCase()}
+      {/* HEADER: Contains Logo AND the Close Button */}
+      <div className="sidebar-logo" style={{ 
+        padding: '25px 20px', 
+        borderBottom: '1px solid var(--border, #334155)', 
+        flexShrink: 0,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start'
+      }}>
+        <div>
+          <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff', whiteSpace: 'nowrap' }}>VisionBridge 📈</div>
+          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '700' }}>
+            WELCOME, {userName.toUpperCase()}
+          </div>
         </div>
+
+        {/* 📱 Mobile Close Button - Only visible on small screens */}
+        <button 
+          onClick={closeMobileMenu}
+          style={{ 
+            background: 'rgba(255,255,255,0.1)', 
+            border: 'none', 
+            color: 'white', 
+            fontSize: '20px', 
+            padding: '5px 10px', 
+            borderRadius: '6px', 
+            cursor: 'pointer',
+            display: window.innerWidth < 1024 ? 'block' : 'none'
+          }}
+        >
+          ✕
+        </button>
       </div>
       
       <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '15px', overflowY: 'auto' }}>

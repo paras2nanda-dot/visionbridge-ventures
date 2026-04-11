@@ -6,61 +6,81 @@ import {
 
 const Charts = () => {
   const [charts, setCharts] = useState(null);
+  const [upcomingClosures, setUpcomingClosures] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Premium High-Contrast Palette
   const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
 
-  useEffect(() => {
-    // 💡 THE FIX: Retrieve the JWT token from local storage
-    const token = sessionStorage.getItem("token");
+  const formatINR = (val) => {
+    if (!val) return "0";
+    return new Intl.NumberFormat('en-IN').format(val);
+  };
 
-    // 💡 THE FIX: Pass the token in the Authorization header to pass the backend middleware
-    fetch('https://visionbridge-backend.onrender.com/api/dashboard/charts', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+  useEffect(() => {
+    const token = sessionStorage.getItem("token");
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    // Fetch both Chart Analytics and Raw SIP Data for the closure table
+    Promise.all([
+      fetch('https://visionbridge-backend.onrender.com/api/dashboard/charts', { headers }),
+      fetch('https://visionbridge-backend.onrender.com/api/sips', { headers })
+    ])
+    .then(async ([chartRes, sipRes]) => {
+      const chartJson = await chartRes.json();
+      const sipJson = await sipRes.json();
+
+      if (chartJson.success) setCharts(chartJson.data);
+      
+      // LOGIC: Filter SIPs closing in next 60 days
+      if (Array.isArray(sipJson)) {
+        const today = new Date();
+        const sixtyDaysFromNow = new Date();
+        sixtyDaysFromNow.setDate(today.getDate() + 60);
+
+        const closingSoon = sipJson
+          .filter(sip => {
+            if (!sip.end_date || sip.status !== 'Active') return false;
+            const endDate = new Date(sip.end_date);
+            return endDate >= today && endDate <= sixtyDaysFromNow;
+          })
+          .sort((a, b) => new Date(a.end_date) - new Date(b.end_date)); // Soonest on top
+
+        setUpcomingClosures(closingSoon);
       }
-    }) 
-      .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then(res => { 
-        if(res.success) setCharts(res.data);
-        setLoading(false); 
-      })
-      .catch(err => {
-        console.error("Charts Fetch Error:", err);
-        setLoading(false);
-      });
+
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Data Fetch Error:", err);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '900', color: '#1e293b' }}>📊 GENERATING PREMIUM ANALYTICS...</div>;
-  
-  // 💡 SAFETY NET: Prevent app crash if backend is down or token is invalid
   if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '900', color: '#ef4444' }}>❌ FAILED TO LOAD CHART DATA. Please log in again.</div>;
 
   const cardStyle = {
-    background: '#ffffff',
-    border: '2px solid #cbd5e1',
+    background: 'var(--bg-card, #ffffff)',
+    border: '2px solid var(--border, #cbd5e1)',
     borderRadius: '24px',
     padding: '25px',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)'
   };
 
   const sectionHeader = (title, color) => (
-    <h2 style={{ fontWeight: '900', color: '#0f172a', marginBottom: '30px', borderLeft: `8px solid ${color}`, paddingLeft: '15px', textTransform: 'uppercase', fontSize: '18px' }}>
+    <h2 style={{ fontWeight: '900', color: 'var(--text-main, #0f172a)', marginBottom: '30px', borderLeft: `8px solid ${color}`, paddingLeft: '15px', textTransform: 'uppercase', fontSize: '18px' }}>
       {title}
     </h2>
   );
 
-  const chartLabel = { textAlign: 'center', fontWeight: '900', color: '#334155', marginBottom: '20px', fontSize: '14px', textTransform: 'uppercase' };
+  const chartLabel = { textAlign: 'center', fontWeight: '900', color: 'var(--text-muted, #334155)', marginBottom: '20px', fontSize: '14px', textTransform: 'uppercase' };
 
-  // --- RENDER DONUT WITH PERCENTAGES ---
   const renderDonut = (data = []) => {
     const total = data.reduce((sum, entry) => sum + (entry.value || 0), 0);
-
     return (
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
@@ -83,7 +103,7 @@ const Charts = () => {
               const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
               return [`${value} (${percent}%)`, 'Value'];
             }}
-            contentStyle={{ borderRadius: '12px', fontWeight: '900', border: '2px solid #cbd5e1' }} 
+            contentStyle={{ borderRadius: '12px', fontWeight: '900', background: 'var(--bg-card)', border: '2px solid var(--border)' }} 
           />
           <Legend iconType="circle" wrapperStyle={{ fontWeight: '900', fontSize: '12px', paddingTop: '15px' }} />
         </PieChart>
@@ -94,6 +114,49 @@ const Charts = () => {
   return (
     <div className="fade-in" style={{ paddingBottom: '50px' }}>
       
+      {/* 🔴 NEW SECTION: UPCOMING SIP CLOSURES */}
+      <div style={{ marginBottom: '60px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+          {sectionHeader("Attention: Upcoming SIP Closures (Next 60 Days)", "#ef4444")}
+          <div style={{ background: '#ef4444', color: 'white', padding: '8px 20px', borderRadius: '50px', fontWeight: '900', fontSize: '14px' }}>
+            {upcomingClosures.length} MATURITIES TRACKED
+          </div>
+        </div>
+
+        <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                <th style={{ padding: '15px 20px', textAlign: 'left', color: '#ef4444', fontWeight: '900', fontSize: '12px', borderBottom: '2px solid var(--border)' }}>CLIENT NAME</th>
+                <th style={{ padding: '15px 20px', textAlign: 'left', color: '#ef4444', fontWeight: '900', fontSize: '12px', borderBottom: '2px solid var(--border)' }}>FUND NAME</th>
+                <th style={{ padding: '15px 20px', textAlign: 'center', color: '#ef4444', fontWeight: '900', fontSize: '12px', borderBottom: '2px solid var(--border)' }}>CLOSURE DATE</th>
+                <th style={{ padding: '15px 20px', textAlign: 'right', color: '#ef4444', fontWeight: '900', fontSize: '12px', borderBottom: '2px solid var(--border)' }}>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {upcomingClosures.length > 0 ? upcomingClosures.map((sip, idx) => (
+                <tr key={sip.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '15px 20px', fontWeight: '800', color: 'var(--text-main)' }}>{sip.client_name}</td>
+                  <td style={{ padding: '15px 20px', fontWeight: '600', color: 'var(--text-muted)' }}>{sip.scheme_name}</td>
+                  <td style={{ padding: '15px 20px', textAlign: 'center' }}>
+                    <span style={{ background: '#fef2f2', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '12px' }}>
+                      {new Date(sip.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
+                  </td>
+                  <td style={{ padding: '15px 20px', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>₹{formatINR(sip.amount)}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="4" style={{ padding: '40px', textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)' }}>
+                    ✅ No SIPs are set to close in the next 60 days.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* 🟦 CATEGORY 1: DEMOGRAPHICS */}
       {sectionHeader("Category 1: Client Demographics (Count %)", "#3b82f6")}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '25px', marginBottom: '60px' }}>
