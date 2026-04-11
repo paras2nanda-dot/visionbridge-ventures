@@ -14,7 +14,7 @@ import sipRoutes from './routes/sips.routes.js';
 import mfschemeRoutes from './routes/mfSchemes.routes.js'; 
 import transactionRoutes from './routes/transactions.routes.js'; 
 import reportRoutes from './routes/reports.routes.js'; 
-import activityRoutes from './routes/activity.routes.js'; // 🚀 FIXED: Added the 's' to match your filename
+import activityRoutes from './routes/activity.routes.js'; 
 
 import { pool } from './config/db.js'; 
 
@@ -68,14 +68,20 @@ app.get('/api/backup', authMiddleware, async (req, res) => {
   }
 });
 
+// 🛡️ ROUTES
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
 app.use('/api/sips', authMiddleware, sipRoutes);
-app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes); 
+
+// 🚀 FIXED: Changed path to '/api/schemes' to match your frontend 404
+app.use('/api/schemes', authMiddleware, mfschemeRoutes); 
+
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
+
+// 🚀 FIXED: Ensure plural path '/api/activities' is used
 app.use('/api/activities', authMiddleware, activityRoutes);
 
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
