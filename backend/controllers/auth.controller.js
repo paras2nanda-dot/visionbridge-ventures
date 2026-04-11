@@ -9,12 +9,11 @@ export const login = async (req, res) => {
     
     res.cookie('token', data.token, {
       httpOnly: true,
-      secure: true, // Required for Render/Vercel (HTTPS)
+      secure: true, 
       sameSite: 'None', 
       maxAge: 8 * 60 * 60 * 1000 
     });
 
-    // 💡 THE FIX: Send token in JSON response as fallback for cookie blockers
     res.json({ message: "Login successful", user: data.user, token: data.token });
   } catch (err) {
     res.status(401).json({ error: err.message });
