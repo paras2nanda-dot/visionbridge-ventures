@@ -2,12 +2,15 @@ import { pool } from "../config/db.js";
 
 export async function buildClientDashboard(clientId) {
   try {
-    // Fetch Client with formatting for "Since" date
+    // 1. Fetch Client Profile (Removed is_active filter for maximum compatibility)
     const clientRes = await pool.query(
-      "SELECT *, TO_CHAR(created_at, 'DD/MM/YYYY') as since_formatted FROM clients WHERE id = $1 AND is_active = true", [clientId]
+      "SELECT *, TO_CHAR(created_at, 'DD/MM/YYYY') as since_formatted FROM clients WHERE id = $1", 
+      [clientId]
     );
+    
     if (clientRes.rows.length === 0) throw new Error("Client not found");
 
+    // 2. Fetch Portfolio & Invested Amounts
     const portfolioRes = await pool.query(`
       SELECT 
         mf.scheme_name,
@@ -19,9 +22,11 @@ export async function buildClientDashboard(clientId) {
       FROM transactions t
       JOIN mf_schemes mf ON t.scheme_id = mf.id
       WHERE t.client_id = $1
-      GROUP BY mf.id, mf.scheme_name HAVING SUM(t.amount) > 0
+      GROUP BY mf.id, mf.scheme_name 
+      HAVING SUM(CASE WHEN t.transaction_type IN ('PURCHASE','SWITCH_IN') THEN t.amount ELSE -t.amount END) > 0
     `, [clientId]);
 
+    // 3. Fetch SIP Summary
     const sipRes = await pool.query(
         "SELECT COALESCE(SUM(amount), 0) as total_sip, COUNT(*) as sip_count FROM sips WHERE client_id = $1 AND is_active = true",
         [clientId]
@@ -38,12 +43,12 @@ export async function buildClientDashboard(clientId) {
       },
       portfolio: portfolioRes.rows.map(r => ({
         ...r,
-        percentage: totalAUM > 0 ? ((Number(r.invested_amount) / totalAUM) * 100).toFixed(2) : 0
+        percentage: totalAUM > 0 ? ((Number(r.invested_amount) / totalAUM) * 100).toFixed(1) : 0
       })),
       alerts: 0
     };
   } catch (error) {
-    console.error("Client Dashboard Error:", error);
+    console.error("Client Dashboard Service Error:", error);
     throw error;
   }
 }

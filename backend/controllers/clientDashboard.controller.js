@@ -2,10 +2,10 @@ import { buildClientDashboard } from "../services/clientDashboard.service.js";
 
 export async function getClientDashboard(req, res) {
   try {
-    const { clientId } = req.params;
-    const data = await buildClientDashboard(clientId);
+    // 💡 THE FIX: Match 'id' from the route definition /:id
+    const { id } = req.params; 
+    const data = await buildClientDashboard(id);
 
-    // Return the object directly so frontend .json() gets the profile/summary/portfolio
     res.json(data);
   } catch (error) {
     console.error("Client Dashboard Controller Error:", error);
