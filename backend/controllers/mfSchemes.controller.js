@@ -28,8 +28,7 @@ export const createScheme = async (req, res) => {
       ]
     );
 
-    // 🕒 Log Activity
-    await logActivity(user, 'CREATE', s.scheme_name, `Added new Mutual Fund scheme: ${s.scheme_name} (${s.amc_name})`);
+    await logActivity(user, 'CREATE', s.scheme_name, `Added new Mutual Fund scheme: ${s.scheme_name}`);
 
     res.status(201).json(result.rows[0]);
   } catch (err) { 
@@ -58,8 +57,7 @@ export const updateScheme = async (req, res) => {
       ]
     );
 
-    // 🕒 Log Activity
-    await logActivity(user, 'UPDATE', s.scheme_name, `Updated allocations/details for ${s.scheme_name}`);
+    await logActivity(user, 'UPDATE', s.scheme_name, `Updated details for ${s.scheme_name}`);
 
     res.json(result.rows[0]);
   } catch (err) { 
@@ -76,11 +74,10 @@ export const deleteScheme = async (req, res) => {
 
     await pool.query('DELETE FROM mf_schemes WHERE id = $1', [id]);
 
-    // 🕒 Log Activity
-    await logActivity(user, 'DELETE', schemeName, `Permanently removed ${schemeName} from the scheme master list`);
+    await logActivity(user, 'DELETE', schemeName, `Removed ${schemeName} from the master list`);
 
     res.json({ message: "Scheme deleted" });
   } catch (err) { 
     res.status(500).json({ error: err.message }); 
   }
-};s
+};
