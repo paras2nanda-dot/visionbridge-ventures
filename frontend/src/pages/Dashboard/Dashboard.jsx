@@ -11,7 +11,8 @@ const Dashboard = () => {
     if (tab === activeTab) return;
     setIsSwitching(true);
     setActiveTab(tab);
-    setTimeout(() => setIsSwitching(false), 400);
+    // Brief timeout to allow the loading spinner to show and clear the previous view
+    setTimeout(() => setIsSwitching(false), 300);
   };
 
   const tabStyle = (tabName) => ({
@@ -21,7 +22,7 @@ const Dashboard = () => {
     background: 'none',
     fontSize: '15px',
     fontWeight: activeTab === tabName ? '900' : '600',
-    color: activeTab === tabName ? '#0ea5e9' : 'var(--text-muted, #94a3b8)',
+    color: activeTab === tabName ? '#0ea5e9' : '#94a3b8',
     borderBottom: activeTab === tabName ? '4px solid #0ea5e9' : '4px solid transparent',
     transition: 'all 0.3s ease',
     display: 'flex',
@@ -32,9 +33,9 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="container fade-in" style={{ width: '100%', minHeight: '100vh', padding: '20px' }}>
+    <div style={{ width: '100%', minHeight: '100vh', padding: '20px', background: '#f8fafc' }}>
       
-      <h1 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main, #0f172a)', marginBottom: '25px' }}>
+      <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '25px' }}>
         Dashboard
       </h1>
       
@@ -43,8 +44,8 @@ const Dashboard = () => {
         display: 'flex', 
         gap: '5px', 
         marginBottom: '0', 
-        borderBottom: '2px solid var(--border, #e2e8f0)',
-        background: 'var(--bg-main, #f8fafc)',
+        borderBottom: '2px solid #e2e8f0',
+        background: '#f8fafc',
         position: 'sticky',
         top: '0',
         zIndex: 100,
@@ -66,12 +67,12 @@ const Dashboard = () => {
         {isSwitching ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px', gap: '15px' }}>
             <div className="sync-spinner"></div>
-            <p style={{ fontWeight: '800', color: 'var(--text-muted)', fontSize: '11px', letterSpacing: '1.5px' }}>REFRESHING VIEW...</p>
+            <p style={{ fontWeight: '800', color: '#94a3b8', fontSize: '11px', letterSpacing: '1.5px' }}>REFRESHING VIEW...</p>
             <style>{`
               .sync-spinner {
                 width: 30px;
                 height: 30px;
-                border: 3px solid var(--border);
+                border: 3px solid #e2e8f0;
                 border-top: 3px solid #0ea5e9;
                 border-radius: 50%;
                 animation: spin 0.8s linear infinite;
@@ -80,8 +81,8 @@ const Dashboard = () => {
             `}</style>
           </div>
         ) : (
-          <div className="fade-in">
-            {/* 💡 EXCLUSIVE RENDERING: Only one of these will exist at a time */}
+          <div>
+            {/* 💡 EXCLUSIVE RENDERING */}
             {activeTab === 'business' && (
               <div key="business-view">
                 <BusinessDashboard />
@@ -95,7 +96,7 @@ const Dashboard = () => {
             )}
             
             {activeTab === 'activity' && (
-              <div key="activity-view" style={{ maxWidth: '800px', margin: '0 auto' }}>
+              <div key="activity-view" style={{ maxWidth: '900px', margin: '0 auto' }}>
                 <ActivityFeed />
               </div>
             )}
