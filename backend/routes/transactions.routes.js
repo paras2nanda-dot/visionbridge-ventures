@@ -1,10 +1,10 @@
 import express from 'express';
-import { createTransaction } from '../controllers/transactions.controller.js';
+import { getTransactions, createTransaction } from '../controllers/transactions.controller.js';
 import { pool } from '../config/db.js';
 
 const router = express.Router();
 
-// 💡 FETCH TRANSACTIONS (Sorted by Latest Date First)
+// 💡 FETCH TRANSACTIONS (Latest First + Formatted Dates)
 router.get('/', async (req, res) => {
   try {
     const query = `
@@ -55,6 +55,7 @@ router.put('/:id', async (req, res) => {
 
     const result = await pool.query(query, values);
 
+    // Activity Log
     await pool.query(
       'INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)',
       [user, 'UPDATE', t.client_name || 'Transaction', `Modified ${t.transaction_type} of ₹${t.amount} for ${t.client_name || 'Client'}`]
@@ -94,4 +95,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;s
+export default router;
