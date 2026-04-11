@@ -2,34 +2,28 @@ import { pool } from '../config/db.js';
 
 export const getActivities = async (req, res) => {
   try {
+    // We fetch the latest 20 activities. 
+    // We let the frontend handle the "Time Ago" logic for better accuracy.
     const query = `
-      SELECT *, 
-      CASE 
-        WHEN created_at >= NOW() - INTERVAL '1 minute' THEN 'Just now'
-        WHEN created_at >= NOW() - INTERVAL '1 hour' THEN EXTRACT(MINUTE FROM NOW() - created_at)::TEXT || ' minutes ago'
-        WHEN created_at >= NOW() - INTERVAL '1 day' THEN EXTRACT(HOUR FROM NOW() - created_at)::TEXT || ' hours ago'
-        ELSE TO_CHAR(created_at, 'DD Mon YYYY')
-      END as time_label
-      FROM activities ORDER BY created_at DESC LIMIT 15`;
+      SELECT id, user_name, action_type, entity_name, details, created_at 
+      FROM activities 
+      ORDER BY created_at DESC 
+      LIMIT 20`;
+      
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
+    console.error("❌ Activity Fetch Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
-export const logActivity = async (type, title, description) => {
-  const configs = {
-    client: { icon: '👤', color: '#0ea5e9' },
-    sip: { icon: '🔄', color: '#10b981' },
-    txn: { icon: '💸', color: '#f59e0b' },
-    scheme: { icon: '📊', color: '#8b5cf6' }
-  };
-  const { icon, color } = configs[type] || { icon: '📝', color: '#64748b' };
+// This helper is used if you want to log something from a controller directly
+export const logActivity = async (user, type, entity, details) => {
   try {
     await pool.query(
-      "INSERT INTO activities (type, icon, title, description, color) VALUES ($1, $2, $3, $4, $5)",
-      [type, icon, title, description, color]
+      "INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)",
+      [user, type, entity, details]
     );
   } catch (err) {
     console.error("❌ Logger Error:", err.message);
