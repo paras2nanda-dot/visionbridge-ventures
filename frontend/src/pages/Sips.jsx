@@ -10,6 +10,9 @@ const Sips = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  
+  // 💡 NEW: Selection State
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const initialState = {
     sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
@@ -24,16 +27,17 @@ const Sips = () => {
 
   const fetchInitialData = async () => {
     try {
-      const [cRes, sRes, sipRes] = await Promise.all([api.get('/clients'), api.get('/mf-schemes'), api.get('/sips')]);
-      setClients(cRes.data || []); 
-      setSchemes(sRes.data || []); 
-      setSips(sipRes.data || []);
+      const [c, s, sip] = await Promise.all([api.get('/clients'), api.get('/mf-schemes'), api.get('/sips')]);
+      setClients(c.data || []); 
+      setSchemes(s.data || []); 
+      setSips(sip.data || []);
+      setSelectedIds([]); // Reset selection after refresh
       
-      if (!isEditing && sipRes.data.length > 0) {
-        const highestID = Math.max(...sipRes.data.map(s => parseInt(s.sip_id?.replace(/\D/g, '') || 0)));
-        setFormData(prev => ({ ...prev, sip_id: `SID${(highestID + 1).toString().padStart(5, '0')}` }));
+      if (!isEditing && sip.data?.length > 0) {
+        const high = Math.max(...sip.data.map(i => parseInt(i.sip_id?.replace(/\D/g, '') || 0)));
+        setFormData(prev => ({ ...prev, sip_id: `SID${(high + 1).toString().padStart(5, '0')}` }));
       }
-    } catch (err) { toast.error("Sync Error"); }
+    } catch (e) { toast.error("Sync Error"); }
   };
 
   const handleSubmit = async (e) => {
@@ -41,33 +45,42 @@ const Sips = () => {
     const payload = { ...formData, amount: formData.amount.toString().replace(/,/g, '') };
     try {
       if (isEditing) await api.put(`/sips/${editingId}`, payload);
-      else await api.post(`/sips`, payload);
-      
-      toast.success("✅ SIP Mandate Saved");
-      setIsEditing(false); 
-      setFormData(initialState); 
-      setClientName(''); 
-      fetchInitialData();
-    } catch (err) { toast.error("Error saving SIP"); }
+      else await api.post('/sips', payload);
+      toast.success("✅ Success"); setIsEditing(false); setClientName(''); setFormData(initialState); fetchInitialData();
+    } catch (e) { toast.error("Error saving"); }
   };
 
-  // 🗑️ DELETE FUNCTION
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this SIP mandate?")) {
+  // 💡 NEW: Selection Handlers
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.length === filteredSips.length) setSelectedIds([]);
+    else setSelectedIds(filteredSips.map(s => s.id));
+  };
+
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Delete ${selectedIds.length} selected SIPs permanently?`)) {
       try {
-        await api.delete(`/sips/${id}`);
-        toast.success("🗑️ SIP Deleted");
+        await api.post('/sips/bulk-delete', { ids: selectedIds });
+        toast.success("🗑️ Selected SIPs Deleted");
         fetchInitialData();
-      } catch (err) {
-        toast.error("Error deleting SIP record");
-      }
+      } catch (e) { toast.error("Bulk Delete Failed"); }
     }
   };
 
-  const filteredSips = sips.filter(s => 
-    s.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.sip_id?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete this mandate?")) {
+      try {
+        await api.delete(`/sips/${id}`);
+        toast.success("🗑️ Deleted");
+        fetchInitialData();
+      } catch (e) { toast.error("Delete Error"); }
+    }
+  };
+
+  const filteredSips = sips.filter(s => s.client_name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="container">
@@ -77,36 +90,37 @@ const Sips = () => {
       <div className="card" style={{ marginBottom: '30px', padding: '25px', borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #3b82f6' }}>
         <form onSubmit={handleSubmit}>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
-              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Client ID</label><input style={{width:'100%', padding:'8px'}} value={formData.client_code_input} onChange={(e)=> {
+              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Client ID</label>
+              <input style={{width:'100%', padding:'8px'}} value={formData.client_code_input} onChange={(e)=> {
                 const val = e.target.value.toUpperCase();
                 const found = clients.find(c => c.client_code === val);
                 setClientName(found ? found.full_name : '');
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
               }} required /></div>
-              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Scheme</label><select style={{width:'100%', padding:'8px'}} value={formData.scheme_id} onChange={e=>setFormData({...formData, scheme_id:e.target.value})} required>
+              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Scheme</label>
+              <select style={{width:'100%', padding:'8px'}} value={formData.scheme_id} onChange={e=>setFormData({...formData, scheme_id:e.target.value})} required>
                 <option value="">Select...</option>{schemes.map(s=><option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select></div>
-              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Amount</label><input style={{width:'100%', padding:'8px'}} value={formData.amount} onChange={e=>setFormData({...formData, amount:e.target.value})} required /></div>
-              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Start Date</label><input type="date" style={{width:'100%', padding:'8px'}} value={formData.start_date} onChange={e=>setFormData({...formData, start_date:e.target.value})} required /></div>
+              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Amount</label>
+              <input style={{width:'100%', padding:'8px'}} value={formData.amount} onChange={e=>setFormData({...formData, amount:e.target.value})} required /></div>
+              <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Start Date</label>
+              <input type="date" style={{width:'100%', padding:'8px'}} value={formData.start_date} onChange={e=>setFormData({...formData, start_date:e.target.value})} required /></div>
            </div>
-           
            <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{ padding: '10px 30px', background: isEditing ? '#f59e0b' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    {isEditing ? "Update Mandate" : "Add SIP"}
-                </button>
-                {isEditing && (
-                    <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '10px 20px', background: 'white', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
-                        Cancel
-                    </button>
-                )}
+             <button type="submit" style={{padding:'10px 30px', background: isEditing ? '#f59e0b' : '#3b82f6', color:'#fff', border:'none', borderRadius:'4px', fontWeight:'bold'}}>{isEditing ? "Update Mandate" : "Add SIP"}</button>
+             {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); }} style={{padding:'10px 20px', background:'white', border:'1px solid #ccc', borderRadius:'4px'}}>Cancel</button>}
            </div>
         </form>
       </div>
 
-      {/* SEARCH SECTION */}
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-        <span style={{ fontSize: '16px' }}>🔍</span>
-        <input type="text" placeholder="Filter by SID or Client Name..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      {/* SEARCH AND BULK ACTIONS */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
+        <input type="text" placeholder="🔍 Search Client Name..." style={{ padding: '8px 15px', borderRadius: '8px', border: '1px solid #ddd', width: '300px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        {selectedIds.length > 0 && (
+          <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Delete Selected ({selectedIds.length})
+          </button>
+        )}
       </div>
 
       {/* TABLE SECTION */}
@@ -114,24 +128,28 @@ const Sips = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{background:'#f8fafc', borderBottom: '2px solid #eee'}}>
+                <th style={{padding:'10px', textAlign:'left'}}><input type="checkbox" checked={selectedIds.length === filteredSips.length && filteredSips.length > 0} onChange={toggleAll} /></th>
                 <th style={{padding:'10px', textAlign:'left'}}>SID</th>
                 <th style={{padding:'10px', textAlign:'left'}}>Client</th>
-                <th style={{padding:'10px', textAlign:'center'}}>Start Date</th>
                 <th style={{padding:'10px', textAlign:'right'}}>Amount</th>
                 <th style={{padding:'10px', textAlign:'center'}}>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredSips.map(s => (
-              <tr key={s.id} style={{borderBottom:'1px solid #eee'}}>
+              <tr key={s.id} style={{borderBottom:'1px solid #eee', background: selectedIds.includes(s.id) ? 'rgba(59, 130, 246, 0.05)' : 'transparent'}}>
+                <td style={{ padding: '10px' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} /></td>
                 <td style={{ padding: '10px', fontWeight: 'bold', color: '#3b82f6' }}>{s.sip_id}</td>
-                <td style={{ padding: '10px' }}>{s.client_name}</td>
-                <td style={{ padding: '10px', textAlign: 'center' }}>{s.start_date}</td>
+                <td style={{ padding: '10px' }}>
+                  <div>{s.client_name}</div>
+                  <small style={{color:'#64748b'}}>{s.scheme_name}</small>
+                </td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
                 <td style={{ padding: '10px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button onClick={() => { setIsEditing(true); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
-                        <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Delete</button>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button onClick={() => { setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontSize:'11px', fontWeight:'bold'}}>VIEW</button>
+                        <button onClick={() => { setIsEditing(true); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontSize:'11px', fontWeight:'bold'}}>EDIT</button>
+                        <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontSize:'11px', fontWeight:'bold'}}>DELETE</button>
                     </div>
                 </td>
               </tr>
