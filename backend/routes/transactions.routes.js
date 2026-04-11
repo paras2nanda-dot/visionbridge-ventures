@@ -1,5 +1,5 @@
 import express from 'express';
-import { getTransactions, createTransaction } from '../controllers/transactions.controller.js';
+import { createTransaction } from '../controllers/transactions.controller.js';
 import { pool } from '../config/db.js';
 
 const router = express.Router();
