@@ -15,7 +15,7 @@ const Dashboard = () => {
     fontWeight: activeTab === tabName ? '900' : '600',
     color: activeTab === tabName ? '#0ea5e9' : '#94a3b8',
     borderBottom: activeTab === tabName ? '4px solid #0ea5e9' : '4px solid transparent',
-    transition: 'all 0.3s ease',
+    transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
@@ -34,14 +34,12 @@ const Dashboard = () => {
       <div style={{ 
         display: 'flex', 
         gap: '5px', 
-        marginBottom: '0', 
         borderBottom: '2px solid #e2e8f0',
         background: '#f8fafc',
         position: 'sticky',
         top: '0',
         zIndex: 100,
-        overflowX: 'auto',
-        scrollbarWidth: 'none'
+        overflowX: 'auto'
       }}>
         <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>
           🏢 Business Analytics
@@ -55,26 +53,15 @@ const Dashboard = () => {
       </div>
 
       <div style={{ paddingTop: '30px' }}>
-        <div>
-          {/* 💡 DIRECT RENDERING: Removed switching delay for maximum stability */}
-          {activeTab === 'business' && (
-            <div key="business-view">
-              <BusinessDashboard />
-            </div>
-          )}
-
-          {activeTab === 'client' && (
-            <div key="client-view">
-              <ClientDashboard />
-            </div>
-          )}
-          
-          {activeTab === 'activity' && (
-            <div key="activity-view" style={{ maxWidth: '900px', margin: '0 auto' }}>
-              <ActivityFeed />
-            </div>
-          )}
-        </div>
+        {/* 💡 DIRECT RENDERING */}
+        {activeTab === 'business' && <BusinessDashboard />}
+        {activeTab === 'client' && <ClientDashboard />}
+        
+        {activeTab === 'activity' && (
+          <div style={{ maxWidth: '900px', margin: '0 auto', display: 'block' }}>
+            <ActivityFeed />
+          </div>
+        )}
       </div>
     </div>
   );
