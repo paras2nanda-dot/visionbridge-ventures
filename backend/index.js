@@ -14,7 +14,7 @@ import sipRoutes from './routes/sips.routes.js';
 import mfschemeRoutes from './routes/mfSchemes.routes.js'; 
 import transactionRoutes from './routes/transactions.routes.js'; 
 import reportRoutes from './routes/reports.routes.js'; 
-import activityRoutes from './routes/activity.route.js'; 
+import activityRoutes from './routes/activity.routes.js'; // 🚀 FIXED: Added the 's' to match your filename
 
 import { pool } from './config/db.js'; 
 
