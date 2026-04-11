@@ -14,19 +14,26 @@ router.put('/:id', async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
-    // 💡 THE FIX: Changed 'date' to 'transaction_date' to match your DB exactly
+    // 💡 THE FIX: Added scheme_id and client_id to the query
     const query = `
       UPDATE transactions SET 
-        amount=$1, transaction_date=$2, transaction_type=$3, platform=$4, notes=$5
-      WHERE id=$6 RETURNING *`;
+        amount=$1, 
+        transaction_date=$2, 
+        transaction_type=$3, 
+        platform=$4, 
+        notes=$5,
+        scheme_id=$6,
+        client_id=$7
+      WHERE id=$8 RETURNING *`;
     
-    // Using t.transaction_date (which the frontend now sends) or t.date as a fallback
     const values = [
       t.amount.toString().replace(/,/g, ''), 
       t.transaction_date || t.date, 
       t.transaction_type, 
       t.platform, 
-      t.notes, 
+      t.notes,
+      t.scheme_id, // Added this
+      t.client_id, // Added this
       id
     ];
 
@@ -49,7 +56,6 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const user = req.user?.username || "System";
   try {
-    // 1. Capture details for the log (Joining with clients to get the name safely)
     const transData = await pool.query(`
       SELECT c.full_name as client_name, t.amount, t.transaction_type 
       FROM transactions t 
@@ -60,10 +66,8 @@ router.delete('/:id', async (req, res) => {
     
     const { client_name, amount, transaction_type } = transData.rows[0];
 
-    // 2. Delete
     await pool.query('DELETE FROM transactions WHERE id = $1', [req.params.id]);
 
-    // 3. 🕒 LOG ACTIVITY
     await pool.query(
       'INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)',
       [user, 'DELETE', client_name || 'Client', `Removed ${transaction_type} record of ₹${amount} for ${client_name || 'Client'}`]
