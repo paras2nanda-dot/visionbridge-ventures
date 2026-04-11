@@ -12,18 +12,9 @@ const Sips = () => {
   const [editingId, setEditingId] = useState(null);
 
   const initialState = {
-    sip_id: '',
-    client_code_input: '',
-    client_id: '',
-    scheme_id: '',
-    amount: '',
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: '',
-    frequency: 'MONTHLY',
-    sip_day: '1',
-    status: 'Active',
-    platform: 'NSE',
-    notes: ''
+    sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
+    start_date: new Date().toISOString().split('T')[0], end_date: '',
+    frequency: 'MONTHLY', sip_day: '1', status: 'Active', platform: 'NSE', notes: ''
   };
 
   const [formData, setFormData] = useState(initialState);
@@ -39,18 +30,11 @@ const Sips = () => {
   const fetchInitialData = async () => {
     try {
       const [cRes, sRes, sipRes] = await Promise.all([
-        api.get('/clients'),
-        api.get('/mf-schemes'),
-        api.get('/sips')
+        api.get('/clients'), api.get('/mf-schemes'), api.get('/sips')
       ]);
-      
-      const cData = cRes.data;
-      const sData = sRes.data;
-      const sipData = sipRes.data;
-
-      setClients(Array.isArray(cData) ? cData : []);
-      setSchemes(Array.isArray(sData) ? sData : []);
-      const validSips = Array.isArray(sipData) ? sipData : [];
+      setClients(Array.isArray(cRes.data) ? cRes.data : []);
+      setSchemes(Array.isArray(sRes.data) ? sRes.data : []);
+      const validSips = Array.isArray(sipRes.data) ? sipRes.data : [];
       setSips(validSips);
 
       if (!isEditing) {
@@ -61,10 +45,7 @@ const Sips = () => {
         }
         setFormData(prev => ({ ...prev, sip_id: `SID${nextNum.toString().padStart(5, '0')}` }));
       }
-    } catch (err) { 
-      console.error(err);
-      toast.error("Failed to fetch SIP data from server");
-    }
+    } catch (err) { toast.error("Failed to fetch SIP data"); }
   };
 
   const calculateSIPData = (sip) => {
@@ -72,7 +53,6 @@ const Sips = () => {
     const start = new Date(sip.start_date);
     const end = sip.status === 'Active' ? new Date() : new Date(sip.end_date || sip.stopped_at || new Date());
     if (start > end) return { aum: 0, count: 0 };
-
     let count = 0;
     if (sip.frequency === 'MONTHLY') {
       const monthDiff = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
@@ -81,48 +61,23 @@ const Sips = () => {
       const daysDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24));
       count = Math.floor(daysDiff / 7) + 1;
     }
-    const finalCount = Math.max(0, count);
-    return { aum: finalCount * parseFloat(sip.amount), count: finalCount };
+    return { aum: Math.max(0, count) * parseFloat(sip.amount), count: Math.max(0, count) };
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.client_id || !formData.scheme_id) {
-      return toast.warn("⚠️ Please validate Client and Scheme.");
-    }
-    
-    const payload = { 
-      ...formData, 
-      amount: formData.amount.toString().replace(/,/g, ''), 
-      is_active: formData.status === 'Active',
-      stopped_at: formData.status === 'Stopped' ? formData.end_date : null 
-    };
-
+    if (!formData.client_id || !formData.scheme_id) return toast.warn("Validate Client/Scheme.");
+    const payload = { ...formData, amount: formData.amount.toString().replace(/,/g, ''), is_active: formData.status === 'Active' };
     const url = isEditing ? `/sips/${editingId}` : `/sips`;
-
     try {
-      if (isEditing) {
-        await api.put(url, payload);
-        toast.success("✅ SIP Updated Successfully");
-      } else {
-        await api.post(url, payload);
-        toast.success("✅ New SIP Saved");
-      }
-      setIsEditing(false); 
-      setFormData(initialState); 
-      setClientName(''); 
-      fetchInitialData();
-    } catch (err) { 
-      toast.error(err.response?.data?.error || "❌ Error saving SIP");
-    }
+      if (isEditing) await api.put(url, payload);
+      else await api.post(url, payload);
+      toast.success("Saved");
+      setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData();
+    } catch (err) { toast.error("Error saving SIP"); }
   };
 
-  const filteredSips = sips.filter(s => 
-    s.sip_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.client_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredSips = sips.filter(s => s.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || s.sip_id?.includes(searchTerm));
   const monthlyBookValue = sips.filter(s => s.status === 'Active' && s.frequency === 'MONTHLY').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
   const totalAumValue = sips.reduce((sum, s) => sum + calculateSIPData(s).aum, 0);
 
@@ -132,15 +87,15 @@ const Sips = () => {
   return (
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 className="title" style={{ margin: 0 }}>SIP Tracker</h1>
+        <h1 className="title">SIP Tracker</h1>
         <div style={{ display: 'flex', gap: '15px' }}>
           <div style={{ background: 'var(--bg-card)', border: '2px solid #10b981', padding: '12px 20px', borderRadius: '10px' }}>
-             <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>Monthly SIP Book</span>
-             <h2 style={{ margin: 0 }}>₹{formatINR(monthlyBookValue)}</h2>
+              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>Monthly SIP Book</span>
+              <h2 style={{ margin: 0 }}>₹{formatINR(monthlyBookValue)}</h2>
           </div>
           <div style={{ background: 'var(--bg-card)', border: '2px solid #3b82f6', padding: '12px 20px', borderRadius: '10px' }}>
-             <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 'bold' }}>TOTAL SIP AUM</span>
-             <h2 style={{ margin: 0 }}>₹{formatINR(totalAumValue)}</h2>
+              <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 'bold' }}>TOTAL SIP AUM</span>
+              <h2 style={{ margin: 0 }}>₹{formatINR(totalAumValue)}</h2>
           </div>
         </div>
       </div>
@@ -167,73 +122,48 @@ const Sips = () => {
               </select>
             </div>
             <div><label style={labelStyle}>SIP Amount (₹) *</label><input style={inputStyle} value={formatINR(formData.amount)} onChange={e => setFormData({...formData, amount: e.target.value.replace(/,/g, '')})} required /></div>
-            <div>
-              <label style={labelStyle}>Frequency</label>
-              <select style={inputStyle} value={formData.frequency} onChange={e => setFormData({...formData, frequency: e.target.value})}>
-                <option value="MONTHLY">Monthly</option><option value="WEEKLY">Weekly</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>SIP Day</label>
-              <select style={inputStyle} value={formData.sip_day} onChange={e => setFormData({...formData, sip_day: e.target.value})}>
-                {formData.frequency === 'MONTHLY' 
-                  ? [...Array(31)].map((_, i) => <option key={i+1}>{i+1}</option>)
-                  : ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => <option key={d}>{d}</option>)
-                }
-              </select>
-            </div>
+            <div><label style={labelStyle}>Start Date</label><input style={inputStyle} type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} required /></div>
+            <div><label style={labelStyle}>End Date</label><input style={inputStyle} type="date" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} /></div>
             <div>
               <label style={labelStyle}>Status</label>
               <select style={inputStyle} value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
                 <option>Active</option><option>Stopped</option>
               </select>
             </div>
-            <div><label style={labelStyle}>Start Date</label><input style={inputStyle} type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} required /></div>
-            <div><label style={labelStyle}>End Date</label><input style={inputStyle} type="date" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} /></div>
-            <div>
-                <label style={labelStyle}>Platform</label>
-                <select style={inputStyle} value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})}>
-                    <option>NSE</option><option>BSE</option><option>Cams</option><option>Kfin</option><option>Other</option>
-                </select>
-            </div>
-            <div><label style={labelStyle}>Notes</label><input style={inputStyle} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} /></div>
           </div>
           <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
             <button type="submit" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update" : "Add SIP"}</button>
-            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
           </div>
         </form>
-      </div>
-
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-        <span className="search-icon-container" style={{ fontSize: '16px' }}>🔍</span>
-        <input type="text" placeholder="Filter SIPs..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
-            <tr><th style={{padding:'12px', textAlign:'left'}}>SID</th><th style={{padding:'12px', textAlign:'left'}}>Client</th><th style={{padding:'12px', textAlign:'left'}}>Scheme</th><th style={{padding:'12px', textAlign:'center'}}>Status</th><th style={{padding:'12px', textAlign:'right'}}>Amount</th><th style={{padding:'12px', textAlign:'right'}}>AUM</th><th style={{padding:'12px', textAlign:'center'}}>Action</th></tr>
+            <tr style={{background:'var(--bg-main)'}}>
+              <th style={{padding:'12px', textAlign:'left'}}>SID</th>
+              <th style={{padding:'12px', textAlign:'left'}}>Client</th>
+              <th style={{padding:'12px', textAlign:'left'}}>Scheme</th>
+              <th style={{padding:'12px', textAlign:'center'}}>Start</th>
+              <th style={{padding:'12px', textAlign:'center'}}>End</th>
+              <th style={{padding:'12px', textAlign:'right'}}>Amount</th>
+              <th style={{padding:'12px', textAlign:'center'}}>Action</th>
+            </tr>
           </thead>
           <tbody>
-            {filteredSips.map(s => {
-              const d = calculateSIPData(s);
-              return (
-                <tr key={s.id}>
-                  <td style={{ padding: '12px', fontWeight: 'bold', color: '#3b82f6' }}>{s.sip_id}</td>
-                  <td style={{ padding: '12px' }}>{s.client_code} - {s.client_name}</td>
-                  <td style={{ padding: '12px' }}>{s.scheme_name} <br/><small style={{color:'var(--text-muted)'}}>{s.platform} • {s.frequency === 'MONTHLY' ? 'Monthly' : 'Weekly'}</small></td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', background: s.status === 'Active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: s.status === 'Active' ? '#10b981' : '#ef4444' }}>{s.status}</span>
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
-                  <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 'bold' }}>₹{formatINR(d.aum)}</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button onClick={() => { setIsEditing(true); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
-                  </td>
-                </tr>
-              )
-            })}
+            {filteredSips.map(s => (
+              <tr key={s.id}>
+                <td style={{ padding: '12px', fontWeight: 'bold', color: '#3b82f6' }}>{s.sip_id}</td>
+                <td style={{ padding: '12px' }}>{s.client_name}</td>
+                <td style={{ padding: '12px' }}>{s.scheme_name}</td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>{s.start_date || '-'}</td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>{s.end_date || 'Active'}</td>
+                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <button onClick={() => { setIsEditing(true); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
