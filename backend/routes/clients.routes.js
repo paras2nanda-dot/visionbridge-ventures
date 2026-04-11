@@ -11,6 +11,8 @@ router.post('/', createClient);
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const c = req.body;
+  const user = req.user.username; // Captured from authMiddleware
+
   try {
     const query = `
       UPDATE clients SET 
@@ -29,6 +31,13 @@ router.put('/:id', async (req, res) => {
     ];
 
     const result = await pool.query(query, values);
+
+    // 🕒 LOG ACTIVITY
+    await pool.query(
+      'INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)',
+      [user, 'UPDATE', c.full_name, `Modified client details for ${c.full_name}`]
+    );
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -37,8 +46,21 @@ router.put('/:id', async (req, res) => {
 
 // DELETE CLIENT
 router.delete('/:id', async (req, res) => {
+  const user = req.user.username;
   try {
+    // 1. Get the name before deleting to log it
+    const clientData = await pool.query('SELECT full_name FROM clients WHERE id = $1', [req.params.id]);
+    const clientName = clientData.rows[0]?.full_name || "Unknown Client";
+
+    // 2. Delete the client
     await pool.query('DELETE FROM clients WHERE id = $1', [req.params.id]);
+
+    // 3. 🕒 LOG ACTIVITY (The fix for missing deletions)
+    await pool.query(
+      'INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)',
+      [user, 'DELETE', clientName, `Permanently removed client: ${clientName}`]
+    );
+
     res.json({ message: "Deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
