@@ -21,6 +21,9 @@ import { pool } from './config/db.js';
 dotenv.config();
 const app = express();
 
+// 🚀 THE FIX: Tell Express to trust the Render proxy for rate limiting
+app.set('trust proxy', 1);
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } })); 
 app.use(express.json({ limit: '10kb' })); 
 app.use(cookieParser());
@@ -68,20 +71,14 @@ app.get('/api/backup', authMiddleware, async (req, res) => {
   }
 });
 
-// 🛡️ ROUTES
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
 app.use('/api/sips', authMiddleware, sipRoutes);
-
-// 🚀 FIXED: Changed path to '/api/schemes' to match your frontend 404
 app.use('/api/schemes', authMiddleware, mfschemeRoutes); 
-
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
-
-// 🚀 FIXED: Ensure plural path '/api/activities' is used
 app.use('/api/activities', authMiddleware, activityRoutes);
 
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
