@@ -53,7 +53,6 @@ const Dashboard = () => {
       </div>
 
       <div style={{ paddingTop: '30px' }}>
-        {/* 💡 DIRECT RENDERING */}
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
         

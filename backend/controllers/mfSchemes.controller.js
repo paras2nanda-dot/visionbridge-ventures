@@ -6,7 +6,6 @@ export const getSchemes = async (req, res) => {
     const result = await pool.query('SELECT * FROM mf_schemes ORDER BY amc_name ASC, scheme_name ASC');
     res.json(result.rows);
   } catch (err) { 
-    console.error("❌ GET Error:", err.message);
     res.status(500).json({ error: err.message }); 
   }
 };
@@ -28,7 +27,7 @@ export const createScheme = async (req, res) => {
       ]
     );
 
-    await logActivity(user, 'CREATE', s.scheme_name, `Added new Mutual Fund scheme: ${s.scheme_name}`);
+    await logActivity(user, 'CREATE', s.scheme_name, `Added new scheme: ${s.scheme_name}`);
 
     res.status(201).json(result.rows[0]);
   } catch (err) { 
@@ -73,8 +72,7 @@ export const deleteScheme = async (req, res) => {
     const schemeName = schemeData.rows[0]?.scheme_name || "Scheme";
 
     await pool.query('DELETE FROM mf_schemes WHERE id = $1', [id]);
-
-    await logActivity(user, 'DELETE', schemeName, `Removed ${schemeName} from the master list`);
+    await logActivity(user, 'DELETE', schemeName, `Removed ${schemeName} from master list`);
 
     res.json({ message: "Scheme deleted" });
   } catch (err) { 
