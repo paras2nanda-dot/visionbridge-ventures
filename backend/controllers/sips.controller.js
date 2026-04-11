@@ -19,7 +19,7 @@ export const getSips = async (req, res) => {
   }
 };
 
-// ... keep createSip, updateSip, deleteSip as you had them ...
+// ... keep createSip, updateSip, deleteSip as per your original code ...
 export const createSip = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System"; 
