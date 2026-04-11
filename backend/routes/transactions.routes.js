@@ -1,10 +1,10 @@
 import express from 'express';
-import { createTransaction } from '../controllers/transactions.controller.js';
+import { getTransactions, createTransaction } from '../controllers/transactions.controller.js';
 import { pool } from '../config/db.js';
 
 const router = express.Router();
 
-// 💡 FIXED: Now formats the date string so the frontend doesn't have to
+// 💡 FETCH TRANSACTIONS (Latest First + Formatted Dates)
 router.get('/', async (req, res) => {
   try {
     const query = `
@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
       FROM transactions t
       JOIN clients c ON t.client_id::TEXT = c.id::TEXT
       JOIN mf_schemes s ON t.scheme_id::TEXT = s.id::TEXT
-      ORDER BY t.transaction_date DESC`;
+      ORDER BY t.transaction_date DESC, t.created_at DESC`;
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
@@ -55,7 +55,7 @@ router.put('/:id', async (req, res) => {
 
     const result = await pool.query(query, values);
 
-    // 🕒 LOG ACTIVITY
+    // Activity Log
     await pool.query(
       'INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)',
       [user, 'UPDATE', t.client_name || 'Transaction', `Modified ${t.transaction_type} of ₹${t.amount} for ${t.client_name || 'Client'}`]
@@ -79,19 +79,17 @@ router.delete('/:id', async (req, res) => {
       WHERE t.id = $1`, [req.params.id]);
       
     if (transData.rows.length === 0) return res.status(404).json({ error: "Transaction not found" });
-    
     const { client_name, amount, transaction_type } = transData.rows[0];
 
     await pool.query('DELETE FROM transactions WHERE id = $1', [req.params.id]);
 
     await pool.query(
       'INSERT INTO activities (user_name, action_type, entity_name, details) VALUES ($1, $2, $3, $4)',
-      [user, 'DELETE', client_name || 'Client', `Removed ${transaction_type} record of ₹${amount} for ${client_name || 'Client'}`]
+      [user, 'DELETE', client_name || 'Client', `Removed ${transaction_type} record of ₹${amount}`]
     );
 
     res.json({ message: "Transaction Deleted" });
   } catch (err) {
-    console.error("Delete Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
