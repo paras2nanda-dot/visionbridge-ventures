@@ -13,7 +13,6 @@ export const getSchemes = async (req, res) => {
 export const createScheme = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System";
-  
   try {
     const result = await pool.query(
       `INSERT INTO mf_schemes 
@@ -26,42 +25,25 @@ export const createScheme = async (req, res) => {
         Number(s.commission_rate || 0.8), Number(s.total_current_value || 0)
       ]
     );
-
-    await logActivity(user, 'CREATE', s.scheme_name, `Added new scheme: ${s.scheme_name}`);
-
+    await logActivity(user, 'CREATE', s.scheme_name, `Added scheme: ${s.scheme_name}`);
     res.status(201).json(result.rows[0]);
-  } catch (err) { 
-    res.status(400).json({ error: err.message }); 
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 };
 
 export const updateScheme = async (req, res) => {
   const { id } = req.params;
   const s = req.body;
   const user = req.user?.username || "System";
-
   try {
     const result = await pool.query(
       `UPDATE mf_schemes SET 
-        scheme_name = $1, amc_name = $2, category = $3, sub_category = $4, 
-        large_cap = $5, mid_cap = $6, small_cap = $7, debt_allocation = $8, 
-        gold_allocation = $9, commission_rate = $10, total_current_value = $11
+        scheme_name = $1, amc_name = $2, category = $3, sub_category = $4, large_cap = $5, mid_cap = $6, small_cap = $7, debt_allocation = $8, gold_allocation = $9, commission_rate = $10, total_current_value = $11
        WHERE id = $12 RETURNING *`,
-      [
-        s.scheme_name, s.amc_name, s.category, s.sub_category, 
-        Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
-        Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
-        Number(s.commission_rate || 0.8), Number(s.total_current_value || 0),
-        id
-      ]
+      [s.scheme_name, s.amc_name, s.category, s.sub_category, Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), Number(s.debt_allocation || 0), Number(s.gold_allocation || 0), Number(s.commission_rate || 0.8), Number(s.total_current_value || 0), id]
     );
-
-    await logActivity(user, 'UPDATE', s.scheme_name, `Updated details for ${s.scheme_name}`);
-
+    await logActivity(user, 'UPDATE', s.scheme_name, `Updated scheme: ${s.scheme_name}`);
     res.json(result.rows[0]);
-  } catch (err) { 
-    res.status(400).json({ error: err.message }); 
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 };
 
 export const deleteScheme = async (req, res) => {
@@ -70,12 +52,8 @@ export const deleteScheme = async (req, res) => {
   try {
     const schemeData = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id = $1', [id]);
     const schemeName = schemeData.rows[0]?.scheme_name || "Scheme";
-
     await pool.query('DELETE FROM mf_schemes WHERE id = $1', [id]);
-    await logActivity(user, 'DELETE', schemeName, `Removed ${schemeName} from master list`);
-
+    await logActivity(user, 'DELETE', schemeName, `Removed scheme: ${schemeName}`);
     res.json({ message: "Scheme deleted" });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 };
