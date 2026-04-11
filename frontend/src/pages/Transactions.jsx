@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api'; 
-import { toast } from 'react-toastify'; // 💡 Added toast
+import { toast } from 'react-toastify'; 
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -8,7 +8,6 @@ const Transactions = () => {
   const [schemes, setSchemes] = useState([]);
   const [clientName, setClientName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -36,188 +35,91 @@ const Transactions = () => {
         api.get('/mf-schemes'),
         api.get('/transactions')
       ]);
-      const cData = cRes.data;
-      const sData = sRes.data;
-      const tData = tRes.data;
-
-      setClients(Array.isArray(cData) ? cData : []);
-      setSchemes(Array.isArray(sData) ? sData : []);
-      const validTData = Array.isArray(tData) ? tData : [];
-      setTransactions(validTData);
+      setClients(cRes.data || []);
+      setSchemes(sRes.data || []);
+      setTransactions(tRes.data || []);
 
       if (!isEditing) {
-        let nextNum = 1;
-        if (validTData.length > 0) {
-          const highestTID = Math.max(...validTData.map(t => {
-             const num = parseInt(t.transaction_id?.replace(/\D/g, ''), 10);
-             return isNaN(num) ? 0 : num;
-          }));
-          nextNum = highestTID + 1;
-        }
-        setFormData(prev => ({ ...prev, transaction_id: `TID${nextNum.toString().padStart(5, '0')}` }));
+        const highestTID = tRes.data.length > 0 ? Math.max(...tRes.data.map(t => parseInt(t.transaction_id?.replace(/\D/g, '') || 0))) : 0;
+        setFormData(prev => ({ ...prev, transaction_id: `TID${(highestTID + 1).toString().padStart(5, '0')}` }));
       }
-    } catch (err) { 
-      console.error(err);
-      toast.error("Failed to sync transactions from server");
-    }
+    } catch (err) { toast.error("Sync Error"); }
   };
 
-  const formatINR = (val) => {
-    if (!val) return "";
-    return new Intl.NumberFormat('en-IN').format(val.toString().replace(/,/g, ""));
-  };
+  const formatINR = (val) => new Intl.NumberFormat('en-IN').format(val.toString().replace(/,/g, ""));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.client_id || !formData.scheme_id) {
-      return toast.warn("⚠️ Please validate Client and Scheme.");
-    }
+    if (!formData.client_id || !formData.scheme_id) return toast.warn("⚠️ Validate Client/Scheme.");
     
     const cleanAmount = formData.amount.toString().replace(/,/g, '');
 
     if (formData.transaction_type === 'Switch') {
-      if (!formData.switch_in_scheme_id) {
-        return toast.warn("⚠️ Please select the 'Switch In' Scheme.");
-      }
-
       try {
-        const outPayload = { 
-            ...formData, 
-            transaction_id: `${formData.transaction_id}-OUT`,
-            transaction_type: 'Switch Out', 
-            amount: cleanAmount 
-        };
-        const inPayload = { 
-            ...formData, 
-            transaction_id: `${formData.transaction_id}-IN`,
-            scheme_id: formData.switch_in_scheme_id, 
-            transaction_type: 'Switch In', 
-            amount: cleanAmount 
-        };
-
-        await api.post('/transactions', outPayload);
-        await api.post('/transactions', inPayload);
-
-        toast.success("✅ Switch Completed (Two entries created)");
-        setFormData(initialState); 
-        fetchInitialData();
-        
-      } catch (err) { 
-        toast.error("❌ Error during Switch transaction"); 
-      }
-
+        await api.post('/transactions', { ...formData, transaction_id: `${formData.transaction_id}-OUT`, transaction_type: 'Switch Out', amount: cleanAmount });
+        await api.post('/transactions', { ...formData, transaction_id: `${formData.transaction_id}-IN`, scheme_id: formData.switch_in_scheme_id, transaction_type: 'Switch In', amount: cleanAmount });
+        toast.success("✅ Switch Completed");
+        setFormData(initialState); fetchInitialData();
+      } catch (err) { toast.error("Switch Error"); }
     } else {
       const url = isEditing ? `/transactions/${editingId}` : `/transactions`;
       try {
-        if (isEditing) {
-          await api.put(url, {...formData, amount: cleanAmount});
-          toast.success("✅ Transaction Updated");
-        } else {
-          await api.post(url, {...formData, amount: cleanAmount});
-          toast.success("✅ Transaction Saved");
-        }
-        
-        setIsEditing(false); 
-        setEditingId(null); 
-        setClientName(''); 
-        setFormData(initialState);
-        fetchInitialData();
-      } catch (err) { 
-        toast.error(err.response?.data?.error || "❌ Network Error saving transaction"); 
-      }
+        if (isEditing) await api.put(url, {...formData, amount: cleanAmount});
+        else await api.post(url, {...formData, amount: cleanAmount});
+        toast.success("✅ Saved");
+        setIsEditing(false); setClientName(''); setFormData(initialState); fetchInitialData();
+      } catch (err) { toast.error("Save Error"); }
     }
   };
 
-  const filteredTransactions = transactions.filter(t => 
-    t.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.client_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '12px', color: '#475569' };
-  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' };
+  const filteredTransactions = transactions.filter(t => t.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || t.transaction_id?.includes(searchTerm));
 
   return (
     <div className="container">
       <h1 className="title">Transactions</h1>
-
-      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #10b981', marginBottom: '30px' }}>
+      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #10b981', marginBottom: '30px', padding: '25px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
-            <div><label style={labelStyle}>TID</label><input style={{...inputStyle, background: '#f8fafc', fontWeight:'bold'}} value={formData.transaction_id} readOnly /></div>
-            <div><label style={labelStyle}>Date</label><input style={inputStyle} type="date" value={formData.transaction_date} onChange={e => setFormData({...formData, transaction_date: e.target.value})} required /></div>
+            <div><label style={{fontSize:'12px', fontWeight:'bold'}}>TID</label><input style={{width:'100%', padding:'8px', background:'#f8fafc'}} value={formData.transaction_id} readOnly /></div>
+            <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Date</label><input style={{width:'100%', padding:'8px'}} type="date" value={formData.transaction_date} onChange={e => setFormData({...formData, transaction_date: e.target.value})} required /></div>
             <div>
-              <label style={labelStyle}>Client ID</label>
-              <input style={inputStyle} value={formData.client_code_input} onChange={e => {
+              <label style={{fontSize:'12px', fontWeight:'bold'}}>Client ID</label>
+              <input style={{width:'100%', padding:'8px'}} value={formData.client_code_input} onChange={e => {
                 const val = e.target.value.toUpperCase();
                 const found = clients.find(c => c.client_code === val);
                 setClientName(found ? found.full_name : '');
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
               }} required />
             </div>
-            <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, background: '#f1f5f9'}} value={clientName} readOnly /></div>
-            
-            <div style={{ gridColumn: formData.transaction_type === 'Switch' ? 'span 1' : 'span 2' }}>
-              <label style={labelStyle}>{formData.transaction_type === 'Switch' ? 'Switch Out Scheme *' : 'MF Scheme Name *'}</label>
-              <select style={inputStyle} value={formData.scheme_id} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
-                <option value="">Select Scheme...</option>
-                {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+            <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Client Name</label><input style={{width:'100%', padding:'8px', background:'#f1f5f9'}} value={clientName} readOnly /></div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{fontSize:'12px', fontWeight:'bold'}}>Scheme</label>
+              <select style={{width:'100%', padding:'8px'}} value={formData.scheme_id} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
+                <option value="">Select...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select>
             </div>
-
-            {formData.transaction_type === 'Switch' && (
-                <div style={{ gridColumn: 'span 1' }}>
-                    <label style={{...labelStyle, color: '#10b981'}}>Switch In Scheme *</label>
-                    <select style={{...inputStyle, border: '1px solid #10b981'}} value={formData.switch_in_scheme_id} onChange={e => setFormData({...formData, switch_in_scheme_id: e.target.value})} required>
-                        <option value="">Select In-Scheme...</option>
-                        {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
-                    </select>
-                </div>
-            )}
-
-            <div><label style={labelStyle}>Type</label>
-              <select style={inputStyle} value={formData.transaction_type} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
-                <option>Purchase</option>
-                <option>Redemption</option>
-                <option>Switch</option>
+            <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Type</label>
+              <select style={{width:'100%', padding:'8px'}} value={formData.transaction_type} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
+                <option>Purchase</option><option>Redemption</option><option>Switch</option>
               </select>
             </div>
-            <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formatINR(formData.amount)} onChange={e => setFormData({...formData, amount: e.target.value.replace(/,/g, '')})} required /></div>
-            
-            <div><label style={labelStyle}>Platform</label>
-              <select style={inputStyle} value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})}>
-                <option>NSE</option><option>BSE</option><option>Cams</option><option>Kfin</option><option>Other</option>
-              </select>
-            </div>
-            <div style={{ gridColumn: 'span 3' }}><label style={labelStyle}>Notes</label><input style={inputStyle} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Optional notes..." /></div>
+            <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Amount</label><input style={{width:'100%', padding:'8px'}} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
           </div>
-          <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-            <button type="submit" className="btn-primary" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{isEditing ? "Update" : "Add Transaction"}</button>
-            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'white', border:'1px solid #ccc', borderRadius:'6px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
-          </div>
+          <button type="submit" style={{ marginTop: '15px', padding: '10px 30px', background: isEditing ? '#f59e0b' : '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight:'bold' }}>{isEditing ? "Update" : "Save"}</button>
         </form>
-      </div>
-
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-        <span style={{ fontSize: '16px' }}>🔍</span>
-        <input type="text" placeholder="Filter by TID, Client ID, or Client Name..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead style={{ background: '#f8fafc' }}>
-            <tr><th style={{padding:'12px', textAlign:'left'}}>TID</th><th style={{padding:'12px', textAlign:'left'}}>Client</th><th style={{padding:'12px', textAlign:'left'}}>Scheme</th><th style={{padding:'12px', textAlign:'right'}}>Amount</th><th style={{padding:'12px', textAlign:'center'}}>Action</th></tr>
-          </thead>
+          <thead><tr style={{background:'#f8fafc'}}><th style={{padding:'10px', textAlign:'left'}}>TID</th><th style={{padding:'10px', textAlign:'left'}}>Client</th><th style={{padding:'10px', textAlign:'left'}}>Scheme</th><th style={{padding:'10px', textAlign:'right'}}>Amount</th><th style={{padding:'10px', textAlign:'center'}}>Action</th></tr></thead>
           <tbody>
             {filteredTransactions.map(t => (
-              <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px', fontWeight: 'bold', color: t.transaction_type.includes('In') ? '#10b981' : (t.transaction_type.includes('Out') ? '#ef4444' : '#64748b') }}>{t.transaction_id}</td>
-                <td style={{ padding: '12px' }}>{t.client_code} - {t.client_name}</td>
-                <td style={{ padding: '12px' }}>{t.scheme_name} <br/><small style={{color:'#64748b'}}>{t.platform} • {t.transaction_type}</small></td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatINR(t.amount)}</td>
-                <td style={{ padding: '12px', textAlign: 'center' }}>
-                   <button onClick={() => { setIsEditing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
-                </td>
+              <tr key={t.id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '10px', fontWeight: 'bold' }}>{t.transaction_id}</td>
+                <td style={{ padding: '10px' }}>{t.client_name}</td>
+                <td style={{ padding: '10px' }}>{t.scheme_name}</td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>₹{formatINR(t.amount)}</td>
+                <td style={{ padding: '10px', textAlign: 'center' }}><button onClick={() => { setIsEditing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo(0,0); }} style={{color:'#3b82f6', background:'none', border:'none', cursor:'pointer'}}>Edit</button></td>
               </tr>
             ))}
           </tbody>

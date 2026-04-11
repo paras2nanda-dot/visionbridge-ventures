@@ -27,12 +27,12 @@ export const createTransaction = async (req, res) => {
       [transaction_id, transaction_date, client_id, scheme_id, transaction_type, amount, platform, notes]
     );
 
-    const schemeRes = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id = $1', [scheme_id]);
+    const schemeRes = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id::TEXT = $1::TEXT', [scheme_id]);
     const schemeName = schemeRes.rows[0]?.scheme_name || 'Mutual Fund';
-    const clientRes = await pool.query('SELECT full_name FROM clients WHERE id = $1', [client_id]);
+    const clientRes = await pool.query('SELECT full_name FROM clients WHERE id::TEXT = $1::TEXT', [client_id]);
     const clientName = clientRes.rows[0]?.full_name || 'Client';
 
-    await logActivity(user, 'CREATE', clientName, `Invested ₹${new Intl.NumberFormat('en-IN').format(amount)} (${transaction_type}) in ${schemeName}`);
+    await logActivity(user, 'CREATE', clientName, `${transaction_type}: ₹${new Intl.NumberFormat('en-IN').format(amount)} in ${schemeName}`);
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -46,6 +46,7 @@ export const updateTransaction = async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
+    // 💡 FIXED: Column name 'transaction_date' matches the DB schema exactly
     const result = await pool.query(
       `UPDATE transactions SET 
         transaction_date = $1, client_id = $2, scheme_id = $3, transaction_type = $4, amount = $5, platform = $6, notes = $7
@@ -53,7 +54,7 @@ export const updateTransaction = async (req, res) => {
       [t.transaction_date, t.client_id, t.scheme_id, t.transaction_type, t.amount, t.platform, t.notes, id]
     );
     
-    await logActivity(user, 'UPDATE', 'Transaction', `Modified investment entry of ₹${t.amount}`);
+    await logActivity(user, 'UPDATE', 'Transaction', `Modified entry: ₹${t.amount} (${t.transaction_type})`);
     
     res.json(result.rows[0]);
   } catch (err) {
@@ -66,11 +67,12 @@ export const deleteTransaction = async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
-    const transData = await pool.query('SELECT amount FROM transactions WHERE id = $1', [id]);
+    const transData = await pool.query('SELECT amount, transaction_type FROM transactions WHERE id = $1', [id]);
     const amount = transData.rows[0]?.amount || 0;
+    const type = transData.rows[0]?.transaction_type || '';
 
     await pool.query('DELETE FROM transactions WHERE id = $1', [id]);
-    await logActivity(user, 'DELETE', 'Transaction', `Removed record of ₹${amount}`);
+    await logActivity(user, 'DELETE', 'Transaction', `Removed ${type} record of ₹${amount}`);
     
     res.json({ message: "Transaction deleted" });
   } catch (err) {
