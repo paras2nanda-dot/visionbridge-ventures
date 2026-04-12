@@ -1,11 +1,13 @@
-/* VisionBridge Executive Theme - Absolute Visibility Fix */
+/* VisionBridge Executive Material Theme - Multi-Tab Visibility Fix */
 :root {
   --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
-  --card-bg: linear-gradient(145deg, #1e293b, #0f172a);
+  --card-bg-navy: linear-gradient(145deg, #1e293b, #0f172a);
   
   /* System Colors */
   --bg-main: #f8fafc;
-  --text-main: #0f172a;
+  --bg-card: #ffffff;
+  --text-main: #0f172a; /* Deep Slate for high contrast */
+  --text-muted: #64748b;
   --border: rgba(226, 232, 240, 0.8);
 }
 
@@ -19,9 +21,9 @@ body {
   color: var(--text-main) !important;
 }
 
-/* 🏢 THE 3D CARD - FORCING WHITE CONTENT */
-.card {
-  background: var(--card-bg) !important;
+/* 🏢 THE DARK EXECUTIVE CARD (Used in Dashboard) */
+.executive-card {
+  background: var(--card-bg-navy) !important;
   border-radius: 20px !important;
   border: 1.5px solid #020617 !important;
   box-shadow: 
@@ -31,14 +33,11 @@ body {
   padding: 24px !important;
   position: relative;
   overflow: hidden;
+  /* 🚨 White text ONLY for these dark cards */
+  color: #ffffff !important;
 }
 
-/* 🚨 CRITICAL: Force all text inside cards to white */
-.card h2, 
-.card h3, 
-.card div, 
-.card span, 
-.card p {
+.executive-card h2, .executive-card h3, .executive-card div, .executive-card span {
   color: #ffffff !important;
 }
 
@@ -53,6 +52,50 @@ body {
   justify-content: center;
   border: 1.5px solid #78350f;
   box-shadow: 4px 8px 18px rgba(0,0,0,0.6), inset 1px 1px 3px rgba(255,255,255,0.7);
+}
+
+/* 📊 STANDARD TABLES (For Clients, SIPs, Transactions) */
+table { 
+  background: #ffffff !important; 
+  width: 100%; 
+  border-collapse: separate; 
+  border-spacing: 0; 
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+}
+
+th { 
+  background: #f1f5f9 !important; 
+  color: #475569 !important; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  font-size: 11px; 
+  padding: 16px 12px !important; 
+  border-bottom: 2px solid var(--border) !important; 
+}
+
+td { 
+  padding: 14px 12px !important; 
+  border-bottom: 1px solid var(--border) !important; 
+  /* 🚨 FORCING DEEP SLATE FOR VISIBILITY ON WHITE ROWS */
+  color: #1e293b !important; 
+  background: #ffffff !important;
+  font-size: 13px; 
+  font-weight: 600; 
+}
+
+/* Row Hover */
+tr:hover td { background-color: #f8fafc !important; }
+
+/* 📝 Forms & Action Links */
+input, select, textarea { 
+  background: #ffffff !important; 
+  color: #1e293b !important; 
+  border: 1.5px solid var(--border) !important; 
+  padding: 12px; 
+  border-radius: 8px; 
 }
 
 .fade-in { animation: fadeIn 0.5s ease-out forwards; }

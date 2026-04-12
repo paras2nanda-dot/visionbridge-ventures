@@ -33,7 +33,7 @@ const BusinessDashboard = () => {
   };
 
   const MetricCard = ({ label, value, sub, icon, figureColor, pulse }) => (
-    <div className="card fade-in">
+    <div className="executive-card fade-in">
       <div style={{ position: 'absolute', top: '22px', right: '22px', zIndex: 10 }} className="icon-container-3d">{icon}</div>
       <div style={{ fontSize: '11px', fontWeight: '900', color: '#ffffff', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', letterSpacing: '0.1em', paddingRight: '60px' }}>
         {pulse && <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', marginRight: '10px', boxShadow: '0 0 12px #10b981' }}></span>}
@@ -50,7 +50,6 @@ const BusinessDashboard = () => {
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
       <h2 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', marginBottom: '40px', letterSpacing: '-2.5px' }}>Dashboard</h2>
 
-      {/* 🟦 ROW 1 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px', marginBottom: '24px' }}>
         <MetricCard label="Total Clients" value={data.total_clients} sub="MASTER DATABASE" icon={Icons.Users} />
         <MetricCard label="Total Active Clients" value={data.total_active_clients} sub="PORTFOLIO VALUE > 0" icon={Icons.Users} />
@@ -59,7 +58,6 @@ const BusinessDashboard = () => {
         <MetricCard label="Monthly SIP Book" value={`₹${formatINR(data.monthly_sip_book)}`} sub="RECURRING INFLOW" icon={Icons.Trending} />
       </div>
 
-      {/* 🟧 ROW 2 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px', marginBottom: '50px' }}>
         <MetricCard label="Expected AUM (12M)" value={`₹${formatINR(data.expected_aum_12m)}`} sub="PROJECTED GROWTH" icon={Icons.Growth} figureColor="#fbbf24" />
         <MetricCard label="Avg. Assets / Client" value={`₹${formatINR(data.avg_assets_per_client)}`} sub="PORTFOLIO QUALITY" icon={Icons.Users} />
@@ -68,9 +66,8 @@ const BusinessDashboard = () => {
         <MetricCard label="Clients Onboarded" value={data.new_clients_30d} sub="LAST 30 DAYS" icon={Icons.Users} />
       </div>
 
-      {/* 🟨 BOTTOM ROW */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '35px' }}>
-        <div className="card">
+        <div className="executive-card">
           <h3 style={{ marginBottom: '30px', fontSize: '24px', fontWeight: '950', color: '#ffffff' }}>🏆 Top Funds by Exposure</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {data.topFunds?.map((fund, idx) => {
@@ -88,7 +85,7 @@ const BusinessDashboard = () => {
           </div>
         </div>
 
-        <div className="card">
+        <div className="executive-card">
           <h3 style={{ marginBottom: '30px', fontSize: '24px', fontWeight: '950', color: '#ffffff' }}>🎂 Client Birthdays (7 Days)</h3>
           {data.upcomingBirthdays?.map((client, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1.5px solid rgba(255,255,255,0.08)' }}>
