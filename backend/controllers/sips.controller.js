@@ -23,6 +23,8 @@ export const createSip = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System"; 
 
+  console.log("Saving SIP with frequency:", s.frequency); // 💡 Debug Log
+
   if (!s.client_id || !s.scheme_id) {
     return res.status(400).json({ error: "Client ID and Scheme ID are required." });
   }
@@ -40,8 +42,8 @@ export const createSip = async (req, res) => {
       s.amount, 
       s.start_date, 
       s.end_date || null, 
-      s.frequency?.toLowerCase(), // 💡 Force lowercase for DB Constraint
-      parseInt(s.sip_day) || 1,    // 💡 Ensure integer
+      s.frequency, // 💡 Passing Title Case directly
+      parseInt(s.sip_day) || 1, 
       s.status, 
       s.platform, 
       s.notes, 
@@ -52,7 +54,7 @@ export const createSip = async (req, res) => {
     await logActivity(user, 'CREATE', s.sip_id, `Started SIP ₹${s.amount} for Client ${s.client_id}`);
     res.status(201).json(result.rows[0]);
   } catch (err) { 
-    console.error("DB Error:", err.message);
+    console.error("DB Error Detail:", err.message);
     res.status(400).json({ error: "Database save error: " + err.message }); 
   }
 };
@@ -73,7 +75,7 @@ export const updateSip = async (req, res) => {
       s.amount, 
       s.start_date, 
       s.end_date || null, 
-      s.frequency?.toLowerCase(), // 💡 Force lowercase
+      s.frequency, 
       parseInt(s.sip_day) || 1, 
       s.status, 
       s.platform, 

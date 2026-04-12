@@ -17,7 +17,7 @@ const Sips = () => {
   const initialState = {
     sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
     start_date: new Date().toISOString().split('T')[0], end_date: '',
-    frequency: 'monthly', // 💡 Fixed: lowercase to match DB constraint
+    frequency: 'Monthly', // 💡 Fixed: Changed to Title Case
     sip_day: '1', status: 'Active', platform: 'NSE', notes: ''
   };
 
@@ -52,7 +52,7 @@ const Sips = () => {
       ...formData, 
       amount: formData.amount.toString().replace(/,/g, ''),
       end_date: formData.end_date || null,
-      frequency: formData.frequency.toLowerCase() // 💡 Force lowercase for DB safety
+      // 💡 Removed .toLowerCase() - DB wants "Monthly"
     };
 
     try {
@@ -65,7 +65,7 @@ const Sips = () => {
       setFormData(initialState); 
       fetchInitialData();
     } catch (e) { 
-      console.error(e);
+      console.error("Save Error:", e);
       toast.error(e.response?.data?.error || "Error saving"); 
     }
   };
@@ -139,8 +139,8 @@ const Sips = () => {
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>SIP Amount (₹) *</label><input style={{width:'100%', padding:'8px'}} value={formData.amount} readOnly={isViewing} onChange={e=>setFormData({...formData, amount:e.target.value})} required /></div>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Frequency</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.frequency} disabled={isViewing} onChange={e=>setFormData({...formData, frequency:e.target.value})}>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
               </select></div>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>SIP Day</label><select style={{width:'100%', padding:'8px'}} value={formData.sip_day} disabled={isViewing} onChange={e=>setFormData({...formData, sip_day:e.target.value})}>
                 {[...Array(31)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
@@ -202,8 +202,8 @@ const Sips = () => {
                 <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code, frequency: s.frequency?.toLowerCase()}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>View</button>
-                        <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code, frequency: s.frequency?.toLowerCase()}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                        <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>View</button>
+                        <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
                         <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Delete</button>
                     </div>
                 </td>
