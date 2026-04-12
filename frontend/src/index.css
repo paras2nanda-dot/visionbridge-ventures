@@ -1,19 +1,30 @@
-/* VisionBridge Executive Theme - Global */
+/* VisionBridge Executive Material Theme - Full Reset & Variables */
 :root {
-  /* Metallic Material Palette */
-  --bg-dots: radial-gradient(#cbd5e1 1px, transparent 1px);
-  --metal-shine: linear-gradient(135deg, #ffffff 0%, #f1f5f9 20%, #e2e8f0 45%, #cbd5e1 50%, #e2e8f0 55%, #f8fafc 80%, #ffffff 100%);
-  --bronze-button: radial-gradient(circle at 30% 30%, #f59e0b, #d97706, #92400e);
+  /* 🏁 THE DOTTED OFFICE WALL BACKGROUND */
+  --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+  
+  /* 🏢 BRUSHED ALUMINUM MATERIAL - 7 STOP GRADIENT */
+  --metal-shine: linear-gradient(145deg, 
+    #ffffff 0%, 
+    #f8fafc 15%, 
+    #e2e8f0 35%, 
+    #cbd5e1 50%, 
+    #e2e8f0 65%, 
+    #f1f5f9 85%, 
+    #ffffff 100%
+  );
+  
+  /* 🥇 3D BRONZE/COPPER BUTTON MATERIAL */
+  --bronze-3d: radial-gradient(circle at 30% 30%, #fbbf24 0%, #d97706 60%, #92400e 100%);
 
-  /* Your Existing Light Mode Palette */
-  --bg-main: #f8fafc;
+  /* Preserved UI Variables */
+  --bg-main: #f1f5f9;
   --bg-card: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
+  --text-main: #0f172a;
+  --text-muted: #475569;
   --border: rgba(226, 232, 240, 0.8);
   --accent: #0ea5e9;
   --accent-bg: rgba(14, 165, 233, 0.1);
-  --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --icon-filter: none;
 }
 
@@ -23,35 +34,65 @@
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border: rgba(51, 65, 85, 0.5);
-  --accent: #38bdf8;
-  --accent-bg: rgba(56, 189, 248, 0.1);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+  --bg-dots: radial-gradient(#1e293b 1.5px, transparent 1.5px);
+  --metal-shine: linear-gradient(145deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
   --icon-filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
-  --metal-shine: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  /* 🏁 REPLICATING THE DOTTED BACKGROUND FROM YOUR IMAGE */
   background-color: var(--bg-main) !important;
-  background-image: var(--bg-dots);
-  background-size: 24px 24px;
+  background-image: var(--bg-dots) !important;
+  background-size: 30px 30px !important;
   color: var(--text-main) !important;
   overflow-x: hidden;
   line-height: 1.5;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* 🏢 THE HEAVY 3D METAL CARD */
+.card {
+  background: var(--metal-shine) !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  /* Multi-layered 3D elevation shadows */
+  box-shadow: 
+    0 15px 35px -5px rgba(0, 0, 0, 0.12), 
+    0 5px 15px rgba(0, 0, 0, 0.05),
+    inset 0 2px 4px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.05) !important;
+  padding: 24px !important;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 🥇 THE PRESSED-IN BRONZE ICON BUTTON */
+.icon-button-executive {
+  width: 50px;
+  height: 50px;
+  background: var(--bronze-3d);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    3px 6px 12px rgba(0,0,0,0.3), 
+    inset 1px 1px 4px rgba(255,255,255,0.6),
+    inset -1px -1px 4px rgba(0,0,0,0.4);
+  border: 1.5px solid #78350f;
+}
+
 /* Sophisticated Headings */
 h1, h2, h3, h4, .title {
   color: var(--text-main) !important;
-  letter-spacing: -0.02em;
-  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-weight: 800;
 }
 
-/* 📅 Date & Search Icon Fixes (Preserved) */
+/* 🔍 Preserved Search & Date Fixes */
 ::-webkit-calendar-picker-indicator { filter: var(--icon-filter); cursor: pointer; }
 .search-icon-container { filter: var(--icon-filter); opacity: 0.6; }
 
@@ -59,40 +100,18 @@ h1, h2, h3, h4, .title {
   flex: 1;
   min-height: 100vh;
   padding: 40px;
-  position: relative;
-  z-index: 1; 
   background-color: transparent !important;
 }
 
-/* 🏢 THE BRUSHED METAL CARD (Replicating Image) */
-.card {
-  background: var(--metal-shine) !important;
-  border-radius: 20px !important;
-  padding: 24px !important;
-  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important; 
-  border: 1px solid var(--border) !important; 
+/* Form Elements (Preserved) */
+input, select, textarea {
+  background: var(--bg-card) !important;
   color: var(--text-main) !important;
-  position: relative;
-  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  padding: 12px 14px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
 }
 
-/* 🥇 THE 3D BRONZE ICON BUTTON */
-.icon-button-3d {
-  width: 46px;
-  height: 46px;
-  background: var(--bronze-button);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 2px 4px 10px rgba(0,0,0,0.25), inset 1px 1px 3px rgba(255,255,255,0.5);
-  border: 1px solid #78350f;
-}
-
-/* Tables & Forms (Preserved and Refined) */
-table { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
-th { background: rgba(226, 232, 240, 0.6) !important; color: var(--text-muted) !important; font-weight: 700; font-size: 12px; text-transform: uppercase; padding: 15px 12px !important; border-bottom: 2px solid var(--border) !important; }
-input, select, textarea { background: var(--bg-card) !important; color: var(--text-main) !important; border: 1px solid var(--border) !important; padding: 10px 14px !important; border-radius: 8px !important; font-size: 14px !important; outline: none; }
-
-.fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }

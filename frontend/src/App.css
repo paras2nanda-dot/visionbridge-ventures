@@ -1,73 +1,50 @@
-/* Executive Theme App Wrapper */
-.counter {
-  font-size: 14px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--border);
-  transition: all 0.3s ease;
-  margin-bottom: 24px;
-  font-weight: 600;
-}
-
-.hero {
-  position: relative;
-  padding: 60px 0;
-  .base, .framework, .vite { inset-inline: 0; margin: 0 auto; }
-  .base { width: 160px; position: relative; z-index: 0; opacity: 0.9; }
-  .framework, .vite { position: absolute; }
-  .framework { z-index: 1; top: 34px; height: 30px; transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg) scale(1.4); }
-  .vite { z-index: 0; top: 107px; height: 28px; transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg) scale(0.8); }
-}
+/* Executive Theme App Wrapper Cleanup */
 
 #center {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background: transparent !important;
+  background: transparent !important; /* Forces transparency for body bg */
   min-height: 100vh;
+}
+
+.main-content {
+  background: transparent !important;
+  padding: 40px !important;
+  flex: 1;
+}
+
+/* Sidebar / Navbar Glassmorphism */
+nav {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(15px);
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.counter {
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1.5px solid var(--border);
+  font-weight: 800;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Preserving Hero & Steps for potential use elsewhere */
+.hero {
+  position: relative;
+  padding: 60px 0;
 }
 
 #next-steps {
   display: flex;
   border-top: 1px solid var(--border);
-  text-align: left;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
-  & > div { flex: 1; padding: 40px; }
-  h3 { font-size: 18px; margin-bottom: 12px; }
-  p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
 }
-
-#docs {
-  border-right: 1px solid var(--border);
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 12px;
-  margin: 24px 0 0;
-  a {
-    color: var(--text-main);
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    background: var(--bg-main);
-    border: 1px solid var(--border);
-    display: flex;
-    padding: 8px 16px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    &:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-  }
-}
-
-#spacer { height: 60px; border-top: 1px solid var(--border); }
 
 .ticks {
   position: relative;
