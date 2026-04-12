@@ -46,7 +46,7 @@ const BusinessDashboard = () => {
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(Number(val) || 0));
 
-  // 🖼️ WHITE-STROKE ICONS FOR THE NAVY CARDS (Preserved)
+  // 🖼️ WHITE-STROKE ICONS FOR THE NAVY CARDS
   const Icons = {
     Users: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>,
     Wallet: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>,
@@ -68,12 +68,9 @@ const BusinessDashboard = () => {
   );
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px', paddingTop: '20px' }}>
       
-      {/* 🚀 PRIMARY HEADER */}
-      <h2 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', marginBottom: '35px', letterSpacing: '-2.5px' }}>Dashboard</h2>
-
-      {/* 🔔 SIP END ALERT (Preserved) */}
+      {/* 🔔 SIP END ALERT (Second Dashboard heading removed from above here) */}
       {data.sipsEndingSoon && data.sipsEndingSoon.length > 0 && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fdba74', borderRadius: '20px', padding: '24px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.04)' }}>
           <span style={{ fontSize: '32px' }}>⚠️</span>
@@ -104,13 +101,10 @@ const BusinessDashboard = () => {
 
       {/* 🟨 BOTTOM ROW: INSIGHTS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '35px' }}>
-        
-        {/* TOP FUNDS WITH PERCENTAGE LOGIC */}
         <div className="card">
           <h3 style={{ marginBottom: '30px', fontSize: '22px', fontWeight: '900' }}>🏆 Top Funds by Exposure</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {data.topFunds?.map((fund, idx) => {
-              // Calculate % of Total Invested AUM
               const percentage = data.total_invested_aum > 0 
                 ? ((Number(fund.invested_value) / Number(data.total_invested_aum)) * 100).toFixed(1) 
                 : 0;
@@ -128,7 +122,6 @@ const BusinessDashboard = () => {
           </div>
         </div>
 
-        {/* BIRTHDAYS (Preserved) */}
         <div className="card">
           <h3 style={{ marginBottom: '30px', fontSize: '22px', fontWeight: '900' }}>🎂 Client Birthdays (7 Days)</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
