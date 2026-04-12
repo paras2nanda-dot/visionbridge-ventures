@@ -23,7 +23,8 @@ export const createSip = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System"; 
 
-  console.log("Saving SIP with frequency:", s.frequency); // 💡 Debug Log
+  // 🕵️ Debugging: If it fails, check your terminal for this line!
+  console.log("Saving SIP Frequency value:", s.frequency);
 
   if (!s.client_id || !s.scheme_id) {
     return res.status(400).json({ error: "Client ID and Scheme ID are required." });
@@ -42,7 +43,7 @@ export const createSip = async (req, res) => {
       s.amount, 
       s.start_date, 
       s.end_date || null, 
-      s.frequency, // 💡 Passing Title Case directly
+      s.frequency, // 💡 Passing value directly to DB
       parseInt(s.sip_day) || 1, 
       s.status, 
       s.platform, 
@@ -54,7 +55,7 @@ export const createSip = async (req, res) => {
     await logActivity(user, 'CREATE', s.sip_id, `Started SIP ₹${s.amount} for Client ${s.client_id}`);
     res.status(201).json(result.rows[0]);
   } catch (err) { 
-    console.error("DB Error Detail:", err.message);
+    console.error("Postgres Error:", err.message);
     res.status(400).json({ error: "Database save error: " + err.message }); 
   }
 };
