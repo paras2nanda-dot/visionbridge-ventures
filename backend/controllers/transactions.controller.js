@@ -79,7 +79,6 @@ export const deleteTransaction = async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
-    // JOIN to get client and scheme names before deleting
     const transData = await pool.query(`
         SELECT t.amount, t.transaction_type, c.full_name as client_name, s.scheme_name 
         FROM transactions t
@@ -104,10 +103,14 @@ export const bulkDeleteTransactions = async (req, res) => {
   const { ids } = req.body;
   const user = req.user?.username || "System";
   try {
-    await pool.query('DELETE FROM transactions WHERE id = ANY($1::text[])', [ids]);
+    // 💡 CASTING FIX: Ensures array elements are strings for PostgreSQL ANY clause
+    const cleanIds = ids.map(id => String(id));
+    await pool.query('DELETE FROM transactions WHERE id::text = ANY($1::text[])', [cleanIds]);
+    
     await logActivity(user, 'DELETE', 'Transactions', `🚨 Bulk deleted ${ids.length} transactions.`);
     res.json({ message: "Success" });
   } catch (err) {
+    console.error("Bulk Delete Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

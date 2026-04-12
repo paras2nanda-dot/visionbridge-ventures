@@ -17,7 +17,7 @@ const Sips = () => {
   const initialState = {
     sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
     start_date: new Date().toISOString().split('T')[0], end_date: '',
-    frequency: 'MONTHLY', // 💡 Fixed: Switched to UPPERCASE
+    frequency: 'MONTHLY',
     sip_day: '1', status: 'Active', platform: 'NSE', notes: ''
   };
 
@@ -44,7 +44,6 @@ const Sips = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isViewing) return setIsViewing(false);
-
     if (!formData.client_id) return toast.warning("Please select a valid Client ID");
     if (!formData.scheme_id) return toast.warning("Please select a Scheme");
 
@@ -52,22 +51,15 @@ const Sips = () => {
       ...formData, 
       amount: formData.amount.toString().replace(/,/g, ''),
       end_date: formData.end_date || null,
-      frequency: formData.frequency.toUpperCase() // 💡 Force UPPERCASE for DB safety
+      frequency: formData.frequency.toUpperCase() 
     };
 
     try {
       if (isEditing) await api.put(`/sips/${editingId}`, payload);
       else await api.post('/sips', payload);
-      
       toast.success("✅ Success"); 
-      setIsEditing(false); 
-      setClientName(''); 
-      setFormData(initialState); 
-      fetchInitialData();
-    } catch (e) { 
-      console.error(e);
-      toast.error(e.response?.data?.error || "Error saving"); 
-    }
+      setIsEditing(false); setClientName(''); setFormData(initialState); fetchInitialData();
+    } catch (e) { toast.error(e.response?.data?.error || "Error saving"); }
   };
 
   const toggleSelect = (id) => {
@@ -82,10 +74,14 @@ const Sips = () => {
   const handleBulkDelete = async () => {
     if (window.confirm(`Delete ${selectedIds.length} selected SIPs permanently?`)) {
       try {
+        // 💡 Payload cleaning: Ensure we only send an array of clean IDs
         await api.post('/sips/bulk-delete', { ids: selectedIds });
         toast.success("🗑️ Bulk Deleted");
         fetchInitialData();
-      } catch (e) { toast.error("Bulk Delete Failed"); }
+      } catch (e) { 
+        console.error("Bulk Delete Error:", e);
+        toast.error("Bulk Delete Failed: " + (e.response?.data?.error || "Check Server")); 
+      }
     }
   };
 
@@ -202,8 +198,8 @@ const Sips = () => {
                 <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code, frequency: s.frequency?.toUpperCase()}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>View</button>
-                        <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code, frequency: s.frequency?.toUpperCase()}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                        <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>View</button>
+                        <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
                         <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Delete</button>
                     </div>
                 </td>

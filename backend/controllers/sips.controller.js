@@ -92,10 +92,14 @@ export const bulkDeleteSips = async (req, res) => {
   const { ids } = req.body;
   const user = req.user?.username || "System";
   try {
-    await pool.query('DELETE FROM sips WHERE id = ANY($1::text[])', [ids]);
+    // 💡 CASTING FIX: Using id::text = ANY($1::text[]) ensures type compatibility
+    const cleanIds = ids.map(id => String(id));
+    await pool.query('DELETE FROM sips WHERE id::text = ANY($1::text[])', [cleanIds]);
+    
     await logActivity(user, 'DELETE', 'SIP', `🚨 Bulk deleted ${ids.length} SIP records.`);
     res.json({ message: "Deleted" });
   } catch (err) {
+    console.error("Bulk Delete Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

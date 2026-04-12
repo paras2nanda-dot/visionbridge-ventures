@@ -14,7 +14,7 @@ router.post('/', createTransaction);
 router.put('/:id', updateTransaction);
 router.delete('/:id', deleteTransaction);
 
-// 💡 NEW: Bulk Delete Endpoint
+// 💡 Correct Bulk Delete endpoint path
 router.post('/bulk-delete', bulkDeleteTransactions);
 
 export default router;
