@@ -24,27 +24,28 @@ const BusinessDashboard = () => {
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(Number(val) || 0));
 
-  // 🎨 PREMIUM THEME CONSTANTS
+  // 🎨 EXECUTIVE THEME CONSTANTS
   const cardStyle = {
     background: '#ffffff',
     padding: '24px',
     borderRadius: '12px',
-    border: '1px solid rgba(226, 232, 240, 0.7)',
+    border: '1px solid rgba(226, 232, 240, 0.8)',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     minHeight: '145px',
-    // Soft Multi-layered Shadow
-    boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-    transition: 'transform 0.2s ease',
-    position: 'relative'
+    // Premium Layered Shadow
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    position: 'relative',
+    overflow: 'hidden'
   };
 
   const iconContainerStyle = {
     position: 'absolute',
-    top: '20px',
-    right: '20px',
-    opacity: 0.5
+    top: '22px',
+    right: '22px',
+    opacity: 0.4
   };
 
   const labelStyle = { 
@@ -52,7 +53,7 @@ const BusinessDashboard = () => {
     fontWeight: '500', 
     color: '#64748b', 
     textTransform: 'capitalize', 
-    letterSpacing: '0.01em', 
+    letterSpacing: '0.025em', 
     marginBottom: '4px',
     display: 'flex',
     alignItems: 'center',
@@ -69,14 +70,22 @@ const BusinessDashboard = () => {
 
   const subTextStyle = { fontSize: '11px', color: '#94a3b8', marginTop: '6px', fontWeight: '500' };
 
-  // 🕯️ PULSE INDICATOR FOR LIVE DATA
+  // 🕯️ LIVE PULSE INDICATOR
   const Pulse = () => (
-    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', marginRight: '6px', boxShadow: '0 0 8px #10b981' }}></span>
+    <span style={{ 
+      display: 'inline-block', 
+      width: '6px', 
+      height: '6px', 
+      borderRadius: '50%', 
+      background: '#10b981', 
+      marginRight: '8px', 
+      boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)' 
+    }}></span>
   );
 
-  // 🖼️ ICON ASSETS (Inline SVGs)
+  // 🖼️ PREMIUM SVGs
   const Icons = {
-    Users: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    Users: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
     Wallet: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>,
     Trending: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
     Growth: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4 4 4"/><path d="M3 3v18h18"/><path d="m12 10-4 4-4-4"/></svg>,
@@ -99,7 +108,7 @@ const BusinessDashboard = () => {
           <div style={iconContainerStyle}>{Icons.Users}</div>
           <div style={labelStyle}>Total Active Clients</div>
           <h2 style={figureStyle}>{data.total_active_clients}</h2>
-          <div style={subTextStyle}>With Portfolio Value</div>
+          <div style={subTextStyle}>With Net Assets {'>'} 0</div>
         </div>
 
         <div style={cardStyle}>
@@ -113,7 +122,7 @@ const BusinessDashboard = () => {
           <div style={iconContainerStyle}>{Icons.Trending}</div>
           <div style={labelStyle}><Pulse />Market Value AUM</div>
           <h2 style={figureStyle}><span style={{color: '#10b981'}}>₹{formatINR(data.market_value_aum)}</span></h2>
-          <div style={subTextStyle}>Current Asset Value</div>
+          <div style={subTextStyle}>Current Portfolio Value</div>
         </div>
 
         <div style={cardStyle}>
@@ -130,14 +139,14 @@ const BusinessDashboard = () => {
           <div style={iconContainerStyle}>{Icons.Growth}</div>
           <div style={labelStyle}>Expected AUM (12M)</div>
           <h2 style={figureStyle}>₹{formatINR(data.expected_aum_12m)}</h2>
-          <div style={subTextStyle}>Projected Growth</div>
+          <div style={subTextStyle}>Cost + 1Y SIP Inflow</div>
         </div>
 
         <div style={cardStyle}>
           <div style={iconContainerStyle}>{Icons.Users}</div>
           <div style={labelStyle}>Avg. Assets / Client</div>
           <h2 style={figureStyle}>₹{formatINR(data.avg_assets_per_client)}</h2>
-          <div style={subTextStyle}>Portfolio Quality</div>
+          <div style={subTextStyle}>Per Active Investor</div>
         </div>
 
         <div style={cardStyle}>
@@ -162,9 +171,9 @@ const BusinessDashboard = () => {
         </div>
       </div>
 
-      {/* 🟨 BOTTOM ROW (Preserved) */}
+      {/* 🟨 BOTTOM ROW */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
-        <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid rgba(226, 232, 240, 0.8)', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '15px', fontWeight: '700', color: '#1e293b' }}>🏆 Top Funds by Exposure</h3>
           {data.topFunds?.map((fund, idx) => (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9', marginBottom: '10px' }}>
@@ -175,7 +184,7 @@ const BusinessDashboard = () => {
           ))}
         </div>
 
-        <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid rgba(226, 232, 240, 0.8)', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '15px', fontWeight: '700', color: '#1e293b' }}>🎂 Client Birthdays (7 Days)</h3>
           {data.upcomingBirthdays?.length > 0 ? data.upcomingBirthdays.map((client, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
