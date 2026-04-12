@@ -1,4 +1,31 @@
 /* Reset and Global Styles */
+:root {
+  /* Light Mode - Premium Slate Palette */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: rgba(226, 232, 240, 0.8);
+  --accent: #0ea5e9;
+  --accent-bg: rgba(14, 165, 233, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --icon-filter: none;
+}
+
+[data-theme='midnight'] {
+  /* Midnight Mode - Deep Navy Palette */
+  --bg-main: #0b0f1a;
+  --bg-card: #161b2c;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: rgba(51, 65, 85, 0.5);
+  --accent: #38bdf8;
+  --accent-bg: rgba(56, 189, 248, 0.1);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+  --icon-filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,24 +37,26 @@ body {
   background-color: var(--bg-main) !important;
   color: var(--text-main) !important;
   overflow-x: hidden;
+  line-height: 1.5;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Force All Headings to Theme Color */
+/* Sophisticated Headings */
 h1, h2, h3, h4, .title {
   color: var(--text-main) !important;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 
-/* 📅 DATE ICON FIX */
+/* 📅 Date & Search Icon Fixes */
 ::-webkit-calendar-picker-indicator {
-    filter: var(--icon-filter, none);
+    filter: var(--icon-filter);
     cursor: pointer;
 }
 
-/* 🔍 SEARCH ICON FIX */
 .search-icon-container {
-    filter: var(--icon-filter, none);
-    opacity: 0.8;
+    filter: var(--icon-filter);
+    opacity: 0.6;
 }
 
 .main-content {
@@ -39,82 +68,96 @@ h1, h2, h3, h4, .title {
   background-color: var(--bg-main);
 }
 
-.subtitle {
-  color: var(--text-muted);
-  margin-bottom: 40px;
-  font-size: 16px;
-}
-
-/* Card Overrides */
-.card, [style*="background: white"], [style*="background: rgb(255, 255, 255)"] {
+/* Premium Card Design */
+.card {
   background: var(--bg-card) !important;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important; 
-  border: 1.5px solid var(--border) !important; 
+  border-radius: 12px !important;
+  padding: 24px !important;
+  box-shadow: var(--shadow-md) !important; 
+  border: 1px solid var(--border) !important; 
   color: var(--text-main) !important;
+  transition: transform 0.2s ease;
 }
 
 .card-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--text-muted);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  margin-bottom: 8px;
+  text-transform: capitalize; /* More professional than UPPERCASE */
+  letter-spacing: 0.01em;
 }
 
 .card-value {
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 26px;
+  font-weight: 700;
   color: var(--text-main);
+  letter-spacing: -0.01em;
 }
 
-/* Table Themes */
+/* Refined Tables */
 table {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
-  border: 1.5px solid var(--border) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
 }
 
 th {
-  background: var(--bg-main) !important;
+  background: #f8fafc !important; /* Slightly distinct header bg */
   color: var(--text-muted) !important;
-  border-bottom: 2.5px solid var(--border) !important; 
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 15px 12px !important;
+  border-bottom: 2px solid var(--border) !important; 
+}
+
+[data-theme='midnight'] th {
+  background: #1e293b !important;
 }
 
 td {
-  border-bottom: 1.5px solid var(--border) !important;
+  padding: 14px 12px !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-size: 13px;
 }
 
-/* Input & Form Themes */
+/* Executive Form Elements */
 input, select, textarea {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
-  border: 1.5px solid var(--border) !important;
-  padding: 12px;
+  border: 1px solid var(--border) !important;
+  padding: 10px 14px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-label, [style*="color: #64748b"] {
+input:focus, select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-bg) !important;
+}
+
+label {
   color: var(--text-muted) !important;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
 }
 
-/* Chart Container Fixes */
-.chart-container, [style*="background-color: #fff"] {
-  background-color: var(--bg-card) !important;
-  border: 1.5px solid var(--border) !important;
-  border-radius: 16px;
-}
-
+/* Animations */
 .fade-in {
-  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); filter: blur(5px); }
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
-}
-
-input, select, textarea {
-  font-size: 16px !important;
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
