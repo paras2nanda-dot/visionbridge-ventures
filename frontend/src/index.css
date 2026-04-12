@@ -1,19 +1,21 @@
-/* VisionBridge Modern Executive Theme - Full Material Suite */
+/* VisionBridge Executive Theme - Full System Styles */
 :root {
-  /* 🌎 THE BACKGROUND - CLEAN NEUTRAL SLATE */
-  --bg-main: #f1f5f9;
+  /* 🏁 THE DOTTED WALL BACKGROUND */
+  --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
   
-  /* 🏢 THE CARD - DEEP PROFESSIONAL NAVY / SLATE */
+  /* 🏢 THE 3D NAVY CARD MATERIAL */
   --card-bg: linear-gradient(145deg, #1e293b, #0f172a);
+  --text-on-card: #ffffff;
+  --label-on-card: #cbd5e1;
+  --sub-on-card: #94a3b8;
   
-  /* 💎 THE DISTINCTIVE BORDERS */
-  --border-outer: #0f172a; /* Dark outer edge */
-  --border-inner: rgba(255, 255, 255, 0.12); /* Light inner rim highlight */
+  /* 💎 3D BORDER SPECS */
+  --border-outer: #0f172a;
+  --border-inner: rgba(255, 255, 255, 0.22);
   
-  /* Existing Logic Variables */
-  --bg-card: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
+  /* System Defaults */
+  --bg-main: #f8fafc;
+  --text-main: #0f172a;
   --border: rgba(226, 232, 240, 0.8);
   --accent: #0ea5e9;
   --accent-bg: rgba(14, 165, 233, 0.1);
@@ -24,8 +26,7 @@
   --bg-main: #020617;
   --card-bg: linear-gradient(145deg, #1e293b, #020617);
   --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border: rgba(51, 65, 85, 0.5);
+  --bg-dots: radial-gradient(#1e293b 1.5px, transparent 1.5px);
   --icon-filter: invert(100%);
 }
 
@@ -34,58 +35,53 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-main) !important;
+  background-image: var(--bg-dots) !important;
+  background-size: 30px 30px !important;
   color: var(--text-main) !important;
   overflow-x: hidden;
   line-height: 1.5;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 🏢 THE 3D "RAISED GLASS" CARD */
+/* 🏢 THE 3D "RAISED GLASS" CARD (High Contrast) */
 .card {
   background: var(--card-bg) !important;
   border-radius: 18px !important;
-  
-  /* 💎 DOUBLE BORDER & 3D SHADOW EFFECT */
   border: 1.5px solid var(--border-outer) !important;
+  /* Multi-layered 3D shadow for heavy lift and rim light */
   box-shadow: 
-    0 15px 35px -5px rgba(0, 0, 0, 0.35), /* External Shadow (The Lift) */
-    inset 0 1px 1px var(--border-inner),   /* Internal Highlight (The Edge) */
-    inset 0 -2px 5px rgba(0,0,0,0.5) !important; /* Internal Depth */
-    
+    0 15px 35px -5px rgba(0, 0, 0, 0.4), 
+    inset 0 1.5px 0 var(--border-inner), 
+    inset 0 -2px 5px rgba(0,0,0,0.5) !important;
   padding: 24px !important;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease;
+  color: var(--text-on-card) !important;
 }
 
-/* 🥇 THE 3D ICON CONTAINER */
+/* Forced Visibility for Card Content */
+.card h2, .card h3 { color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+/* 🥇 THE PRESSED-IN BRONZE ICON CONTAINER */
 .icon-container-3d {
   width: 50px;
   height: 50px;
-  background: linear-gradient(145deg, #334155, #1e293b);
-  border-radius: 12px;
+  background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #d97706 60%, #92400e 100%);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 3px 5px 12px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1);
+  border: 1.5px solid #78350f;
+  box-shadow: 3px 6px 15px rgba(0,0,0,0.5), inset 1px 1px 3px rgba(255,255,255,0.5);
 }
 
-/* Global Typography */
-h1, h2, h3, h4, .title {
-  color: #0f172a !important;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-
-[data-theme='midnight'] h1, 
-[data-theme='midnight'] h2, 
-[data-theme='midnight'] h3 { color: #ffffff !important; }
-
-/* Existing Global Styles preserved */
+h1, h2, h3, h4, .title { color: var(--text-main) !important; letter-spacing: -0.03em; font-weight: 800; }
 .main-content { flex: 1; min-height: 100vh; padding: 40px; background-color: transparent !important; }
-::-webkit-calendar-picker-indicator { filter: var(--icon-filter); cursor: pointer; }
-input, select, textarea { background: #ffffff !important; border: 1px solid var(--border) !important; border-radius: 8px; padding: 12px; }
 
-.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+/* Table & Form Themes */
+table { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 12px; overflow: hidden; }
+th { background: rgba(226, 232, 240, 0.6) !important; color: var(--text-muted) !important; font-weight: 700; text-transform: uppercase; padding: 15px 12px !important; border-bottom: 2px solid var(--border) !important; }
+input, select, textarea { background: var(--bg-card) !important; border: 1px solid var(--border) !important; padding: 12px; border-radius: 8px; }
+
+.fade-in { animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
