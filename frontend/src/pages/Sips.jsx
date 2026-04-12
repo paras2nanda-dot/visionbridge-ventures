@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import api from '../services/api'; 
 import { toast } from 'react-toastify'; 
@@ -9,7 +10,7 @@ const Sips = () => {
   const [clientName, setClientName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [isViewing, setIsViewing] = useState(false); // 💡 Added View state
+  const [isViewing, setIsViewing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -41,13 +42,31 @@ const Sips = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isViewing) return setIsViewing(false); // If viewing, button just closes
-    const payload = { ...formData, amount: formData.amount.toString().replace(/,/g, '') };
+    if (isViewing) return setIsViewing(false);
+
+    // 💡 VALIDATION: Ensure IDs are not empty to prevent DB Type errors
+    if (!formData.client_id) return toast.warning("Please select a valid Client ID");
+    if (!formData.scheme_id) return toast.warning("Please select a Scheme");
+
+    const payload = { 
+      ...formData, 
+      amount: formData.amount.toString().replace(/,/g, ''),
+      end_date: formData.end_date || null // Ensure empty string becomes null for Postgres
+    };
+
     try {
       if (isEditing) await api.put(`/sips/${editingId}`, payload);
       else await api.post('/sips', payload);
-      toast.success("✅ Success"); setIsEditing(false); setClientName(''); setFormData(initialState); fetchInitialData();
-    } catch (e) { toast.error("Error saving"); }
+      
+      toast.success("✅ Success"); 
+      setIsEditing(false); 
+      setClientName(''); 
+      setFormData(initialState); 
+      fetchInitialData();
+    } catch (e) { 
+      console.error(e);
+      toast.error(e.response?.data?.error || "Error saving"); 
+    }
   };
 
   const toggleSelect = (id) => {
@@ -85,7 +104,7 @@ const Sips = () => {
   );
 
   return (
-    <div className="container">
+    <div className="container fade-in">
       {/* STAT CARDS SECTION */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 className="title">SIP Tracker</h1>
@@ -107,7 +126,7 @@ const Sips = () => {
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>SID</label><input style={{width:'100%', padding:'8px', background:'#f8fafc'}} value={formData.sip_id} readOnly /></div>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Client ID *</label>
-              <input style={{width:'100%', padding:'8px'}} value={formData.client_code_input} readOnly={isViewing} onChange={(e)=> {
+              <input style={{width:'100%', padding:'8px'}} value={formData.client_code_input} readOnly={isViewing} placeholder="e.g. C001" onChange={(e)=> {
                 const val = e.target.value.toUpperCase();
                 const found = clients.find(c => c.client_code === val);
                 setClientName(found ? found.full_name : '');
