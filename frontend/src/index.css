@@ -1,21 +1,19 @@
-/* VisionBridge Executive Material Theme - Complete Visibility Fix */
+/* VisionBridge Executive Material Theme - High Definition Visibility */
 :root {
-  /* 🏁 BACKGROUND & MATERIALS */
+  /* 🏁 THE DOTTED BACKGROUND */
   --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+  
+  /* 🏢 THE 3D NAVY MATERIAL (Deep and Rich) */
   --card-bg: linear-gradient(145deg, #1e293b, #0f172a);
   
-  /* 🌎 LIGHT MODE COLORS (For Tables & Forms) */
+  /* 💎 BRIGHT 3D BORDERS */
+  --border-outer: #020617;
+  --border-inner: rgba(255, 255, 255, 0.3); /* Brightened rim for HD visibility */
+  
+  /* Global Visibility Colors */
   --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --text-main: #1e293b; /* Deep Slate - ALWAYS visible on white */
-  --text-muted: #64748b;
+  --text-main: #0f172a;
   --border: rgba(226, 232, 240, 0.8);
-  
-  /* 3D BORDER SPECS */
-  --border-outer: #0f172a;
-  --border-inner: rgba(255, 255, 255, 0.22);
-  
-  /* Accents */
   --accent: #0ea5e9;
   --accent-bg: rgba(14, 165, 233, 0.1);
   --icon-filter: none;
@@ -25,9 +23,7 @@
   --bg-main: #020617;
   --bg-card: #111827;
   --card-bg: linear-gradient(145deg, #1e293b, #020617);
-  --text-main: #f8fafc; /* Silver-White - ALWAYS visible on dark */
-  --text-muted: #94a3b8;
-  --border: rgba(51, 65, 85, 0.5);
+  --text-main: #f8fafc;
   --bg-dots: radial-gradient(#1e293b 1.5px, transparent 1.5px);
   --icon-filter: invert(100%);
 }
@@ -42,106 +38,46 @@ body {
   color: var(--text-main) !important;
   overflow-x: hidden;
   line-height: 1.5;
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 🏢 THE 3D NAVY CARD (Keeps its white text for Dashboard) */
+/* 🏢 THE HD 3D CARD (Forced High Contrast) */
 .card {
   background: var(--card-bg) !important;
-  border-radius: 18px !important;
+  border-radius: 20px !important;
   border: 1.5px solid var(--border-outer) !important;
+  
+  /* 💎 Heavy 3D "Raised Glass" Shadows */
   box-shadow: 
-    0 15px 35px -5px rgba(0, 0, 0, 0.4), 
+    0 20px 40px -10px rgba(0, 0, 0, 0.5), 
     inset 0 1.5px 0 var(--border-inner), 
-    inset 0 -2px 5px rgba(0,0,0,0.5) !important;
+    inset 0 -2px 6px rgba(0,0,0,0.6) !important;
+    
   padding: 24px !important;
   position: relative;
   overflow: hidden;
-  color: #ffffff !important; /* Force white text ONLY inside 3D cards */
+  /* Force all children to respect visibility */
+  color: #ffffff !important;
 }
 
-/* 🥇 THE BRONZE ICON CONTAINER */
+/* 🥇 THE BRIGHTENED 3D BRONZE BUTTON */
 .icon-container-3d {
-  width: 50px;
-  height: 50px;
-  background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #d97706 60%, #92400e 100%);
+  width: 52px;
+  height: 52px;
+  background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 50%, #b45309 100%);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1.5px solid #78350f;
-  box-shadow: 3px 6px 15px rgba(0,0,0,0.5), inset 1px 1px 3px rgba(255,255,255,0.5);
+  box-shadow: 4px 8px 18px rgba(0,0,0,0.6), inset 1px 1px 3px rgba(255,255,255,0.7);
 }
 
-/* Global Headings */
-h1, h2, h3, h4, .title { color: var(--text-main) !important; letter-spacing: -0.03em; font-weight: 800; }
+h1, h2, h3, h4, .title { color: var(--text-main) !important; letter-spacing: -0.04em; font-weight: 800; }
 
-/* 📊 THE TABLE FIX (High Visibility) */
-table { 
-  background: var(--bg-card) !important; 
-  border: 1px solid var(--border) !important; 
-  border-radius: 12px; 
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-  overflow: hidden;
-}
+/* 📊 Table visibility (preserved from previous fix) */
+table { background: #ffffff !important; border: 1px solid var(--border) !important; border-radius: 12px; width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important; }
+th { background: #f1f5f9 !important; color: #475569 !important; font-weight: 800; text-transform: uppercase; font-size: 11px; padding: 16px 12px !important; border-bottom: 2px solid var(--border) !important; }
+td { padding: 14px 12px !important; border-bottom: 1px solid var(--border) !important; color: #1e293b !important; font-size: 13px; font-weight: 600; background: #ffffff !important; }
 
-th { 
-  background: #f1f5f9 !important; 
-  color: #475569 !important; /* Dark slate headers */
-  font-weight: 800; 
-  text-transform: uppercase; 
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  padding: 16px 12px !important; 
-  border-bottom: 2px solid var(--border) !important; 
-}
-
-[data-theme='midnight'] th { background: #1e293b !important; color: #cbd5e1 !important; }
-
-td { 
-  padding: 14px 12px !important; 
-  border-bottom: 1px solid var(--border) !important;
-  /* 🚨 THIS IS THE FIX: Forced high-contrast text color */
-  color: #1e293b !important; 
-  font-size: 13px;
-  font-weight: 600;
-  background: #ffffff !important;
-}
-
-[data-theme='midnight'] td {
-  color: #f8fafc !important; /* White text for dark mode tables */
-  background: #111827 !important;
-}
-
-/* Row Hover */
-tr:hover td { background-color: #f8fafc !important; }
-[data-theme='midnight'] tr:hover td { background-color: #1f2937 !important; }
-
-/* Action Links (View, Edit, Delete) visibility */
-table a, table button {
-  font-weight: 700 !important;
-  text-transform: uppercase;
-  font-size: 11px;
-}
-
-/* 📝 Forms & Inputs */
-input, select, textarea { 
-  background: #ffffff !important; 
-  color: #1e293b !important;
-  border: 1.5px solid var(--border) !important; 
-  padding: 12px; 
-  border-radius: 8px; 
-}
-
-[data-theme='midnight'] input, 
-[data-theme='midnight'] select, 
-[data-theme='midnight'] textarea {
-  background: #1f2937 !important;
-  color: #ffffff !important;
-}
-
-.fade-in { animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
