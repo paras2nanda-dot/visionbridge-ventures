@@ -1,10 +1,10 @@
-/* Executive Theme App Wrapper Cleanup */
+/* Executive Theme App Wrapper - Full Cleanup */
 
 #center {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background: transparent !important; /* Forces transparency for body bg */
+  background: transparent !important; /* Important: allow index.css bg to show */
   min-height: 100vh;
 }
 
@@ -14,29 +14,23 @@
   flex: 1;
 }
 
-/* Sidebar / Navbar Glassmorphism */
+/* Glassmorphism for Navbar */
 nav {
-  background: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(15px);
-  border-bottom: 2px solid var(--border);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  border-bottom: 2.5px solid #e2e8f0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
 .counter {
   font-size: 14px;
   padding: 10px 20px;
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--accent);
   background: var(--accent-bg);
   border: 1.5px solid var(--border);
   font-weight: 800;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-/* Preserving Hero & Steps for potential use elsewhere */
-.hero {
-  position: relative;
-  padding: 60px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
 #next-steps {

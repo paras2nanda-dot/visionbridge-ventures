@@ -1,27 +1,19 @@
-/* VisionBridge Executive Material Theme - Full Reset & Variables */
+/* VisionBridge Modern Executive Theme - Full Material Suite */
 :root {
-  /* 🏁 THE DOTTED OFFICE WALL BACKGROUND */
-  --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
-  
-  /* 🏢 BRUSHED ALUMINUM MATERIAL - 7 STOP GRADIENT */
-  --metal-shine: linear-gradient(145deg, 
-    #ffffff 0%, 
-    #f8fafc 15%, 
-    #e2e8f0 35%, 
-    #cbd5e1 50%, 
-    #e2e8f0 65%, 
-    #f1f5f9 85%, 
-    #ffffff 100%
-  );
-  
-  /* 🥇 3D BRONZE/COPPER BUTTON MATERIAL */
-  --bronze-3d: radial-gradient(circle at 30% 30%, #fbbf24 0%, #d97706 60%, #92400e 100%);
-
-  /* Preserved UI Variables */
+  /* 🌎 THE BACKGROUND - CLEAN NEUTRAL SLATE */
   --bg-main: #f1f5f9;
+  
+  /* 🏢 THE CARD - DEEP PROFESSIONAL NAVY / SLATE */
+  --card-bg: linear-gradient(145deg, #1e293b, #0f172a);
+  
+  /* 💎 THE DISTINCTIVE BORDERS */
+  --border-outer: #0f172a; /* Dark outer edge */
+  --border-inner: rgba(255, 255, 255, 0.12); /* Light inner rim highlight */
+  
+  /* Existing Logic Variables */
   --bg-card: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #475569;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
   --border: rgba(226, 232, 240, 0.8);
   --accent: #0ea5e9;
   --accent-bg: rgba(14, 165, 233, 0.1);
@@ -29,14 +21,12 @@
 }
 
 [data-theme='midnight'] {
-  --bg-main: #0b0f1a;
-  --bg-card: #161b2c;
+  --bg-main: #020617;
+  --card-bg: linear-gradient(145deg, #1e293b, #020617);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border: rgba(51, 65, 85, 0.5);
-  --bg-dots: radial-gradient(#1e293b 1.5px, transparent 1.5px);
-  --metal-shine: linear-gradient(145deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
-  --icon-filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
+  --icon-filter: invert(100%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,74 +34,58 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-main) !important;
-  background-image: var(--bg-dots) !important;
-  background-size: 30px 30px !important;
   color: var(--text-main) !important;
   overflow-x: hidden;
   line-height: 1.5;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 🏢 THE HEAVY 3D METAL CARD */
+/* 🏢 THE 3D "RAISED GLASS" CARD */
 .card {
-  background: var(--metal-shine) !important;
-  border-radius: 24px !important;
-  border: 1px solid rgba(255, 255, 255, 0.9) !important;
-  /* Multi-layered 3D elevation shadows */
+  background: var(--card-bg) !important;
+  border-radius: 18px !important;
+  
+  /* 💎 DOUBLE BORDER & 3D SHADOW EFFECT */
+  border: 1.5px solid var(--border-outer) !important;
   box-shadow: 
-    0 15px 35px -5px rgba(0, 0, 0, 0.12), 
-    0 5px 15px rgba(0, 0, 0, 0.05),
-    inset 0 2px 4px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.05) !important;
+    0 15px 35px -5px rgba(0, 0, 0, 0.35), /* External Shadow (The Lift) */
+    inset 0 1px 1px var(--border-inner),   /* Internal Highlight (The Edge) */
+    inset 0 -2px 5px rgba(0,0,0,0.5) !important; /* Internal Depth */
+    
   padding: 24px !important;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
-/* 🥇 THE PRESSED-IN BRONZE ICON BUTTON */
-.icon-button-executive {
+/* 🥇 THE 3D ICON CONTAINER */
+.icon-container-3d {
   width: 50px;
   height: 50px;
-  background: var(--bronze-3d);
-  border-radius: 14px;
+  background: linear-gradient(145deg, #334155, #1e293b);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
-    3px 6px 12px rgba(0,0,0,0.3), 
-    inset 1px 1px 4px rgba(255,255,255,0.6),
-    inset -1px -1px 4px rgba(0,0,0,0.4);
-  border: 1.5px solid #78350f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 3px 5px 12px rgba(0,0,0,0.4), inset 1px 1px 2px rgba(255,255,255,0.1);
 }
 
-/* Sophisticated Headings */
+/* Global Typography */
 h1, h2, h3, h4, .title {
-  color: var(--text-main) !important;
-  letter-spacing: -0.03em;
+  color: #0f172a !important;
   font-weight: 800;
+  letter-spacing: -0.04em;
 }
 
-/* 🔍 Preserved Search & Date Fixes */
+[data-theme='midnight'] h1, 
+[data-theme='midnight'] h2, 
+[data-theme='midnight'] h3 { color: #ffffff !important; }
+
+/* Existing Global Styles preserved */
+.main-content { flex: 1; min-height: 100vh; padding: 40px; background-color: transparent !important; }
 ::-webkit-calendar-picker-indicator { filter: var(--icon-filter); cursor: pointer; }
-.search-icon-container { filter: var(--icon-filter); opacity: 0.6; }
+input, select, textarea { background: #ffffff !important; border: 1px solid var(--border) !important; border-radius: 8px; padding: 12px; }
 
-.main-content {
-  flex: 1;
-  min-height: 100vh;
-  padding: 40px;
-  background-color: transparent !important;
-}
-
-/* Form Elements (Preserved) */
-input, select, textarea {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border) !important;
-  padding: 12px 14px !important;
-  border-radius: 10px !important;
-  font-size: 14px !important;
-}
-
-.fade-in { animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
