@@ -65,7 +65,6 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         }
       `}</style>
 
-      {/* HEADER: Contains Logo AND the Close Button */}
       <div className="sidebar-logo" style={{ 
         padding: '25px 20px', 
         borderBottom: '1px solid var(--border, #334155)', 
@@ -81,7 +80,6 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           </div>
         </div>
 
-        {/* 📱 Mobile Close Button - Only visible on small screens */}
         <button 
           onClick={closeMobileMenu}
           style={{ 
@@ -109,14 +107,32 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
       </nav>
 
       <div style={{ padding: '20px', borderTop: '1px solid var(--border, #334155)', flexShrink: 0, background: 'rgba(0,0,0,0.1)' }}>
-        <div style={{ marginBottom: '20px' }}>
+        {/* 🚪 LOGOUT BUTTON - NOW ON TOP */}
+        <button onClick={handleLogout} disabled={isLoggingOut}
+          style={{ 
+            width: '100%', 
+            textAlign: 'left', 
+            border: 'none', 
+            background: 'none', 
+            cursor: isLoggingOut ? 'not-allowed' : 'pointer', 
+            fontWeight: '900', 
+            color: isLoggingOut ? '#fca5a5' : '#ef4444', 
+            opacity: isLoggingOut ? 0.7 : 1, 
+            padding: '8px 0', 
+            fontSize: '14px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            marginBottom: '15px' 
+          }}>
+          {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
+        </button>
+
+        {/* 🌓 APPEARANCE BUTTON - NOW ON BOTTOM */}
+        <div>
           <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1px' }}>APPEARANCE</p>
           <ThemeSwitcher />
         </div>
-        <button onClick={handleLogout} disabled={isLoggingOut}
-          style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: isLoggingOut ? 'not-allowed' : 'pointer', fontWeight: '900', color: isLoggingOut ? '#fca5a5' : '#ef4444', opacity: isLoggingOut ? 0.7 : 1, padding: '8px 0', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
-        </button>
       </div>
     </div>
   );
