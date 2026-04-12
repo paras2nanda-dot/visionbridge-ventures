@@ -46,7 +46,7 @@ const BusinessDashboard = () => {
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(Number(val) || 0));
 
-  // 🖼️ WHITE-STROKE ICONS FOR THE NAVY CARDS
+  // 🖼️ WHITE-STROKE ICONS (Preserved)
   const Icons = {
     Users: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>,
     Wallet: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>,
@@ -57,12 +57,39 @@ const BusinessDashboard = () => {
 
   const MetricCard = ({ label, value, sub, icon, figureColor, pulse }) => (
     <div className="card fade-in">
-      <div style={{ position: 'absolute', top: '22px', right: '22px' }} className="icon-container-3d">{icon}</div>
-      <div style={{ fontSize: '11px', fontWeight: '800', color: '#cbd5e1', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', letterSpacing: '0.08em' }}>
+      {/* 🛠️ Icon positioned absolutely in top right */}
+      <div style={{ position: 'absolute', top: '22px', right: '22px', zIndex: 1 }} className="icon-button-executive">
+        {icon}
+      </div>
+
+      {/* 🛠️ Added paddingRight: '65px' to prevent text overlap with the icon */}
+      <div style={{ 
+        fontSize: '11px', 
+        fontWeight: '800', 
+        color: '#cbd5e1', 
+        textTransform: 'uppercase', 
+        marginBottom: '8px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        letterSpacing: '0.08em',
+        paddingRight: '65px' 
+      }}>
         {pulse && <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', marginRight: '10px', boxShadow: '0 0 12px #10b981' }}></span>}
         {label}
       </div>
-      <h2 style={{ fontSize: '32px', fontWeight: '900', color: figureColor || '#ffffff', margin: '0', letterSpacing: '-0.04em' }}>{value}</h2>
+
+      {/* 🛠️ Added paddingRight: '65px' here too for long numbers */}
+      <h2 style={{ 
+        fontSize: '32px', 
+        fontWeight: '900', 
+        color: figureColor || '#ffffff', 
+        margin: '0', 
+        letterSpacing: '-0.04em',
+        paddingRight: '65px'
+      }}>
+        {value}
+      </h2>
+
       <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '12px', fontWeight: '700' }}>{sub}</div>
     </div>
   );
@@ -70,7 +97,7 @@ const BusinessDashboard = () => {
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px', paddingTop: '20px' }}>
       
-      {/* 🔔 SIP END ALERT (Second Dashboard heading removed from above here) */}
+      {/* 🚀 PRIMARY HEADER (Redundant 2nd Dashboard removed) */}
       {data.sipsEndingSoon && data.sipsEndingSoon.length > 0 && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fdba74', borderRadius: '20px', padding: '24px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.04)' }}>
           <span style={{ fontSize: '32px' }}>⚠️</span>
