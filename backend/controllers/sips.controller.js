@@ -23,40 +23,20 @@ export const createSip = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System"; 
 
-  // 🕵️ Debugging: If it fails, check your terminal for this line!
-  console.log("Saving SIP Frequency value:", s.frequency);
-
-  if (!s.client_id || !s.scheme_id) {
-    return res.status(400).json({ error: "Client ID and Scheme ID are required." });
-  }
+  if (!s.client_id || !s.scheme_id) return res.status(400).json({ error: "ID required" });
 
   try {
-    const query = `
-      INSERT INTO sips (sip_id, client_id, scheme_id, amount, start_date, end_date, frequency, sip_day, status, platform, notes, is_active) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-      RETURNING *`;
-    
-    const values = [
-      s.sip_id, 
-      s.client_id, 
-      s.scheme_id, 
-      s.amount, 
-      s.start_date, 
-      s.end_date || null, 
-      s.frequency, // 💡 Passing value directly to DB
-      parseInt(s.sip_day) || 1, 
-      s.status, 
-      s.platform, 
-      s.notes, 
-      s.status === 'Active'
-    ];
-    
+    const query = `INSERT INTO sips (sip_id, client_id, scheme_id, amount, start_date, end_date, frequency, sip_day, status, platform, notes, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`;
+    const values = [s.sip_id, s.client_id, s.scheme_id, s.amount, s.start_date, s.end_date || null, s.frequency, parseInt(s.sip_day) || 1, s.status, s.platform, s.notes, s.status === 'Active'];
     const result = await pool.query(query, values);
-    await logActivity(user, 'CREATE', s.sip_id, `Started SIP ₹${s.amount} for Client ${s.client_id}`);
+
+    const clientRes = await pool.query('SELECT full_name FROM clients WHERE id::TEXT = $1::TEXT', [s.client_id]);
+    const clientName = clientRes.rows[0]?.full_name || 'Client';
+
+    await logActivity(user, 'CREATE', clientName, `📈 Started New SIP: ₹${s.amount}\n• Mandate ID: ${s.sip_id}`);
     res.status(201).json(result.rows[0]);
   } catch (err) { 
-    console.error("Postgres Error:", err.message);
-    res.status(400).json({ error: "Database save error: " + err.message }); 
+    res.status(400).json({ error: err.message }); 
   }
 };
 
@@ -66,28 +46,22 @@ export const updateSip = async (req, res) => {
   const user = req.user?.username || "System";
   
   try {
-    const query = `
-      UPDATE sips 
-      SET amount=$1, start_date=$2, end_date=$3, frequency=$4, sip_day=$5, status=$6, platform=$7, notes=$8, is_active=$9, scheme_id=$10 
-      WHERE id=$11 
-      RETURNING *`;
-      
-    const values = [
-      s.amount, 
-      s.start_date, 
-      s.end_date || null, 
-      s.frequency, 
-      parseInt(s.sip_day) || 1, 
-      s.status, 
-      s.platform, 
-      s.notes, 
-      s.status === 'Active', 
-      s.scheme_id, 
-      id
-    ];
-    
+    const oldRes = await pool.query('SELECT * FROM sips WHERE id = $1', [id]);
+    if (oldRes.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const old = oldRes.rows[0];
+
+    const query = `UPDATE sips SET amount=$1, start_date=$2, end_date=$3, frequency=$4, sip_day=$5, status=$6, platform=$7, notes=$8, is_active=$9, scheme_id=$10 WHERE id=$11 RETURNING *`;
+    const values = [s.amount, s.start_date, s.end_date || null, s.frequency, parseInt(s.sip_day) || 1, s.status, s.platform, s.notes, s.status === 'Active', s.scheme_id, id];
     const result = await pool.query(query, values);
-    await logActivity(user, 'UPDATE', s.sip_id, `Updated SIP mandate ${s.sip_id}`);
+
+    let changes = [];
+    if (String(old.amount) !== String(s.amount)) changes.push(`• Amount: ₹${old.amount} → ₹${s.amount}`);
+    if (old.status !== s.status) changes.push(`• Status: ${old.status} → ${s.status}`);
+    if (old.frequency !== s.frequency) changes.push(`• Frequency: ${old.frequency} → ${s.frequency}`);
+
+    const detailMsg = changes.length > 0 ? `Updated SIP details:\n${changes.join('\n')}` : "Updated SIP metadata.";
+    await logActivity(user, 'UPDATE', s.client_name || 'SIP', detailMsg);
+
     res.json(result.rows[0]);
   } catch (err) { 
     res.status(400).json({ error: err.message }); 
@@ -98,8 +72,18 @@ export const deleteSip = async (req, res) => {
   const { id } = req.params;
   const user = req.user?.username || "System";
   try {
+    const sipData = await pool.query(`
+        SELECT s.sip_id, s.amount, c.full_name as client_name 
+        FROM sips s 
+        JOIN clients c ON s.client_id::TEXT = c.id::TEXT 
+        WHERE s.id = $1`, [id]);
+
+    if (sipData.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const { sip_id, amount, client_name } = sipData.rows[0];
+
     await pool.query('DELETE FROM sips WHERE id = $1', [id]);
-    await logActivity(user, 'DELETE', 'SIP', `Deleted SIP record`);
+    await logActivity(user, 'DELETE', client_name, `🗑️ Deleted SIP Mandate:\n• ID: ${sip_id}\n• Monthly Amount: ₹${amount}`);
+    
     res.json({ message: "Deleted" });
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -109,8 +93,8 @@ export const bulkDeleteSips = async (req, res) => {
   const user = req.user?.username || "System";
   try {
     await pool.query('DELETE FROM sips WHERE id = ANY($1::text[])', [ids]);
-    await logActivity(user, 'DELETE', 'SIP', `Bulk deleted ${ids.length} SIP records`);
-    res.json({ message: "Deleted successfully" });
+    await logActivity(user, 'DELETE', 'SIP', `🚨 Bulk deleted ${ids.length} SIP records.`);
+    res.json({ message: "Deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

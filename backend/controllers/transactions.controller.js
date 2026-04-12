@@ -31,11 +31,12 @@ export const createTransaction = async (req, res) => {
     );
 
     const schemeRes = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id::TEXT = $1::TEXT', [scheme_id]);
-    const schemeName = schemeRes.rows[0]?.scheme_name || 'Mutual Fund';
     const clientRes = await pool.query('SELECT full_name FROM clients WHERE id::TEXT = $1::TEXT', [client_id]);
+    
+    const schemeName = schemeRes.rows[0]?.scheme_name || 'Scheme';
     const clientName = clientRes.rows[0]?.full_name || 'Client';
 
-    await logActivity(user, 'CREATE', clientName, `${transaction_type}: ₹${new Intl.NumberFormat('en-IN').format(cleanAmount)} in ${schemeName}`);
+    await logActivity(user, 'CREATE', clientName, `💰 ${transaction_type}: ₹${new Intl.NumberFormat('en-IN').format(cleanAmount)}\n• Scheme: ${schemeName}`);
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -49,16 +50,25 @@ export const updateTransaction = async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
+    const oldRes = await pool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+    if (oldRes.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const old = oldRes.rows[0];
+
     const cleanAmount = t.amount.toString().replace(/,/g, '');
-    const result = await pool.query(
-      `UPDATE transactions SET 
-        transaction_date = $1, client_id = $2, scheme_id = $3, transaction_type = $4, amount = $5, platform = $6, notes = $7
-       WHERE id = $8 RETURNING *`,
+    await pool.query(
+      `UPDATE transactions SET transaction_date = $1, client_id = $2, scheme_id = $3, transaction_type = $4, amount = $5, platform = $6, notes = $7 WHERE id = $8`,
       [t.transaction_date, t.client_id, t.scheme_id, t.transaction_type, cleanAmount, t.platform, t.notes, id]
     );
-    
-    await logActivity(user, 'UPDATE', t.client_name || 'Transaction', `Modified entry: ₹${cleanAmount} (${t.transaction_type})`);
-    res.json(result.rows[0]);
+
+    let changes = [];
+    if (String(old.amount) !== String(cleanAmount)) changes.push(`• Amount: ₹${old.amount} → ₹${cleanAmount}`);
+    if (old.transaction_type !== t.transaction_type) changes.push(`• Type: ${old.transaction_type} → ${t.transaction_type}`);
+    if (old.platform !== t.platform) changes.push(`• Platform: ${old.platform} → ${t.platform}`);
+
+    const detailMsg = changes.length > 0 ? `Updated transaction:\n${changes.join('\n')}` : "Updated transaction metadata.";
+    await logActivity(user, 'UPDATE', t.client_name || 'Transaction', detailMsg);
+
+    res.json({ success: true });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -69,29 +79,34 @@ export const deleteTransaction = async (req, res) => {
   const user = req.user?.username || "System";
 
   try {
-    const transData = await pool.query('SELECT amount, transaction_type FROM transactions WHERE id = $1', [id]);
+    // JOIN to get client and scheme names before deleting
+    const transData = await pool.query(`
+        SELECT t.amount, t.transaction_type, c.full_name as client_name, s.scheme_name 
+        FROM transactions t
+        JOIN clients c ON t.client_id::TEXT = c.id::TEXT
+        JOIN mf_schemes s ON t.scheme_id::TEXT = s.id::TEXT
+        WHERE t.id = $1`, [id]);
+
     if (transData.rows.length === 0) return res.status(404).json({ error: "Not found" });
     
-    const amount = transData.rows[0]?.amount || 0;
-    const type = transData.rows[0]?.transaction_type || '';
+    const { amount, transaction_type, client_name, scheme_name } = transData.rows[0];
 
     await pool.query('DELETE FROM transactions WHERE id = $1', [id]);
-    await logActivity(user, 'DELETE', 'Transaction', `Removed ${type} record of ₹${amount}`);
+    await logActivity(user, 'DELETE', client_name, `🗑️ Deleted ${transaction_type} record:\n• Amount: ₹${amount}\n• Scheme: ${scheme_name}`);
     
-    res.json({ message: "Transaction deleted" });
+    res.json({ message: "Deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 💡 NEW: Bulk Delete Handler
 export const bulkDeleteTransactions = async (req, res) => {
   const { ids } = req.body;
   const user = req.user?.username || "System";
   try {
     await pool.query('DELETE FROM transactions WHERE id = ANY($1::text[])', [ids]);
-    await logActivity(user, 'DELETE', 'Transactions', `Bulk deleted ${ids.length} transaction records`);
-    res.json({ message: "Transactions deleted successfully" });
+    await logActivity(user, 'DELETE', 'Transactions', `🚨 Bulk deleted ${ids.length} transactions.`);
+    res.json({ message: "Success" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
