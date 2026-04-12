@@ -13,6 +13,7 @@ const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
 
+  // 🛡️ DATE HELPERS
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     const d = new Date(dateString);
@@ -37,7 +38,7 @@ const Clients = () => {
     client_code: '', full_name: '', date_of_birth: '', 
     onboarding_date: formatDateForInput(new Date()), 
     added_by: 'Paras', sourcing: 'Internal', sourcing_type: 'Family / Relative', mobile_number: '',
-    monthly_income: '', risk_profile: 'Medium', investment_experience: 'Beginner', 
+    monthly_income: '', risk_profile: 'Moderate', investment_experience: 'Beginner', 
     pan: '', aadhaar: '', nominee_name: '', nominee_relation: '', nominee_mobile: '', notes: '', email: ''
   };
 
@@ -65,7 +66,7 @@ const Clients = () => {
         setFormData(prev => ({ ...prev, client_code: nextId }));
       }
     } catch (err) { 
-      toast.error("Failed to sync with database");
+      toast.error("Database Sync Error");
     } finally {
       setLoading(false);
     }
@@ -88,9 +89,9 @@ const Clients = () => {
     try {
       if (isEditing) await api.put(url, formData);
       else await api.post(url, formData);
-      toast.success("✅ Success");
+      toast.success("✅ Saved Successfully");
       setIsEditing(false); setFormData(initialState); fetchClients(); setActiveSubTab('basic'); 
-    } catch (err) { toast.error("Error saving client"); }
+    } catch (err) { toast.error("Error saving client details"); }
   };
 
   const toggleSelect = (id) => {
@@ -103,10 +104,10 @@ const Clients = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (window.confirm(`Delete ${selectedIds.length} selected clients?`)) {
+    if (window.confirm(`Permanently delete ${selectedIds.length} selected clients?`)) {
       try {
         await api.post('/clients/bulk-delete', { ids: selectedIds });
-        toast.success("🗑️ Clients Deleted");
+        toast.success("🗑️ Selected Clients Deleted");
         fetchClients();
       } catch (err) { toast.error("Bulk Delete Failed"); }
     }
@@ -121,9 +122,13 @@ const Clients = () => {
       ...client,
       date_of_birth: formatDateForInput(client.dob || client.date_of_birth), 
       onboarding_date: formatDateForInput(client.onboarding_date),
-      pan: client.pan || '', aadhaar: client.aadhaar || '', email: client.email || '',
-      notes: client.notes || '', nominee_name: client.nominee_name || '',
-      nominee_relation: client.nominee_relation || '', nominee_mobile: client.nominee_mobile || ''
+      pan: client.pan || '', 
+      aadhaar: client.aadhaar || '', 
+      email: client.email || '',
+      notes: client.notes || '', 
+      nominee_name: client.nominee_name || '',
+      nominee_relation: client.nominee_relation || '', 
+      nominee_mobile: client.nominee_mobile || ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -152,7 +157,8 @@ const Clients = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+            {/* TAB 1: BASIC DETAILS */}
             <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
               <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: '#f8fafc'}} value={formData.client_code} readOnly /></div>
               <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
@@ -160,22 +166,34 @@ const Clients = () => {
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
               <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
               <div><label style={labelStyle}>Mobile *</label><input style={inputStyle} type="text" maxLength="10" value={formData.mobile_number} readOnly={isViewing} onChange={e => setFormData({...formData, mobile_number: e.target.value.replace(/[^0-9]/g, '')})} required /></div>
+              <div><label style={labelStyle}>Client Sourcing</label><select style={inputStyle} value={formData.sourcing} disabled={isViewing} onChange={e => setFormData({...formData, sourcing: e.target.value})}><option>Internal</option><option>External</option></select></div>
+              <div><label style={labelStyle}>Sourcing Type</label><select style={inputStyle} value={formData.sourcing_type} disabled={isViewing} onChange={e => setFormData({...formData, sourcing_type: e.target.value})}>
+                <option>Family / Relative</option><option>Friend</option><option>Colleague</option><option>Reference by Family</option><option>Reference by Colleague</option><option>Marketing</option><option>Others</option>
+              </select></div>
             </div>
+
+            {/* TAB 2: OTHER DETAILS */}
             <div style={{ display: activeSubTab === 'other' ? 'contents' : 'none' }}>
               <div><label style={labelStyle}>Monthly Income (₹)</label><input style={inputStyle} type="text" value={formatINR(formData.monthly_income)} readOnly={isViewing} onChange={e => setFormData({...formData, monthly_income: e.target.value.replace(/,/g, '')})} /></div>
               <div><label style={labelStyle}>PAN Card</label><input style={inputStyle} type="text" value={formData.pan} readOnly={isViewing} onChange={e => setFormData({...formData, pan: e.target.value})} /></div>
+              <div><label style={labelStyle}>Aadhaar No.</label><input style={inputStyle} type="text" value={formData.aadhaar} readOnly={isViewing} onChange={e => setFormData({...formData, aadhaar: e.target.value})} /></div>
               <div><label style={labelStyle}>Mail ID</label><input style={inputStyle} type="email" value={formData.email} readOnly={isViewing} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
-              <div style={{ gridColumn: 'span 3' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
+              <div><label style={labelStyle}>Risk Profile</label><select style={inputStyle} value={formData.risk_profile} disabled={isViewing} onChange={e => setFormData({...formData, risk_profile: e.target.value})}><option>Low</option><option>Moderate</option><option>High</option></select></div>
+              <div><label style={labelStyle}>Investment Experience</label><select style={inputStyle} value={formData.investment_experience} disabled={isViewing} onChange={e => setFormData({...formData, investment_experience: e.target.value})}><option>Beginner</option><option>Intermediate</option><option>Pro</option></select></div>
+              <div><label style={labelStyle}>Nominee Name</label><input style={inputStyle} type="text" value={formData.nominee_name} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_name: e.target.value})} /></div>
+              <div><label style={labelStyle}>Nominee Relation</label><input style={inputStyle} type="text" value={formData.nominee_relation} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_relation: e.target.value})} /></div>
+              <div><label style={labelStyle}>Nominee Mobile</label><input style={inputStyle} type="text" maxLength="10" value={formData.nominee_mobile} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_mobile: e.target.value.replace(/[^0-9]/g, '')})} /></div>
+              <div style={{ gridColumn: 'span 3' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '45px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
             </div>
           </div>
           <div style={{marginTop: '20px', display: 'flex', gap: '10px'}}>
-             <button type="submit" style={{padding: '12px 30px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#38bdf8', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold'}}>{isEditing ? "Update" : isViewing ? "Close" : "Add Client"}</button>
-             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 20px', borderRadius: '6px', border: '1px solid #ccc', background: 'white', cursor: 'pointer'}}>Cancel</button>}
+             <button type="submit" style={{padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#38bdf8', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold'}}>{isEditing ? "Update" : isViewing ? "Close View" : "Add Client"}</button>
+             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 20px', borderRadius: '6px', border: '1px solid #ccc', background: 'white', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
           </div>
         </form>
       </div>
 
-      {/* SEARCH AND BULK DELETE */}
+      {/* SEARCH AND BULK DELETE BAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
         <div style={{ position: 'relative', width: '400px' }}>
           <input type="text" placeholder="Search by Name, ID, or Mobile..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }} />
@@ -212,12 +230,12 @@ const Clients = () => {
                 <td style={{ padding: '12px', fontWeight: '600' }}>{c.full_name}</td>
                 <td style={{ padding: '12px' }}>{c.mobile_number}</td>
                 <td style={{ padding: '12px', color: '#64748b' }}>{formatDateForDisplay(c.onboarding_date)}</td>
-                <td style={{ padding: '12px', fontWeight: '500' }}>{c.added_by}</td>
+                <td style={{ padding: '12px' }}>{c.added_by}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                       <button onClick={() => handleAction(c, 'view')} style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>VIEW</button>
                       <button onClick={() => handleAction(c, 'edit')} style={{ color: '#38bdf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>EDIT</button>
-                      <button onClick={async () => { if(window.confirm("Delete?")) { try { await api.delete(`/clients/${c.id}`); toast.info("Deleted"); fetchClients(); } catch(err){toast.error("Error");}} }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>DELETE</button>
+                      <button onClick={async () => { if(window.confirm("Permanently delete this client?")) { try { await api.delete(`/clients/${c.id}`); toast.info("Client removed"); fetchClients(); } catch(err){toast.error("Error deleting client");}} }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>DELETE</button>
                     </div>
                 </td>
               </tr>
