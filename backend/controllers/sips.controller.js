@@ -23,7 +23,6 @@ export const createSip = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System"; 
 
-  // Ensure these are present and not empty strings
   if (!s.client_id || !s.scheme_id) {
     return res.status(400).json({ error: "Client ID and Scheme ID are required." });
   }
@@ -40,9 +39,9 @@ export const createSip = async (req, res) => {
       s.scheme_id, 
       s.amount, 
       s.start_date, 
-      s.end_date || null, // Handle empty date string
-      s.frequency, 
-      s.sip_day, 
+      s.end_date || null, 
+      s.frequency?.toLowerCase(), // 💡 Force lowercase for DB Constraint
+      parseInt(s.sip_day) || 1,    // 💡 Ensure integer
       s.status, 
       s.platform, 
       s.notes, 
@@ -74,8 +73,8 @@ export const updateSip = async (req, res) => {
       s.amount, 
       s.start_date, 
       s.end_date || null, 
-      s.frequency, 
-      s.sip_day, 
+      s.frequency?.toLowerCase(), // 💡 Force lowercase
+      parseInt(s.sip_day) || 1, 
       s.status, 
       s.platform, 
       s.notes, 

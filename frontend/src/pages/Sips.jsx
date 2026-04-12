@@ -17,7 +17,8 @@ const Sips = () => {
   const initialState = {
     sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
     start_date: new Date().toISOString().split('T')[0], end_date: '',
-    frequency: 'Monthly', sip_day: '1', status: 'Active', platform: 'NSE', notes: ''
+    frequency: 'monthly', // 💡 Fixed: lowercase to match DB constraint
+    sip_day: '1', status: 'Active', platform: 'NSE', notes: ''
   };
 
   const [formData, setFormData] = useState(initialState);
@@ -44,14 +45,14 @@ const Sips = () => {
     e.preventDefault();
     if (isViewing) return setIsViewing(false);
 
-    // 💡 VALIDATION: Ensure IDs are not empty to prevent DB Type errors
     if (!formData.client_id) return toast.warning("Please select a valid Client ID");
     if (!formData.scheme_id) return toast.warning("Please select a Scheme");
 
     const payload = { 
       ...formData, 
       amount: formData.amount.toString().replace(/,/g, ''),
-      end_date: formData.end_date || null // Ensure empty string becomes null for Postgres
+      end_date: formData.end_date || null,
+      frequency: formData.frequency.toLowerCase() // 💡 Force lowercase for DB safety
     };
 
     try {
@@ -105,7 +106,6 @@ const Sips = () => {
 
   return (
     <div className="container fade-in">
-      {/* STAT CARDS SECTION */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 className="title">SIP Tracker</h1>
         <div style={{ display: 'flex', gap: '15px' }}>
@@ -120,7 +120,6 @@ const Sips = () => {
         </div>
       </div>
       
-      {/* FORM SECTION */}
       <div className="card" style={{ marginBottom: '30px', padding: '25px', borderTop: isEditing ? '4px solid #f59e0b' : isViewing ? '4px solid #64748b' : '4px solid #3b82f6' }}>
         <form onSubmit={handleSubmit}>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
@@ -140,10 +139,11 @@ const Sips = () => {
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>SIP Amount (₹) *</label><input style={{width:'100%', padding:'8px'}} value={formData.amount} readOnly={isViewing} onChange={e=>setFormData({...formData, amount:e.target.value})} required /></div>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Frequency</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.frequency} disabled={isViewing} onChange={e=>setFormData({...formData, frequency:e.target.value})}>
-                <option>Monthly</option><option>Quarterly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
               </select></div>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>SIP Day</label><select style={{width:'100%', padding:'8px'}} value={formData.sip_day} disabled={isViewing} onChange={e=>setFormData({...formData, sip_day:e.target.value})}>
-                {[...Array(31)].map((_, i) => <option key={i+1}>{i+1}</option>)}
+                {[...Array(31)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
               </select></div>
               <div><label style={{fontSize:'12px', fontWeight:'bold'}}>Status</label>
               <select style={{width:'100%', padding:'8px'}} value={formData.status} disabled={isViewing} onChange={e=>setFormData({...formData, status:e.target.value})}>
@@ -162,7 +162,6 @@ const Sips = () => {
         </form>
       </div>
 
-      {/* SEARCH AND BULK ACTIONS */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
         <input type="text" placeholder="🔍 Filter SIPs..." style={{ padding: '8px 15px', borderRadius: '8px', border: '1px solid #ddd', width: '350px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         {selectedIds.length > 0 && (
@@ -172,7 +171,6 @@ const Sips = () => {
         )}
       </div>
 
-      {/* TABLE SECTION */}
       <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
           <thead>
@@ -204,8 +202,8 @@ const Sips = () => {
                 <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 'bold' }}>₹{formatINR(s.amount)}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>View</button>
-                        <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
+                        <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code, frequency: s.frequency?.toLowerCase()}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#64748b', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>View</button>
+                        <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code, frequency: s.frequency?.toLowerCase()}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#3b82f6', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Edit</button>
                         <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontWeight:'bold'}}>Delete</button>
                     </div>
                 </td>
