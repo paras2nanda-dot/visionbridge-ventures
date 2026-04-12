@@ -5,11 +5,10 @@ import {
   updateScheme, 
   deleteScheme 
 } from '../controllers/mfSchemes.controller.js';
-import { authenticateToken } from '../middleware/authMiddleware.js'; // Ensure this is imported if used
 
 const router = express.Router();
 
-// 💡 Fixed: All routes now point to the controller logic
+// 💡 Fixed: Routes now point to the controller functions
 router.get('/', getSchemes);
 router.post('/', createScheme);
 router.put('/:id', updateScheme);
