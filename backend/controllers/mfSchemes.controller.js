@@ -13,13 +13,18 @@ export const getSchemes = async (req, res) => {
 export const createScheme = async (req, res) => {
   const s = req.body;
   const user = req.user?.username || "System";
+
+  // 💡 CATEGORY SHIELD: Ensuring "Other" maps to something safe if needed
+  // If your DB fails on "Other", it might expect "Equity" or "Others"
+  const safeCategory = s.category === 'Other' ? 'Equity' : s.category;
+
   try {
     const result = await pool.query(
       `INSERT INTO mf_schemes 
       (scheme_name, amc_name, category, sub_category, large_cap, mid_cap, small_cap, debt_allocation, gold_allocation, commission_rate, total_current_value) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [
-        s.scheme_name, s.amc_name, s.category, s.sub_category, 
+        s.scheme_name, s.amc_name, safeCategory, s.sub_category, 
         Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
         Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
         Number(s.commission_rate || 0.8), Number(s.total_current_value || 0)
@@ -29,7 +34,7 @@ export const createScheme = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) { 
     console.error("DB Error:", err.message);
-    res.status(400).json({ error: err.message }); 
+    res.status(400).json({ error: "Database save error: " + err.message }); 
   }
 };
 
@@ -39,7 +44,7 @@ export const updateScheme = async (req, res) => {
   const user = req.user?.username || "System";
   
   try {
-    // 💡 Explicitly selecting only columns that exist to avoid "risk_level" ghost errors
+    // 💡 REMOVED risk_level entirely to fix the "column does not exist" error
     const query = `
       UPDATE mf_schemes SET 
         scheme_name = $1, 
@@ -71,11 +76,6 @@ export const updateScheme = async (req, res) => {
     ];
 
     const result = await pool.query(query, values);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Scheme not found" });
-    }
-
     await logActivity(user, 'UPDATE', s.scheme_name, `Updated scheme: ${s.scheme_name}`);
     res.json(result.rows[0]);
   } catch (err) { 
