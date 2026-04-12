@@ -1,14 +1,25 @@
-/* VisionBridge Executive Material Theme - Multi-Tab Visibility Fix */
+/* VisionBridge Executive Material Theme - Obsidian & Light Mode Suite */
 :root {
+  /* 🌎 LIGHT MODE (Preserved) */
   --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
   --card-bg-navy: linear-gradient(145deg, #1e293b, #0f172a);
-  
-  /* System Colors */
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
-  --text-main: #0f172a; /* Deep Slate for high contrast */
+  --text-main: #0f172a;
   --text-muted: #64748b;
   --border: rgba(226, 232, 240, 0.8);
+}
+
+/* 🌑 THE OBSIDIAN MODE (Midnight) */
+[data-theme='midnight'] {
+  --bg-main: #000000 !important;
+  --bg-card: #000000 !important;
+  --card-bg-navy: linear-gradient(145deg, #111827, #000000);
+  --text-main: #ffffff !important;
+  --text-muted: #94a3b8;
+  --border: #262626; /* Dark subtle borders for Obsidian */
+  --bg-dots: radial-gradient(#1a1a1a 1.5px, transparent 1.5px);
+  --icon-filter: invert(100%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,29 +30,80 @@ body {
   background-image: var(--bg-dots) !important;
   background-size: 30px 30px !important;
   color: var(--text-main) !important;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 🏢 THE DARK EXECUTIVE CARD (Used in Dashboard) */
+/* 🏢 THE DARK EXECUTIVE CARD (Dashboard) */
 .executive-card {
   background: var(--card-bg-navy) !important;
   border-radius: 20px !important;
-  border: 1.5px solid #020617 !important;
+  border: 1.5px solid #000000 !important;
   box-shadow: 
-    0 20px 40px -10px rgba(0, 0, 0, 0.5), 
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.3), 
-    inset 0 -2px 6px rgba(0,0,0,0.6) !important;
+    0 20px 40px -10px rgba(0, 0, 0, 0.7), 
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.1), 
+    inset 0 -2px 6px rgba(0,0,0,0.8) !important;
   padding: 24px !important;
   position: relative;
   overflow: hidden;
-  /* 🚨 White text ONLY for these dark cards */
   color: #ffffff !important;
 }
 
-.executive-card h2, .executive-card h3, .executive-card div, .executive-card span {
-  color: #ffffff !important;
+[data-theme='midnight'] .executive-card {
+  border-color: #333333 !important;
+  box-shadow: 0 0 0 1px #262626 !important;
 }
 
-/* 🥇 THE BRONZE ICON BUTTON */
+/* 📊 UNIVERSAL TABLE FIX - OBSIDIAN READY */
+table { 
+  background: var(--bg-card) !important; 
+  width: 100%; 
+  border-collapse: separate; 
+  border-spacing: 0; 
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+}
+
+th { 
+  background: #f1f5f9 !important; 
+  color: #475569 !important; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  font-size: 11px; 
+  padding: 16px 12px !important; 
+}
+
+[data-theme='midnight'] th { 
+  background: #0a0a0a !important; 
+  color: #ffffff !important; 
+  border-bottom: 2px solid #333333 !important;
+}
+
+td { 
+  padding: 14px 12px !important; 
+  border-bottom: 1px solid var(--border) !important; 
+  color: var(--text-main) !important; /* Forced white in Midnight */
+  background: var(--bg-card) !important;
+  font-size: 13px; 
+  font-weight: 600; 
+}
+
+/* 📝 FORMS & INPUTS - OBSIDIAN READY */
+input, select, textarea { 
+  background: var(--bg-card) !important; 
+  color: var(--text-main) !important; 
+  border: 1.5px solid var(--border) !important; 
+  padding: 12px; 
+  border-radius: 8px; 
+  outline: none;
+}
+
+[data-theme='midnight'] input:focus, 
+[data-theme='midnight'] select:focus {
+  border-color: #ffffff !important;
+}
+
+/* 🥇 ICON CONTAINER (Preserved) */
 .icon-container-3d {
   width: 52px;
   height: 52px;
@@ -52,50 +114,6 @@ body {
   justify-content: center;
   border: 1.5px solid #78350f;
   box-shadow: 4px 8px 18px rgba(0,0,0,0.6), inset 1px 1px 3px rgba(255,255,255,0.7);
-}
-
-/* 📊 STANDARD TABLES (For Clients, SIPs, Transactions) */
-table { 
-  background: #ffffff !important; 
-  width: 100%; 
-  border-collapse: separate; 
-  border-spacing: 0; 
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-}
-
-th { 
-  background: #f1f5f9 !important; 
-  color: #475569 !important; 
-  font-weight: 800; 
-  text-transform: uppercase; 
-  font-size: 11px; 
-  padding: 16px 12px !important; 
-  border-bottom: 2px solid var(--border) !important; 
-}
-
-td { 
-  padding: 14px 12px !important; 
-  border-bottom: 1px solid var(--border) !important; 
-  /* 🚨 FORCING DEEP SLATE FOR VISIBILITY ON WHITE ROWS */
-  color: #1e293b !important; 
-  background: #ffffff !important;
-  font-size: 13px; 
-  font-weight: 600; 
-}
-
-/* Row Hover */
-tr:hover td { background-color: #f8fafc !important; }
-
-/* 📝 Forms & Action Links */
-input, select, textarea { 
-  background: #ffffff !important; 
-  color: #1e293b !important; 
-  border: 1.5px solid var(--border) !important; 
-  padding: 12px; 
-  border-radius: 8px; 
 }
 
 .fade-in { animation: fadeIn 0.5s ease-out forwards; }
