@@ -1,6 +1,11 @@
-/* Reset and Global Styles */
+/* VisionBridge Executive Theme - Global */
 :root {
-  /* Light Mode - Premium Slate Palette */
+  /* Metallic Material Palette */
+  --bg-dots: radial-gradient(#cbd5e1 1px, transparent 1px);
+  --metal-shine: linear-gradient(135deg, #ffffff 0%, #f1f5f9 20%, #e2e8f0 45%, #cbd5e1 50%, #e2e8f0 55%, #f8fafc 80%, #ffffff 100%);
+  --bronze-button: radial-gradient(circle at 30% 30%, #f59e0b, #d97706, #92400e);
+
+  /* Your Existing Light Mode Palette */
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #1e293b;
@@ -8,13 +13,11 @@
   --border: rgba(226, 232, 240, 0.8);
   --accent: #0ea5e9;
   --accent-bg: rgba(14, 165, 233, 0.1);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --icon-filter: none;
 }
 
 [data-theme='midnight'] {
-  /* Midnight Mode - Deep Navy Palette */
   --bg-main: #0b0f1a;
   --bg-card: #161b2c;
   --text-main: #f8fafc;
@@ -24,17 +27,17 @@
   --accent-bg: rgba(56, 189, 248, 0.1);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
   --icon-filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
+  --metal-shine: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* 🏁 REPLICATING THE DOTTED BACKGROUND FROM YOUR IMAGE */
   background-color: var(--bg-main) !important;
+  background-image: var(--bg-dots);
+  background-size: 24px 24px;
   color: var(--text-main) !important;
   overflow-x: hidden;
   line-height: 1.5;
@@ -48,16 +51,9 @@ h1, h2, h3, h4, .title {
   font-weight: 700;
 }
 
-/* 📅 Date & Search Icon Fixes */
-::-webkit-calendar-picker-indicator {
-    filter: var(--icon-filter);
-    cursor: pointer;
-}
-
-.search-icon-container {
-    filter: var(--icon-filter);
-    opacity: 0.6;
-}
+/* 📅 Date & Search Icon Fixes (Preserved) */
+::-webkit-calendar-picker-indicator { filter: var(--icon-filter); cursor: pointer; }
+.search-icon-container { filter: var(--icon-filter); opacity: 0.6; }
 
 .main-content {
   flex: 1;
@@ -65,99 +61,38 @@ h1, h2, h3, h4, .title {
   padding: 40px;
   position: relative;
   z-index: 1; 
-  background-color: var(--bg-main);
+  background-color: transparent !important;
 }
 
-/* Premium Card Design */
+/* 🏢 THE BRUSHED METAL CARD (Replicating Image) */
 .card {
-  background: var(--bg-card) !important;
-  border-radius: 12px !important;
+  background: var(--metal-shine) !important;
+  border-radius: 20px !important;
   padding: 24px !important;
-  box-shadow: var(--shadow-md) !important; 
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important; 
   border: 1px solid var(--border) !important; 
   color: var(--text-main) !important;
-  transition: transform 0.2s ease;
-}
-
-.card-title {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  text-transform: capitalize; /* More professional than UPPERCASE */
-  letter-spacing: 0.01em;
-}
-
-.card-value {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -0.01em;
-}
-
-/* Refined Tables */
-table {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px;
-  border-collapse: separate;
-  border-spacing: 0;
+  position: relative;
   overflow: hidden;
 }
 
-th {
-  background: #f8fafc !important; /* Slightly distinct header bg */
-  color: var(--text-muted) !important;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 15px 12px !important;
-  border-bottom: 2px solid var(--border) !important; 
+/* 🥇 THE 3D BRONZE ICON BUTTON */
+.icon-button-3d {
+  width: 46px;
+  height: 46px;
+  background: var(--bronze-button);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.25), inset 1px 1px 3px rgba(255,255,255,0.5);
+  border: 1px solid #78350f;
 }
 
-[data-theme='midnight'] th {
-  background: #1e293b !important;
-}
+/* Tables & Forms (Preserved and Refined) */
+table { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+th { background: rgba(226, 232, 240, 0.6) !important; color: var(--text-muted) !important; font-weight: 700; font-size: 12px; text-transform: uppercase; padding: 15px 12px !important; border-bottom: 2px solid var(--border) !important; }
+input, select, textarea { background: var(--bg-card) !important; color: var(--text-main) !important; border: 1px solid var(--border) !important; padding: 10px 14px !important; border-radius: 8px !important; font-size: 14px !important; outline: none; }
 
-td {
-  padding: 14px 12px !important;
-  border-bottom: 1px solid var(--border) !important;
-  font-size: 13px;
-}
-
-/* Executive Form Elements */
-input, select, textarea {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border) !important;
-  padding: 10px 14px !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-input:focus, select:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-bg) !important;
-}
-
-label {
-  color: var(--text-muted) !important;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  display: block;
-}
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
