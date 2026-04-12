@@ -1,31 +1,12 @@
-/* VisionBridge Executive Material Theme - High Definition Visibility */
+/* VisionBridge Executive Theme - Absolute Visibility Fix */
 :root {
-  /* 🏁 THE DOTTED BACKGROUND */
   --bg-dots: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
-  
-  /* 🏢 THE 3D NAVY MATERIAL (Deep and Rich) */
   --card-bg: linear-gradient(145deg, #1e293b, #0f172a);
   
-  /* 💎 BRIGHT 3D BORDERS */
-  --border-outer: #020617;
-  --border-inner: rgba(255, 255, 255, 0.3); /* Brightened rim for HD visibility */
-  
-  /* Global Visibility Colors */
+  /* System Colors */
   --bg-main: #f8fafc;
   --text-main: #0f172a;
   --border: rgba(226, 232, 240, 0.8);
-  --accent: #0ea5e9;
-  --accent-bg: rgba(14, 165, 233, 0.1);
-  --icon-filter: none;
-}
-
-[data-theme='midnight'] {
-  --bg-main: #020617;
-  --bg-card: #111827;
-  --card-bg: linear-gradient(145deg, #1e293b, #020617);
-  --text-main: #f8fafc;
-  --bg-dots: radial-gradient(#1e293b 1.5px, transparent 1.5px);
-  --icon-filter: invert(100%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,30 +17,32 @@ body {
   background-image: var(--bg-dots) !important;
   background-size: 30px 30px !important;
   color: var(--text-main) !important;
-  overflow-x: hidden;
-  line-height: 1.5;
 }
 
-/* 🏢 THE HD 3D CARD (Forced High Contrast) */
+/* 🏢 THE 3D CARD - FORCING WHITE CONTENT */
 .card {
   background: var(--card-bg) !important;
   border-radius: 20px !important;
-  border: 1.5px solid var(--border-outer) !important;
-  
-  /* 💎 Heavy 3D "Raised Glass" Shadows */
+  border: 1.5px solid #020617 !important;
   box-shadow: 
     0 20px 40px -10px rgba(0, 0, 0, 0.5), 
-    inset 0 1.5px 0 var(--border-inner), 
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.3), 
     inset 0 -2px 6px rgba(0,0,0,0.6) !important;
-    
   padding: 24px !important;
   position: relative;
   overflow: hidden;
-  /* Force all children to respect visibility */
+}
+
+/* 🚨 CRITICAL: Force all text inside cards to white */
+.card h2, 
+.card h3, 
+.card div, 
+.card span, 
+.card p {
   color: #ffffff !important;
 }
 
-/* 🥇 THE BRIGHTENED 3D BRONZE BUTTON */
+/* 🥇 THE BRONZE ICON BUTTON */
 .icon-container-3d {
   width: 52px;
   height: 52px;
@@ -71,13 +54,6 @@ body {
   border: 1.5px solid #78350f;
   box-shadow: 4px 8px 18px rgba(0,0,0,0.6), inset 1px 1px 3px rgba(255,255,255,0.7);
 }
-
-h1, h2, h3, h4, .title { color: var(--text-main) !important; letter-spacing: -0.04em; font-weight: 800; }
-
-/* 📊 Table visibility (preserved from previous fix) */
-table { background: #ffffff !important; border: 1px solid var(--border) !important; border-radius: 12px; width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important; }
-th { background: #f1f5f9 !important; color: #475569 !important; font-weight: 800; text-transform: uppercase; font-size: 11px; padding: 16px 12px !important; border-bottom: 2px solid var(--border) !important; }
-td { padding: 14px 12px !important; border-bottom: 1px solid var(--border) !important; color: #1e293b !important; font-size: 13px; font-weight: 600; background: #ffffff !important; }
 
 .fade-in { animation: fadeIn 0.5s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
