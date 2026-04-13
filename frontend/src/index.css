@@ -116,7 +116,13 @@
   transition: all 0.3s ease !important; /* Smooth transition for the glow */
 }
 
-/* 💡 FIX: The glowing effect on focus (Indigo/Purple to match MF Schemes universally) */
+/* 💡 FIX: Force native browser calendar icons to invert to white in Obsidian mode */
+[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%) !important;
+  cursor: pointer;
+}
+
+/* The glowing effect on focus */
 [data-theme='midnight'] input:focus, 
 [data-theme='midnight'] select:focus, 
 [data-theme='midnight'] textarea:focus {
