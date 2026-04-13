@@ -80,3 +80,37 @@ body {
 [data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(100%);
 }
+
+/* 📱 SURGICAL MOBILE UI ENGINE */
+@media (max-width: 768px) {
+  /* 1. Reset Global Spacing */
+  .container { padding: 15px !important; }
+  .card { padding: 15px !important; margin-bottom: 20px !important; }
+  
+  /* 2. Fix Grid Overlap: Force any 3 or 4 column grid to stack vertically */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* 3. Fix Table Squashing: Allow scrolling without breaking layout */
+  .card[style*="overflow-x: auto"], 
+  div[style*="overflow-x: auto"] {
+    margin: 0 -15px !important; /* Makes table full-width on phone */
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+  
+  table {
+    min-width: 650px !important; /* Ensures headers don't wrap and look messy */
+  }
+
+  /* 4. Touch Optimization */
+  input, select, button {
+    height: 45px !important; /* Larger hit area for fingers */
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+  }
+  
+  .title { font-size: 26px !important; margin-bottom: 15px !important; }
+}

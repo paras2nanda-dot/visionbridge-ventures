@@ -131,7 +131,7 @@ const MFSchemes = () => {
   );
 
   const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '800', fontSize: '11px', color: 'var(--text-muted)' };
-  const inputStyle = { width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', outline: 'none', fontSize: '13px', background: 'var(--bg-card)', color: 'var(--text-main)' };
+  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', outline: 'none', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
     <div className="container fade-in">
@@ -139,9 +139,10 @@ const MFSchemes = () => {
 
       <div className="card" style={{ background: 'var(--bg-card)', borderTop: isEditing ? '4px solid #f59e0b' : '4px solid #6366f1', marginBottom: '30px' }}>
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '20px' }}>
+          {/* 📱 MOBILE FIX: Responsive Auto-Fit Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '15px', marginBottom: '20px' }}>
             <div><label style={labelStyle}>AMC Name *</label><input style={inputStyle} value={formData.amc_name} onChange={e => setFormData({...formData, amc_name: e.target.value})} required /></div>
-            <div style={{ gridColumn: 'span 2' }}><label style={labelStyle}>Scheme Name *</label><input style={inputStyle} value={formData.scheme_name} onChange={e => setFormData({...formData, scheme_name: e.target.value})} required /></div>
+            <div style={{ gridColumn: 'span 1' }}><label style={labelStyle}>Scheme Name *</label><input style={inputStyle} value={formData.scheme_name} onChange={e => setFormData({...formData, scheme_name: e.target.value})} required /></div>
             
             <div>
               <label style={labelStyle}>Category *</label>
@@ -165,11 +166,12 @@ const MFSchemes = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+          {/* 📱 MOBILE FIX: Switched to auto-fit to stack main value and percentage grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid #6366f1' }}>
                 <label style={{...labelStyle, color: '#6366f1'}}>Total Business Market Value (₹)</label>
                 <input 
-                    style={{...inputStyle, fontSize: '16px', fontWeight: '900'}} 
+                    style={{...inputStyle, fontSize: '18px', fontWeight: '900'}} 
                     type="number" 
                     step="any"
                     value={formData.total_current_value} 
@@ -180,58 +182,62 @@ const MFSchemes = () => {
               </div>
 
               <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                {/* Allocation grid stacks on small mobile */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
                     <div><label style={labelStyle}>Large %</label><input style={inputStyle} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Mid %</label><input style={inputStyle} type="number" step="any" value={formData.mid_cap} onChange={e => setFormData({...formData, mid_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Small %</label><input style={inputStyle} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Debt %</label><input style={inputStyle} type="number" step="any" value={formData.debt_allocation} onChange={e => setFormData({...formData, debt_allocation: e.target.value})} /></div>
                     <div><label style={labelStyle}>Gold %</label><input style={inputStyle} type="number" step="any" value={formData.gold_allocation} onChange={e => setFormData({...formData, gold_allocation: e.target.value})} /></div>
                 </div>
-                <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>Equity: <strong>{totalEquity}%</strong></span>
                     <span style={{ fontSize: '12px', fontWeight: '900', color: grandTotal === 100 ? '#10b981' : '#ef4444' }}>Grand Total: {grandTotal}%</span>
                 </div>
               </div>
           </div>
 
-          <button type="submit" disabled={isSaving} style={{ marginTop: '20px', padding: '12px 40px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900' }}>
-            {isSaving ? (isEditing ? "Updating..." : "Adding Scheme...") : (isEditing ? "Update Scheme" : "Add Scheme")}
-          </button>
-          {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ marginLeft: '10px', color: 'var(--text-muted)', cursor:'pointer', border:'none', background:'none', fontWeight: '900' }}>Cancel</button>}
+          <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900', flex: '1 1 auto' }}>
+              {isSaving ? (isEditing ? "Updating..." : "Adding Scheme...") : (isEditing ? "Update Scheme" : "Add Scheme")}
+            </button>
+            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ padding: '12px 20px', color: 'var(--text-muted)', cursor:'pointer', border:'1px solid var(--border)', background:'var(--bg-main)', borderRadius: '6px', fontWeight: '900' }}>Cancel</button>}
+          </div>
         </form>
       </div>
 
-      <div style={{ marginBottom: '15px', background: 'var(--bg-card)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ marginBottom: '15px', background: 'var(--bg-card)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={{color: 'var(--text-muted)'}}>🔍</span>
-        <input type="text" placeholder="Search Master..." style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-main)' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input type="text" placeholder="Search Master..." style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '15px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <div className="card" style={{ background: 'var(--bg-card)', padding: '0', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead style={{ background: 'var(--bg-main)' }}>
-            <tr style={{ borderBottom: '2px solid var(--border)' }}>
-              <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)' }}>AMC / Scheme</th>
-              <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)' }}>Category</th>
-              <th style={{ padding: '12px', textAlign: 'right', color: 'var(--text-muted)' }}>Comm. %</th>
-              <th style={{ padding: '12px', textAlign: 'right', color: 'var(--text-muted)' }}>Total Market Value</th>
-              <th style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSchemes.map(s => (
-              <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '12px' }}><strong style={{color: 'var(--text-main)'}}>{s.amc_name}</strong><br/><span style={{color: 'var(--text-muted)'}}>{s.scheme_name}</span></td>
-                <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.category}<br/><small style={{color: 'var(--text-muted)'}}>{s.sub_category}</small></td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight:'900', color: '#6366f1' }}>{s.commission_rate || '0.8'}%</td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
-                <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#6366f1', background: 'none', cursor: 'pointer', fontWeight: '900', marginRight: '10px' }}>Edit</button>
-                  <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '900' }}>Delete</button>
-                </td>
+      <div className="card" style={{ background: 'var(--bg-card)', padding: '0' }}>
+        <div className="table-container" style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead style={{ background: 'var(--bg-main)' }}>
+              <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)' }}>AMC / Scheme</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)' }}>Category</th>
+                <th style={{ padding: '12px', textAlign: 'right', color: 'var(--text-muted)' }}>Comm. %</th>
+                <th style={{ padding: '12px', textAlign: 'right', color: 'var(--text-muted)' }}>Total Market Value</th>
+                <th style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredSchemes.map(s => (
+                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '12px' }}><strong style={{color: 'var(--text-main)'}}>{s.amc_name}</strong><br/><span style={{color: 'var(--text-muted)'}}>{s.scheme_name}</span></td>
+                  <td style={{ padding: '12px', color: 'var(--text-main)' }}>{s.category}<br/><small style={{color: 'var(--text-muted)'}}>{s.sub_category}</small></td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight:'900', color: '#6366f1' }}>{s.commission_rate || '0.8'}%</td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#6366f1', background: 'none', cursor: 'pointer', fontWeight: '900', marginRight: '10px' }}>Edit</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
