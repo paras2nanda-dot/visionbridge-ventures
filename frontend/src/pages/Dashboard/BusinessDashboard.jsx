@@ -33,24 +33,30 @@ const BusinessDashboard = () => {
   };
 
   const MetricCard = ({ label, value, sub, icon, figureColor, pulse }) => (
-    <div className="executive-card fade-in">
+    /* 💡 RESTORED: Executive Card Styling with Navy Gradient */
+    <div className="fade-in" style={{ 
+      background: 'linear-gradient(145deg, #1e293b, #0f172a)', 
+      padding: '24px', 
+      borderRadius: '20px', 
+      position: 'relative', 
+      overflow: 'hidden', 
+      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+      minHeight: '160px'
+    }}>
       <div style={{ position: 'absolute', top: '22px', right: '22px', zIndex: 10 }} className="icon-container-3d">{icon}</div>
       <div style={{ fontSize: '11px', fontWeight: '900', color: '#ffffff', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', letterSpacing: '0.1em', paddingRight: '60px' }}>
         {pulse && <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', marginRight: '10px', boxShadow: '0 0 12px #10b981' }}></span>}
         {label}
       </div>
-      {/* 💡 FIX: Added wordBreak so massive numbers wrap cleanly when zoomed in */}
       <h2 style={{ fontSize: '34px', fontWeight: '950', color: figureColor || '#ffffff', margin: '0', letterSpacing: '-0.04em', paddingRight: '60px', wordBreak: 'break-word' }}>
         {value}
       </h2>
-      <div style={{ fontSize: '12px', color: '#ffffff', marginTop: '14px', fontWeight: '800', letterSpacing: '0.02em', opacity: 0.8 }}>{sub}</div>
+      <div style={{ fontSize: '12px', color: '#ffffff', marginTop: '14px', fontWeight: '800', letterSpacing: '0.02em', opacity: 0.7 }}>{sub}</div>
     </div>
   );
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
-
-      {/* 💡 FIX: Replaced "repeat(5, 1fr)" with "repeat(auto-fit, minmax(210px, 1fr))" to allow safe wrapping on zoom */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         <MetricCard label="Total Clients" value={data.total_clients} sub="MASTER DATABASE" icon={Icons.Users} />
         <MetricCard label="Total Active Clients" value={data.total_active_clients} sub="PORTFOLIO VALUE > 0" icon={Icons.Users} />
@@ -59,7 +65,6 @@ const BusinessDashboard = () => {
         <MetricCard label="Monthly SIP Book" value={`₹${formatINR(data.monthly_sip_book)}`} sub="RECURRING INFLOW" icon={Icons.Trending} />
       </div>
 
-      {/* 💡 FIX: Replaced "repeat(5, 1fr)" here as well */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '24px', marginBottom: '50px' }}>
         <MetricCard label="Expected AUM (12M)" value={`₹${formatINR(data.expected_aum_12m)}`} sub="PROJECTED GROWTH" icon={Icons.Growth} figureColor="#fbbf24" />
         <MetricCard label="Avg. Assets / Client" value={`₹${formatINR(data.avg_assets_per_client)}`} sub="PORTFOLIO QUALITY" icon={Icons.Users} />
@@ -69,7 +74,7 @@ const BusinessDashboard = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '35px' }}>
-        <div className="executive-card">
+        <div style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', padding: '30px', borderRadius: '20px' }}>
           <h3 style={{ marginBottom: '30px', fontSize: '24px', fontWeight: '950', color: '#ffffff' }}>🏆 Top Funds by Exposure</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {data.topFunds?.map((fund, idx) => {
@@ -87,7 +92,7 @@ const BusinessDashboard = () => {
           </div>
         </div>
 
-        <div className="executive-card">
+        <div style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', padding: '30px', borderRadius: '20px' }}>
           <h3 style={{ marginBottom: '30px', fontSize: '24px', fontWeight: '950', color: '#ffffff' }}>🎂 Client Birthdays (7 Days)</h3>
           {data.upcomingBirthdays?.map((client, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1.5px solid rgba(255,255,255,0.08)' }}>
