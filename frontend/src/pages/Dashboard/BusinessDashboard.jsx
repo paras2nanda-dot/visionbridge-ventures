@@ -39,7 +39,8 @@ const BusinessDashboard = () => {
         {pulse && <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', marginRight: '10px', boxShadow: '0 0 12px #10b981' }}></span>}
         {label}
       </div>
-      <h2 style={{ fontSize: '34px', fontWeight: '950', color: figureColor || '#ffffff', margin: '0', letterSpacing: '-0.04em', paddingRight: '60px' }}>
+      {/* 💡 FIX: Added wordBreak so massive numbers wrap cleanly when zoomed in */}
+      <h2 style={{ fontSize: '34px', fontWeight: '950', color: figureColor || '#ffffff', margin: '0', letterSpacing: '-0.04em', paddingRight: '60px', wordBreak: 'break-word' }}>
         {value}
       </h2>
       <div style={{ fontSize: '12px', color: '#ffffff', marginTop: '14px', fontWeight: '800', letterSpacing: '0.02em', opacity: 0.8 }}>{sub}</div>
@@ -49,7 +50,8 @@ const BusinessDashboard = () => {
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px', marginBottom: '24px' }}>
+      {/* 💡 FIX: Replaced "repeat(5, 1fr)" with "repeat(auto-fit, minmax(210px, 1fr))" to allow safe wrapping on zoom */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         <MetricCard label="Total Clients" value={data.total_clients} sub="MASTER DATABASE" icon={Icons.Users} />
         <MetricCard label="Total Active Clients" value={data.total_active_clients} sub="PORTFOLIO VALUE > 0" icon={Icons.Users} />
         <MetricCard label="Total Invested AUM" value={`₹${formatINR(data.total_invested_aum)}`} sub="PRINCIPAL COST BASIS" icon={Icons.Wallet} />
@@ -57,7 +59,8 @@ const BusinessDashboard = () => {
         <MetricCard label="Monthly SIP Book" value={`₹${formatINR(data.monthly_sip_book)}`} sub="RECURRING INFLOW" icon={Icons.Trending} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px', marginBottom: '50px' }}>
+      {/* 💡 FIX: Replaced "repeat(5, 1fr)" here as well */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '24px', marginBottom: '50px' }}>
         <MetricCard label="Expected AUM (12M)" value={`₹${formatINR(data.expected_aum_12m)}`} sub="PROJECTED GROWTH" icon={Icons.Growth} figureColor="#fbbf24" />
         <MetricCard label="Avg. Assets / Client" value={`₹${formatINR(data.avg_assets_per_client)}`} sub="PORTFOLIO QUALITY" icon={Icons.Users} />
         <MetricCard label="Comm. (Invested)" value={`₹${formatINR(data.comm_inv_monthly)}/mo`} sub={`ANNUAL: ₹${formatINR(data.comm_inv_annual)}`} icon={Icons.Revenue} figureColor="#60a5fa" />

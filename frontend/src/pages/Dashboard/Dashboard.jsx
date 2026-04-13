@@ -31,17 +31,19 @@ const Dashboard = () => {
         Dashboard
       </h1>
       
-      {/* 💡 NAVIGATION TABS - Added solid background to prevent overlap transparency */}
+      {/* 💡 NAVIGATION TABS - Fixed sticky positioning and padding for zoom levels */}
       <div style={{ 
         display: 'flex', 
         gap: '5px', 
         borderBottom: '2px solid #e2e8f0',
         background: '#f8fafc',
         position: 'sticky',
-        top: '-25px', // Adjusted to account for parent padding
+        top: '0', 
+        paddingTop: '10px',
+        paddingBottom: '0',
         zIndex: 100,
         overflowX: 'auto',
-        marginBottom: '10px'
+        marginBottom: '20px'
       }}>
         <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>
           🏢 Business Analytics
@@ -54,8 +56,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* 💡 CONTENT AREA - Optimized padding to fix card overlap */}
-      <div style={{ paddingTop: '15px' }}>
+      <div style={{ paddingTop: '5px' }}>
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
         
