@@ -53,9 +53,10 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           text-decoration: none;
           font-weight: 700;
           font-size: 14px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          /* 💡 FIX: Removed ellipsis and allowed text to wrap if necessary */
+          white-space: normal; 
+          word-wrap: break-word;
+          line-height: 1.4;
         }
         .sidebar-link.active {
           background: rgba(14, 165, 233, 0.15);
