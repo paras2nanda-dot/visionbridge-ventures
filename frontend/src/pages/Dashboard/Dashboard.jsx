@@ -7,31 +7,31 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
 
   const tabStyle = (tabName) => ({
-    padding: '14px 28px',
+    padding: '12px 20px', // 📱 Slightly smaller padding for mobile
     cursor: 'pointer',
     border: 'none',
     background: 'none',
-    fontSize: '15px',
+    fontSize: '14px', // 📱 Optimized font size
     fontWeight: activeTab === tabName ? '900' : '600',
     color: activeTab === tabName ? '#6366f1' : 'var(--text-muted)',
     borderBottom: activeTab === tabName ? '4px solid #6366f1' : '4px solid transparent',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '8px',
     outline: 'none',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap' // 📱 Vital: prevents tabs from breaking into lines
   });
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', padding: '25px', background: 'var(--bg-main)' }}>
+    /* 📱 Mobile: Reduced outer padding from 25px to 15px */
+    <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)' }}>
       
-      {/* 💡 Main Page Header */}
-      <h1 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)', marginBottom: '20px' }}>
+      <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '20px' }}>
         Dashboard
       </h1>
       
-      {/* 💡 NAVIGATION TABS */}
+      {/* 💡 NAVIGATION TABS - Optimized for Touch Scrolling */}
       <div style={{ 
         display: 'flex', 
         gap: '5px', 
@@ -39,10 +39,12 @@ const Dashboard = () => {
         background: 'var(--bg-main)',
         position: 'sticky',
         top: '0', 
-        paddingTop: '10px',
+        paddingTop: '5px',
         paddingBottom: '0',
         zIndex: 100,
-        overflowX: 'auto',
+        overflowX: 'auto', // 📱 Vital: Allows swiping through tabs on mobile
+        scrollbarWidth: 'none', // Hides scrollbar on Firefox
+        msOverflowStyle: 'none', // Hides scrollbar on IE
         marginBottom: '20px'
       }}>
         <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>

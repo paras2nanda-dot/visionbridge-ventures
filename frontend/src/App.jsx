@@ -41,7 +41,6 @@ function App() {
         const gain = context.createGain();
 
         osc.type = 'sine';
-        // Start high and drop fast to create the "pop" effect
         osc.frequency.setValueAtTime(800, context.currentTime);
         osc.frequency.exponentialRampToValueAtTime(100, context.currentTime + 0.1);
 
@@ -53,17 +52,12 @@ function App() {
 
         osc.start();
         osc.stop(context.currentTime + 0.1);
-      } catch (e) {
-        // Silently fail if audio context isn't supported
-      }
+      } catch (e) {}
     };
 
     const handleInteraction = (e) => {
-      // Listen for any button, link, tab, or clickable span
       const target = e.target.closest('button, a, select, .sidebar-link, [role="button"], input[type="submit"]');
-      if (target) {
-        playPop();
-      }
+      if (target) playPop();
     };
 
     window.addEventListener('pointerdown', handleInteraction);
@@ -95,7 +89,8 @@ function App() {
   }, [location.pathname]);
 
   return (
-    <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease' }}>
+    /* 📱 MOBILE FIX: Added overflow-x: hidden to prevent sideways wobble on phones */
+    <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease', overflowX: 'hidden' }}>
       <ToastContainer position="top-right" autoClose={3000} theme="colored" style={{ zIndex: 99999 }} />
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
