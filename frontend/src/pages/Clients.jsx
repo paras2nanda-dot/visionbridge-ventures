@@ -105,44 +105,55 @@ const Clients = () => {
     return c.full_name?.toLowerCase().includes(s) || c.client_code?.toLowerCase().includes(s) || c.mobile_number?.includes(s);
   });
 
-  const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)' };
-  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' };
+  const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
+  const inputStyle = { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'all 0.2s ease' };
 
   return (
     <div className="container fade-in" style={{ paddingBottom: '50px' }}>
-      <h1 className="title" style={{ color: 'var(--text-main)' }}>Clients Database</h1>
+      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '800' }}>Clients Database</h1>
 
-      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : isViewing ? '4px solid #64748b' : '4px solid #6366f1', marginBottom: '30px', padding: '25px', background: 'var(--bg-card)' }}>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <button type="button" onClick={() => setActiveSubTab('basic')} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: activeSubTab === 'basic' ? (isEditing ? '#f59e0b' : '#6366f1') : 'var(--bg-main)', color: activeSubTab === 'basic' ? 'white' : 'var(--text-muted)', fontWeight: 'bold', border:'none', transition: 'all 0.3s' }}>📋 Basic Details</button>
-          <button type="button" onClick={() => setActiveSubTab('other')} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: activeSubTab === 'other' ? (isEditing ? '#f59e0b' : '#6366f1') : 'var(--bg-main)', color: activeSubTab === 'other' ? 'white' : 'var(--text-muted)', fontWeight: 'bold', border:'none', transition: 'all 0.3s' }}>📝 Other Details</button>
+      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#6366f1'}`, marginBottom: '32px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'var(--bg-main)', padding: '6px', borderRadius: '12px' }}>
+          <button 
+            type="button" 
+            onClick={() => setActiveSubTab('basic')} 
+            style={{ 
+              flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', border: 'none', fontWeight: 'bold', transition: 'all 0.2s',
+              background: activeSubTab === 'basic' ? 'var(--bg-card)' : 'transparent',
+              color: activeSubTab === 'basic' ? '#6366f1' : 'var(--text-muted)',
+              boxShadow: activeSubTab === 'basic' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+            }}>📋 Basic Details</button>
+          <button 
+            type="button" 
+            onClick={() => setActiveSubTab('other')} 
+            style={{ 
+              flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', border: 'none', fontWeight: 'bold', transition: 'all 0.2s',
+              background: activeSubTab === 'other' ? 'var(--bg-card)' : 'transparent',
+              color: activeSubTab === 'other' ? '#6366f1' : 'var(--text-muted)',
+              boxShadow: activeSubTab === 'other' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+            }}>📝 Other Details</button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* 📱 MOBILE FIX: Used repeat(auto-fit) instead of fixed repeat(4) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '15px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
             <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
-              <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: 'var(--bg-main)'}} value={formData.client_code} readOnly /></div>
+              <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: 'var(--bg-main)', border: '1px dashed var(--border)'}} value={formData.client_code} readOnly /></div>
               <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
               <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
               <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
-              
               <div>
                 <label style={labelStyle}>Mobile *</label>
                 <input 
                   style={inputStyle} 
                   type="text"
                   inputMode="numeric"
-                  pattern="[0-9]{10}"
                   placeholder="10 digit number"
                   value={formData.mobile_number} 
                   readOnly={isViewing} 
                   onChange={e => {
                     const onlyNums = e.target.value.replace(/\D/g, '');
-                    if (onlyNums.length <= 10) {
-                      setFormData({...formData, mobile_number: onlyNums});
-                    }
+                    if (onlyNums.length <= 10) setFormData({...formData, mobile_number: onlyNums});
                   }} 
                   required 
                 />
@@ -156,30 +167,42 @@ const Clients = () => {
               <div><label style={labelStyle}>PAN Card</label><input style={inputStyle} type="text" value={formData.pan} readOnly={isViewing} onChange={e => setFormData({...formData, pan: e.target.value})} /></div>
               <div><label style={labelStyle}>Aadhaar No.</label><input style={inputStyle} type="text" value={formData.aadhaar} readOnly={isViewing} onChange={e => setFormData({...formData, aadhaar: e.target.value})} /></div>
               <div><label style={labelStyle}>Mail ID</label><input style={inputStyle} type="email" value={formData.email} readOnly={isViewing} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
-              {/* 💡 Adjusted for Responsive Stacking */}
-              <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
+              <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '80px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
             </div>
           </div>
-          <div style={{marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
-             <button type="submit" disabled={isSaving} style={{padding: '12px 30px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold'}}>
-                {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update" : isViewing ? "Close" : "Add Client")}
+          <div style={{marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
+             <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
+                {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update Client" : isViewing ? "Close View" : "Add Client")}
              </button>
-             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 20px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
+             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
           </div>
         </form>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ maxWidth: '400px', width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' }} />
-        {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Delete ({selectedIds.length})</button>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
+          <input type="text" placeholder="Search clients..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ ...inputStyle, paddingLeft: '40px', borderRadius: '12px' }} />
+          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+        </div>
+        {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Delete selected ({selectedIds.length})</button>}
       </div>
 
-      <div className="card" style={{ padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="card" style={{ padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead><tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}><th style={{ padding: '15px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} /></th><th style={{ color: 'var(--text-muted)' }}>ID</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Client Name</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Mobile</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Onboarded</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Added By</th><th style={{ color: 'var(--text-muted)' }}>Action</th></tr></thead>
+            <thead>
+              <tr style={{ background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '16px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} /></th>
+                <th style={{ color: 'var(--text-muted)', textAlign: 'left', padding: '16px', fontWeight: '700' }}>ID</th>
+                <th style={{ color: 'var(--text-muted)', textAlign: 'left', padding: '16px', fontWeight: '700' }}>CLIENT NAME</th>
+                <th style={{ color: 'var(--text-muted)', textAlign: 'left', padding: '16px', fontWeight: '700' }}>MOBILE</th>
+                <th style={{ color: 'var(--text-muted)', textAlign: 'left', padding: '16px', fontWeight: '700' }}>ONBOARDED</th>
+                <th style={{ color: 'var(--text-muted)', textAlign: 'left', padding: '16px', fontWeight: '700' }}>ADDED BY</th>
+                <th style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '16px', fontWeight: '700' }}>ACTION</th>
+              </tr>
+            </thead>
             <tbody>{filteredClients.map(c => (
-                <tr key={c.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(c.id) ? 'rgba(99, 102, 241, 0.1)' : 'transparent', color: 'var(--text-main)' }}>
+                <tr key={c.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(c.id) ? 'rgba(99, 102, 241, 0.04)' : 'transparent', color: 'var(--text-main)', transition: 'background 0.2s' }}>
                   <td style={{ padding: '12px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} /></td>
                   <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>{c.client_code}</td>
                   <td style={{ padding: '12px', fontWeight: '600' }}>{c.full_name}</td>
@@ -187,8 +210,8 @@ const Clients = () => {
                   <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
                   <td style={{ padding: '12px' }}>{c.added_by}</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '10px' }}>VIEW</button>
-                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '10px' }}>EDIT</button>
+                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '12px' }}>VIEW</button>
+                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '12px' }}>EDIT</button>
                       <button onClick={async () => { if(window.confirm("Delete?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>DELETE</button>
                   </td>
                 </tr>

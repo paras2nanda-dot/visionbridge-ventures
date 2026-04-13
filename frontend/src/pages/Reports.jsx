@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 
 const Reports = () => {
@@ -39,7 +40,6 @@ const Reports = () => {
     }
   };
 
-  // 🛡️ NEW: SYSTEM BACKUP LOGIC
   const handleBackup = async () => {
     setDownloadingReport('system-backup');
     try {
@@ -70,159 +70,167 @@ const Reports = () => {
     }
   };
 
-  // UPDATED Card Style to use Theme Variables
   const cardStyle = {
-    background: 'var(--bg-card, #ffffff)',
-    border: '2px solid var(--border, #cbd5e1)',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
     borderRadius: '16px',
-    padding: '25px',
+    padding: '24px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+    flexWrap: 'wrap',
+    gap: '20px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
   };
 
+  const btnStyle = (color) => ({
+    background: color,
+    color: 'white',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '10px',
+    fontWeight: '800',
+    fontSize: '13px',
+    cursor: 'pointer',
+    letterSpacing: '0.5px',
+    boxShadow: `0 4px 12px ${color}33`,
+    transition: 'all 0.2s ease',
+    minWidth: '160px'
+  });
+
   return (
-    <div className="fade-in" style={{ padding: '20px', paddingBottom: '50px' }}>
-      <h2 style={{ fontWeight: '900', color: 'var(--text-main, #0f172a)', marginBottom: '30px', borderLeft: '8px solid #3b82f6', paddingLeft: '15px' }}>
-        DOWNLOAD REPORTS
+    <div className="container fade-in" style={{ paddingBottom: '60px' }}>
+      <h2 style={{ 
+        fontWeight: '800', 
+        color: 'var(--text-main)', 
+        marginBottom: '32px', 
+        borderLeft: '6px solid #6366f1', 
+        paddingLeft: '16px',
+        textTransform: 'uppercase',
+        fontSize: '16px',
+        letterSpacing: '1px'
+      }}>
+        Report Export Center
       </h2>
 
-      {/* CARD 1: CLIENT-WISE INVESTED AUM */}
-      <div style={cardStyle}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Client-wise Invested AUM</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Client metrics including SIP ratios and Risk Profiles.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+        
+        {/* CARD 1: CLIENT-WISE INVESTED AUM */}
+        <div style={cardStyle}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Client-wise Invested AUM</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Detailed client metrics including SIP ratios and Risk Profiles.</p>
+          </div>
+          <button 
+            onClick={() => handleDownload('client-aum', 'Client_AUM_Report.xlsx')}
+            disabled={downloadingReport === 'client-aum'}
+            style={btnStyle('#1e293b')}
+          >
+            {downloadingReport === 'client-aum' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
+          </button>
         </div>
-        <button 
-          onClick={() => handleDownload('client-aum', 'Client_AUM_Report.xlsx')}
-          disabled={downloadingReport === 'client-aum'}
-          style={{
-            background: '#0f172a', color: 'white', border: 'none', padding: '10px 20px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'client-aum' ? 'wait' : 'pointer'
-          }}
-        >
-          {downloadingReport === 'client-aum' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
-        </button>
-      </div>
 
-      {/* CARD 2: SCHEME-WISE AUM */}
-      <div style={cardStyle}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Scheme-wise AUM</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
+        {/* CARD 2: SCHEME-WISE AUM */}
+        <div style={cardStyle}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Scheme-wise AUM</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
+          </div>
+          <button 
+            onClick={() => handleDownload('scheme-aum', 'Scheme_AUM_Report.xlsx')}
+            disabled={downloadingReport === 'scheme-aum'}
+            style={btnStyle('#10b981')}
+          >
+            {downloadingReport === 'scheme-aum' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
+          </button>
         </div>
-        <button 
-          onClick={() => handleDownload('scheme-aum', 'Scheme_AUM_Report.xlsx')}
-          disabled={downloadingReport === 'scheme-aum'}
-          style={{
-            background: '#10b981', color: 'white', border: 'none', padding: '10px 20px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'scheme-aum' ? 'wait' : 'pointer'
-          }}
-        >
-          {downloadingReport === 'scheme-aum' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
-        </button>
-      </div>
 
-      {/* CARD 3: MONTHLY SIP BOOK */}
-      <div style={cardStyle}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Monthly SIP Book</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Active SIP counts and amounts aggregated by scheme.</p>
+        {/* CARD 3: MONTHLY SIP BOOK */}
+        <div style={cardStyle}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Monthly SIP Book</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Active SIP counts and amounts aggregated by scheme.</p>
+          </div>
+          <button 
+            onClick={() => handleDownload('sip-book', 'Monthly_SIP_Book_Report.xlsx')}
+            disabled={downloadingReport === 'sip-book'}
+            style={btnStyle('#f59e0b')}
+          >
+            {downloadingReport === 'sip-book' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
+          </button>
         </div>
-        <button 
-          onClick={() => handleDownload('sip-book', 'Monthly_SIP_Book_Report.xlsx')}
-          disabled={downloadingReport === 'sip-book'}
-          style={{
-            background: '#f59e0b', color: 'white', border: 'none', padding: '10px 20px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'sip-book' ? 'wait' : 'pointer'
-          }}
-        >
-          {downloadingReport === 'sip-book' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
-        </button>
-      </div>
 
-      {/* CARD 4: MONTHLY COMMISSION REPORT */}
-      <div style={cardStyle}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Monthly Commission Report</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Revenue projections based on Invested and Market AUM.</p>
+        {/* CARD 4: MONTHLY COMMISSION REPORT */}
+        <div style={cardStyle}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Monthly Commission Report</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Revenue projections based on Invested and Market AUM.</p>
+          </div>
+          <button 
+            onClick={() => handleDownload('commission-report', 'Monthly_Commission_Report.xlsx')}
+            disabled={downloadingReport === 'commission-report'}
+            style={btnStyle('#6366f1')}
+          >
+            {downloadingReport === 'commission-report' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
+          </button>
         </div>
-        <button 
-          onClick={() => handleDownload('commission-report', 'Monthly_Commission_Report.xlsx')}
-          disabled={downloadingReport === 'commission-report'}
-          style={{
-            background: '#6366f1', color: 'white', border: 'none', padding: '10px 20px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'commission-report' ? 'wait' : 'pointer'
-          }}
-        >
-          {downloadingReport === 'commission-report' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
-        </button>
-      </div>
 
-      {/* CARD 5: CLIENTS DATABASE (FULL) */}
-      <div style={cardStyle}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>Clients Database (Full)</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Export all client records with complete KYC and contact details.</p>
+        {/* CARD 5: CLIENTS DATABASE (FULL) */}
+        <div style={cardStyle}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Clients Database (Full)</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Export all client records with complete KYC and contact details.</p>
+          </div>
+          <button 
+            onClick={() => handleDownload('clients-database', 'Full_Clients_Database.xlsx')}
+            disabled={downloadingReport === 'clients-database'}
+            style={btnStyle('#0ea5e9')}
+          >
+            {downloadingReport === 'clients-database' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
+          </button>
         </div>
-        <button 
-          onClick={() => handleDownload('clients-database', 'Full_Clients_Database.xlsx')}
-          disabled={downloadingReport === 'clients-database'}
-          style={{
-            background: '#0ea5e9', color: 'white', border: 'none', padding: '10px 20px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'clients-database' ? 'wait' : 'pointer'
-          }}
-        >
-          {downloadingReport === 'clients-database' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
-        </button>
-      </div>
 
-      {/* CARD 6: MF SCHEMES DATABASE (FULL) */}
-      <div style={cardStyle}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main, #1e293b)' }}>MF Schemes Database (Full)</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted, #64748b)', fontSize: '14px' }}>Master export of all mutual fund schemes and their allocations.</p>
+        {/* CARD 6: MF SCHEMES DATABASE (FULL) */}
+        <div style={cardStyle}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>MF Schemes Database (Full)</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Master export of all mutual fund schemes and their allocations.</p>
+          </div>
+          <button 
+            onClick={() => handleDownload('schemes-database', 'Full_MF_Schemes_Database.xlsx')}
+            disabled={downloadingReport === 'schemes-database'}
+            style={btnStyle('#8b5cf6')}
+          >
+            {downloadingReport === 'schemes-database' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
+          </button>
         </div>
-        <button 
-          onClick={() => handleDownload('schemes-database', 'Full_MF_Schemes_Database.xlsx')}
-          disabled={downloadingReport === 'schemes-database'}
-          style={{
-            background: '#8b5cf6', color: 'white', border: 'none', padding: '10px 20px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'schemes-database' ? 'wait' : 'pointer'
-          }}
-        >
-          {downloadingReport === 'schemes-database' ? 'GENERATING...' : '📥 DOWNLOAD EXCEL'}
-        </button>
-      </div>
 
-      {/* 🛡️ SYSTEM MAINTENANCE: FIXED COLORS FOR DARK MODE */}
-      <div style={{ 
-        ...cardStyle, 
-        border: '2px solid #991b1b', 
-        background: 'rgba(153, 27, 27, 0.2)', 
-        marginTop: '40px' 
-      }}>
-        <div>
-          <h3 style={{ margin: 0, fontWeight: '800', color: '#ef4444' }}>System Maintenance</h3>
-          <p style={{ margin: '5px 0 0 0', color: 'var(--text-main)', fontSize: '13px', opacity: 0.9 }}>
-            <strong>Admin Only:</strong> Full database JSON backup for disaster recovery.
-          </p>
+        {/* 🛡️ SYSTEM MAINTENANCE: DISASTER RECOVERY */}
+        <div style={{ 
+          ...cardStyle, 
+          background: 'rgba(239, 68, 68, 0.03)', 
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+          marginTop: '32px' 
+        }}>
+          <div style={{ flex: '1' }}>
+            <h3 style={{ margin: 0, fontWeight: '800', color: '#ef4444', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Disaster Recovery</h3>
+            <p style={{ margin: '6px 0 0 0', color: 'var(--text-main)', fontSize: '13px', opacity: 0.8 }}>
+              Internal database JSON backup for off-site system restoration.
+            </p>
+          </div>
+          <button 
+            onClick={handleBackup}
+            disabled={downloadingReport === 'system-backup'}
+            style={{
+              ...btnStyle('#ef4444'),
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)'
+            }}
+          >
+            {downloadingReport === 'system-backup' ? 'BACKING UP...' : '💾 SYSTEM BACKUP'}
+          </button>
         </div>
-        <button 
-          onClick={handleBackup}
-          disabled={downloadingReport === 'system-backup'}
-          style={{
-            background: '#ef4444', color: 'white', border: 'none', padding: '12px 25px', 
-            borderRadius: '8px', fontWeight: 'bold', cursor: downloadingReport === 'system-backup' ? 'wait' : 'pointer',
-            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
-          }}
-        >
-          {downloadingReport === 'system-backup' ? 'PREPARING...' : '💾 DOWNLOAD JSON'}
-        </button>
       </div>
-      
     </div>
   );
 };

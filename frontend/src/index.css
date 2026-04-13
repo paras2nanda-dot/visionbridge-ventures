@@ -1,20 +1,22 @@
-/* VisionBridge Premium Theme Suite */
+/* VisionBridge Premium Executive Suite */
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --border: rgba(226, 232, 240, 0.8);
+  /* 🪄 Refined: Transparent borders for a seamless look */
+  --border: rgba(0, 0, 0, 0.05); 
   --sidebar: #1e293b;
 }
 
-/* 🌑 MIDNIGHT THEME ONLY */
+/* 🌑 MIDNIGHT THEME REFINEMENT */
 [data-theme='midnight'] {
   --bg-main: #000000;
   --bg-card: #0d0d0d;
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  --border: #27272a;
+  /* 🪄 Refined: Subtle etched borders for dark mode */
+  --border: rgba(255, 255, 255, 0.08); 
   --sidebar: #000000;
 }
 
@@ -44,14 +46,29 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* 💎 THE EXECUTIVE CARD: Soft shadow + Subtle border */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px; 
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
 }
 
-/* 💎 AESTHETIC ICON HALO (Replaced 3D Container) */
+/* 💎 INPUT POLISH: Softer outlines */
+input, select, textarea {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
+  outline: none;
+}
+
+/* 💎 ICON HALO */
 .icon-container-3d {
   width: 48px;
   height: 48px;
@@ -61,8 +78,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
 }
 
@@ -70,47 +87,44 @@ body {
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
-  background-color: #18181b !important;
+  background-color: #121214 !important;
   color: #ffffff !important;
-  border: 1px solid #3f3f46 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color-scheme: dark !important; 
 }
 
 /* Date Icon Fix */
 [data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(100%);
+  opacity: 0.5;
 }
 
 /* 📱 SURGICAL MOBILE UI ENGINE */
 @media (max-width: 768px) {
-  /* 1. Reset Global Spacing */
   .container { padding: 15px !important; }
-  .card { padding: 15px !important; margin-bottom: 20px !important; }
+  .card { padding: 20px !important; margin-bottom: 20px !important; border-radius: 12px; }
   
-  /* 2. Fix Grid Overlap: Force any 3 or 4 column grid to stack vertically */
   [style*="grid-template-columns"] {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    gap: 16px !important;
   }
 
-  /* 3. Fix Table Squashing: Allow scrolling without breaking layout */
   .card[style*="overflow-x: auto"], 
   div[style*="overflow-x: auto"] {
-    margin: 0 -15px !important; /* Makes table full-width on phone */
+    margin: 0 -15px !important; 
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
   }
   
   table {
-    min-width: 650px !important; /* Ensures headers don't wrap and look messy */
+    min-width: 700px !important; 
   }
 
-  /* 4. Touch Optimization */
   input, select, button {
-    height: 45px !important; /* Larger hit area for fingers */
-    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    height: 48px !important; 
+    font-size: 16px !important; 
   }
   
-  .title { font-size: 26px !important; margin-bottom: 15px !important; }
+  .title { font-size: 28px !important; margin-bottom: 20px !important; }
 }
