@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import api from '../services/api'; 
-import { toast } from 'react-toastify'; // 💡 Added toast
+import { toast } from 'react-toastify'; 
 
 const MFSchemes = () => {
   const [schemes, setSchemes] = useState([]);
@@ -125,9 +126,8 @@ const MFSchemes = () => {
     s.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Updated styles to use Theme Variables
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '800', fontSize: '11px', color: 'var(--text-muted, #475569)' };
-  const inputStyle = { width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border, #cbd5e1)', outline: 'none', fontSize: '13px', background: 'var(--bg-card)', color: 'var(--text-main)' };
+  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '800', fontSize: '11px', color: 'var(--text-muted)' };
+  const inputStyle = { width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', outline: 'none', fontSize: '13px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
     <div className="container fade-in">
@@ -162,21 +162,19 @@ const MFSchemes = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              {/* FIXED: Removed blue background for var(--bg-main) */}
-              <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid #3b82f6' }}>
-                <label style={{...labelStyle, color: '#3b82f6'}}>Total Business Market Value (₹)</label>
+              <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid #6366f1' }}>
+                <label style={{...labelStyle, color: '#6366f1'}}>Total Business Market Value (₹)</label>
                 <input 
-                    style={{...inputStyle, fontSize: '16px', fontWeight: '900', background: 'var(--bg-card)'}} 
+                    style={{...inputStyle, fontSize: '16px', fontWeight: '900'}} 
                     type="number" 
                     step="any"
                     value={formData.total_current_value} 
                     onChange={e => setFormData({...formData, total_current_value: e.target.value})} 
                     placeholder="Enter aggregate from portal"
                 />
-                <small style={{display:'block', marginTop: '5px', color: '#3b82f6', fontSize: '10px', fontWeight: '700'}}>Total AUM for this fund across all clients</small>
+                <small style={{display:'block', marginTop: '5px', color: '#6366f1', fontSize: '10px', fontWeight: '700'}}>Total AUM for this fund across all clients</small>
               </div>
 
-              {/* FIXED: Removed grey background for var(--bg-main) */}
               <div style={{ padding: '15px', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
                     <div><label style={labelStyle}>Large %</label><input style={inputStyle} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
@@ -221,7 +219,7 @@ const MFSchemes = () => {
                 <td style={{ padding: '12px', textAlign: 'right', fontWeight:'900', color: '#6366f1' }}>{s.commission_rate || '0.8'}%</td>
                 <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#3b82f6', background: 'none', cursor: 'pointer', fontWeight: '900', marginRight: '10px' }}>Edit</button>
+                  <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#6366f1', background: 'none', cursor: 'pointer', fontWeight: '900', marginRight: '10px' }}>Edit</button>
                   <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '900' }}>Delete</button>
                 </td>
               </tr>

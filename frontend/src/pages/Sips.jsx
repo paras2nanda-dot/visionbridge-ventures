@@ -99,7 +99,7 @@ const Sips = () => {
     s.sip_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const inputStyle = { width:'100%', padding:'8px', background: 'var(--bg-card, #ffffff)', color: 'var(--text-main, #0f172a)', border: '1px solid var(--border)', borderRadius: '6px', outline: 'none' };
+  const inputStyle = { width:'100%', padding:'8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '6px', outline: 'none' };
   const labelStyle = { fontSize:'12px', fontWeight:'bold', color: 'var(--text-muted)' };
 
   return (
@@ -147,6 +147,7 @@ const Sips = () => {
               <select style={inputStyle} value={formData.status} disabled={isViewing} onChange={e=>setFormData({...formData, status:e.target.value})}>
                 <option>Active</option><option>Paused</option><option>Stopped</option>
               </select></div>
+              {/* 💡 FIX: Removed background override to let global CSS handle native icon color */}
               <div><label style={labelStyle}>Start Date</label><input type="date" style={inputStyle} value={formData.start_date} readOnly={isViewing} onChange={e=>setFormData({...formData, start_date:e.target.value})} required /></div>
               <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} value={formData.end_date} readOnly={isViewing} onChange={e=>setFormData({...formData, end_date:e.target.value})} /></div>
               <div><label style={labelStyle}>Platform</label><select style={inputStyle} value={formData.platform} disabled={isViewing} onChange={e=>setFormData({...formData, platform:e.target.value})}><option>NSE</option><option>BSE</option></select></div>

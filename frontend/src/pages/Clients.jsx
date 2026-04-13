@@ -97,25 +97,25 @@ const Clients = () => {
     return c.full_name?.toLowerCase().includes(s) || c.client_code?.toLowerCase().includes(s) || c.mobile_number?.includes(s);
   });
 
-  // 💡 FIX: Upgraded inline styles to use dynamic CSS variables
-  const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted, #475569)' };
-  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border, #cbd5e1)', fontSize: '14px', background: 'var(--bg-card, #ffffff)', color: 'var(--text-main, #0f172a)', outline: 'none' };
+  const labelStyle = { display: 'block', marginBottom: '5px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)' };
+  const inputStyle = { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' };
 
   return (
     <div className="container fade-in" style={{ paddingBottom: '50px' }}>
-      <h1 className="title" style={{ color: 'var(--text-main, #0f172a)' }}>Clients Database</h1>
+      <h1 className="title" style={{ color: 'var(--text-main)' }}>Clients Database</h1>
 
-      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : isViewing ? '4px solid #64748b' : '4px solid #6366f1', marginBottom: '30px', padding: '25px', background: 'var(--bg-card, #ffffff)' }}>
+      <div className="card" style={{ borderTop: isEditing ? '4px solid #f59e0b' : isViewing ? '4px solid #64748b' : '4px solid #6366f1', marginBottom: '30px', padding: '25px', background: 'var(--bg-card)' }}>
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <button type="button" onClick={() => setActiveSubTab('basic')} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: activeSubTab === 'basic' ? (isEditing ? '#f59e0b' : '#6366f1') : 'var(--bg-main, #f1f5f9)', color: activeSubTab === 'basic' ? 'white' : 'var(--text-muted, #64748b)', fontWeight: 'bold', border:'none', transition: 'all 0.3s' }}>📋 Basic Details</button>
-          <button type="button" onClick={() => setActiveSubTab('other')} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: activeSubTab === 'other' ? (isEditing ? '#f59e0b' : '#6366f1') : 'var(--bg-main, #f1f5f9)', color: activeSubTab === 'other' ? 'white' : 'var(--text-muted, #64748b)', fontWeight: 'bold', border:'none', transition: 'all 0.3s' }}>📝 Other Details</button>
+          <button type="button" onClick={() => setActiveSubTab('basic')} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: activeSubTab === 'basic' ? (isEditing ? '#f59e0b' : '#6366f1') : 'var(--bg-main)', color: activeSubTab === 'basic' ? 'white' : 'var(--text-muted)', fontWeight: 'bold', border:'none', transition: 'all 0.3s' }}>📋 Basic Details</button>
+          <button type="button" onClick={() => setActiveSubTab('other')} style={{ flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', background: activeSubTab === 'other' ? (isEditing ? '#f59e0b' : '#6366f1') : 'var(--bg-main)', color: activeSubTab === 'other' ? 'white' : 'var(--text-muted)', fontWeight: 'bold', border:'none', transition: 'all 0.3s' }}>📝 Other Details</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
             <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
-              <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: 'var(--bg-main, #f8fafc)'}} value={formData.client_code} readOnly /></div>
+              <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: 'var(--bg-main)'}} value={formData.client_code} readOnly /></div>
               <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
+              {/* 💡 FIX: Removed background override to let global CSS handle native icon color */}
               <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
               <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
@@ -140,23 +140,23 @@ const Clients = () => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
-        <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '400px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border, #e2e8f0)', background: 'var(--bg-card, #ffffff)', color: 'var(--text-main, #0f172a)', outline: 'none' }} />
+        <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '400px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' }} />
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Delete ({selectedIds.length})</button>}
       </div>
 
-      <div className="card" style={{ padding: '0', overflowX: 'auto', background: 'var(--bg-card, #ffffff)', border: '1px solid var(--border)' }}>
+      <div className="card" style={{ padding: '0', overflowX: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead><tr style={{ background: 'var(--bg-main, #f8fafc)', borderBottom: '2px solid var(--border, #e2e8f0)' }}><th style={{ padding: '15px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} /></th><th style={{ color: 'var(--text-muted)' }}>ID</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Client Name</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Mobile</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Onboarded</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Added By</th><th style={{ color: 'var(--text-muted)' }}>Action</th></tr></thead>
+          <thead><tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}><th style={{ padding: '15px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} /></th><th style={{ color: 'var(--text-muted)' }}>ID</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Client Name</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Mobile</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Onboarded</th><th style={{ color: 'var(--text-muted)', textAlign: 'left' }}>Added By</th><th style={{ color: 'var(--text-muted)' }}>Action</th></tr></thead>
           <tbody>{filteredClients.map(c => (
-              <tr key={c.id} style={{ borderBottom: '1px solid var(--border, #f1f5f9)', background: selectedIds.includes(c.id) ? 'rgba(99, 102, 241, 0.1)' : 'transparent', color: 'var(--text-main, #0f172a)' }}>
+              <tr key={c.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(c.id) ? 'rgba(99, 102, 241, 0.1)' : 'transparent', color: 'var(--text-main)' }}>
                 <td style={{ padding: '12px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} /></td>
                 <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>{c.client_code}</td>
                 <td style={{ padding: '12px', fontWeight: '600' }}>{c.full_name}</td>
                 <td style={{ padding: '12px' }}>{c.mobile_number}</td>
-                <td style={{ padding: '12px', color: 'var(--text-muted, #64748b)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
+                <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
                 <td style={{ padding: '12px' }}>{c.added_by}</td>
                 <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted, #64748b)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '10px' }}>VIEW</button>
+                    <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '10px' }}>VIEW</button>
                     <button onClick={() => handleAction(c, 'edit')} style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', marginRight: '10px' }}>EDIT</button>
                     <button onClick={async () => { if(window.confirm("Delete?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>DELETE</button>
                 </td>
