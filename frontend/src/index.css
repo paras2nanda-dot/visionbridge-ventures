@@ -18,28 +18,18 @@
   --sidebar: #000000;
 }
 
-/* 📊 TEXT RULES: Only force white text when in Midnight mode */
+/* 📊 TEXT RULES */
 [data-theme='midnight'] body,
-[data-theme='midnight'] h1,
-[data-theme='midnight'] h2,
-[data-theme='midnight'] h3,
-[data-theme='midnight'] p,
-[data-theme='midnight'] label,
-[data-theme='midnight'] td,
-[data-theme='midnight'] th,
-[data-theme='midnight'] span {
+[data-theme='midnight'] h1, [data-theme='midnight'] h2, [data-theme='midnight'] h3,
+[data-theme='midnight'] p, [data-theme='midnight'] label,
+[data-theme='midnight'] td, [data-theme='midnight'] th, [data-theme='midnight'] span {
   color: #ffffff !important;
 }
 
-/* ☀️ LIGHT MODE RULES: Ensure text is dark */
 [data-theme='light'] body,
-[data-theme='light'] h1,
-[data-theme='light'] h2,
-[data-theme='light'] h3,
-[data-theme='light'] p,
-[data-theme='light'] label,
-[data-theme='light'] td,
-[data-theme='light'] th,
+[data-theme='light'] h1, [data-theme='light'] h2, [data-theme='light'] h3,
+[data-theme='light'] p, [data-theme='light'] label,
+[data-theme='light'] td, [data-theme='light'] th, 
 [data-theme='light'] span:not(.breadcrumb-active) {
   color: #0f172a !important;
 }
@@ -59,6 +49,21 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
+}
+
+/* 💎 AESTHETIC ICON HALO (Replaced 3D Container) */
+.icon-container-3d {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
 }
 
 /* Force dark UI for native pickers in Midnight */
