@@ -65,6 +65,11 @@ const Clients = () => {
     e.preventDefault();
     if (isViewing) return setIsViewing(false);
     
+    // 💡 Double Check: Ensure it's exactly 10 digits before sending to API
+    if (formData.mobile_number.length !== 10) {
+      return toast.warn("⚠️ Mobile number must be exactly 10 digits.");
+    }
+
     setIsSaving(true); // 💡 Start animation
     try {
       if (isEditing) await api.put(`/clients/${editingId}`, formData);
@@ -122,7 +127,22 @@ const Clients = () => {
               <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
               <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
-              <div><label style={labelStyle}>Mobile *</label><input style={inputStyle} type="text" value={formData.mobile_number} readOnly={isViewing} onChange={e => setFormData({...formData, mobile_number: e.target.value.replace(/\D/g, '')})} required /></div>
+              {/* 💡 FIX: Added maxLength and strict 10-digit slicing in onChange */}
+              <div>
+                <label style={labelStyle}>Mobile *</label>
+                <input 
+                  style={inputStyle} 
+                  type="text" 
+                  maxLength="10" 
+                  value={formData.mobile_number} 
+                  readOnly={isViewing} 
+                  onChange={e => {
+                    const onlyNums = e.target.value.replace(/\D/g, '');
+                    setFormData({...formData, mobile_number: onlyNums.slice(0, 10)});
+                  }} 
+                  required 
+                />
+              </div>
             </div>
 
             <div style={{ display: activeSubTab === 'other' ? 'contents' : 'none' }}>
