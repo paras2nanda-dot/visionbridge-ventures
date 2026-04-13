@@ -37,18 +37,27 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    triggerPop(); // 🔊 Play sound
+    triggerPop(); 
     setIsLoggingIn(true); 
-    const cleanUsername = username.trim().toLowerCase();
+
+    // 💡 FIX: We trim spaces but keep original casing to match DB exactly.
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
 
     try {
-      const res = await api.post("/auth/login", { username: cleanUsername, password });
+      const res = await api.post("/auth/login", { 
+        username: cleanUsername, 
+        password: cleanPassword 
+      });
+      
       sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
       sessionStorage.setItem("token", res.data.token); 
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
       navigate("/dashboard");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Invalid username or password");
+      // 💡 Improved error feedback
+      const errorMsg = err.response?.data?.error || "Invalid username or password";
+      toast.error(errorMsg);
     } finally {
       setIsLoggingIn(false); 
     }
@@ -56,11 +65,15 @@ export default function Login() {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    triggerPop(); // 🔊 Play sound
+    triggerPop();
     setIsResetting(true);
-    const cleanResetUser = resetUser.trim().toLowerCase();
+    const cleanResetUser = resetUser.trim();
     try {
-      await api.post("/auth/reset-password", { username: cleanResetUser, securityAnswer, newPassword });
+      await api.post("/auth/reset-password", { 
+        username: cleanResetUser, 
+        securityAnswer: securityAnswer.trim(), 
+        newPassword: newPassword.trim() 
+      });
       toast.success("✅ Password updated successfully!");
       setTimeout(() => setShowReset(false), 2000);
     } catch (err) {
@@ -90,10 +103,26 @@ export default function Login() {
           <h2 style={styles.formTitle}>Welcome Back</h2>
           <form onSubmit={handleLogin} style={{width: '100%'}}>
             <label style={styles.label}>Username</label>
-            <input style={styles.input} className="login-field" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <input 
+                style={styles.input} 
+                className="login-field" 
+                placeholder="Username" 
+                value={username} 
+                onChange={(e) => setUsername(e.target.value)} 
+                autoCapitalize="none"
+                required 
+            />
             <label style={styles.label}>Password</label>
             <div style={styles.passwordContainer}>
-              <input type={showPassword ? "text" : "password"} style={styles.passwordInput} className="login-field" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input 
+                type={showPassword ? "text" : "password"} 
+                style={styles.passwordInput} 
+                className="login-field" 
+                placeholder="Password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+              />
               <span style={styles.eyeIcon} onClick={() => { triggerPop(); setShowPassword(!showPassword); }}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
             <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>{isLoggingIn ? "Authenticating..." : "Sign In"}</button>
@@ -107,7 +136,7 @@ export default function Login() {
           <div style={styles.modalCard}>
             <h3 style={{color: 'var(--text-main)', marginBottom: '20px', fontWeight: '800'}}>Reset Password</h3>
             <form onSubmit={handleResetPassword}>
-              <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required />
+              <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required autoCapitalize="none" />
               <input style={styles.input} placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
               <input style={styles.input} type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
               <button type="submit" style={styles.loginBtn} disabled={isResetting}>{isResetting ? "UPDATING..." : "Reset"}</button>
