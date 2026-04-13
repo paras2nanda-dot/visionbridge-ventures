@@ -1,64 +1,77 @@
-/* VisionBridge Total Obsidian & Premium Light Suite */
+/* VisionBridge Premium Theme Suite */
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
   --border: rgba(226, 232, 240, 0.8);
-  --card-bg-navy: linear-gradient(145deg, #1e293b, #0f172a);
+  --sidebar: #1e293b;
 }
 
-/* 🌑 THE OBSIDIAN MODE (Midnight) */
+/* 🌑 MIDNIGHT THEME ONLY */
 [data-theme='midnight'] {
-  --bg-main: #000000 !important;
-  --bg-card: #000000 !important;
-  --text-main: #ffffff !important;
-  --text-muted: #ffffff !important;
-  --border: #333333 !important;
+  --bg-main: #000000;
+  --bg-card: #0d0d0d;
+  --text-main: #ffffff;
+  --text-muted: #a1a1aa;
+  --border: #27272a;
+  --sidebar: #000000;
 }
 
-[data-theme='midnight'], 
+/* 📊 TEXT RULES: Only force white text when in Midnight mode */
 [data-theme='midnight'] body,
-[data-theme='midnight'] #root,
-[data-theme='midnight'] .main-content,
-[data-theme='midnight'] .container,
-[data-theme='midnight'] section,
-[data-theme='midnight'] article {
-  background-color: #000000 !important;
-  background-image: none !important;
-  color: #ffffff !important;
-  border-color: #333333 !important;
-}
-
-[data-theme='midnight'] label,
-[data-theme='midnight'] p,
 [data-theme='midnight'] h1,
 [data-theme='midnight'] h2,
 [data-theme='midnight'] h3,
-[data-theme='midnight'] h4,
+[data-theme='midnight'] p,
+[data-theme='midnight'] label,
 [data-theme='midnight'] td,
-[data-theme='midnight'] th {
+[data-theme='midnight'] th,
+[data-theme='midnight'] span {
   color: #ffffff !important;
 }
 
-[data-theme='midnight'] .card {
-  background: #000000 !important;
-  border: 1px solid #333333 !important;
+/* ☀️ LIGHT MODE RULES: Ensure text is dark */
+[data-theme='light'] body,
+[data-theme='light'] h1,
+[data-theme='light'] h2,
+[data-theme='light'] h3,
+[data-theme='light'] p,
+[data-theme='light'] label,
+[data-theme='light'] td,
+[data-theme='light'] th,
+[data-theme='light'] span:not(.breadcrumb-active) {
+  color: #0f172a !important;
 }
 
-[data-theme='midnight'] input, 
-[data-theme='midnight'] select, 
-[data-theme='midnight'] textarea {
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border: 1px solid #333333 !important;
-  color-scheme: dark !important; 
-}
-
-/* Global Reset */
+/* General Layout Fixes */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* Force dark UI for native pickers in Midnight */
+[data-theme='midnight'] input, 
+[data-theme='midnight'] select, 
+[data-theme='midnight'] textarea {
+  background-color: #18181b !important;
+  color: #ffffff !important;
+  border: 1px solid #3f3f46 !important;
+  color-scheme: dark !important; 
+}
+
+/* Date Icon Fix */
+[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%);
 }
