@@ -12,6 +12,7 @@ const Transactions = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false); // 💡 Added isSaving state
   const [selectedIds, setSelectedIds] = useState([]);
 
   const initialState = {
@@ -48,6 +49,7 @@ const Transactions = () => {
     if (isViewing) return setIsViewing(false);
     if (!formData.client_id || !formData.scheme_id) return toast.warn("⚠️ Validate Client and Scheme.");
     
+    setIsSaving(true); // 💡 Start animation
     const cleanAmount = formData.amount.toString().replace(/,/g, '');
     try {
       if (isEditing) await api.put(`/transactions/${editingId}`, {...formData, amount: cleanAmount});
@@ -55,6 +57,7 @@ const Transactions = () => {
       toast.success("✅ Saved Successfully");
       setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData();
     } catch (err) { toast.error("Save Error"); }
+    finally { setIsSaving(false); } // 💡 Stop animation
   };
 
   const toggleSelect = (id) => {
@@ -120,7 +123,9 @@ const Transactions = () => {
             <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
           </div>
           <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-            <button type="submit" style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>{isEditing ? "Update" : isViewing ? "Close" : "Save"}</button>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                {isSaving ? (isEditing ? "Updating..." : "Saving Transaction...") : (isEditing ? "Update" : isViewing ? "Close" : "Save")}
+            </button>
             {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 20px', background: 'var(--bg-main)', color: 'var(--text-main)', border:'1px solid var(--border)', borderRadius:'6px', cursor: 'pointer' }}>Cancel</button>}
           </div>
         </form>

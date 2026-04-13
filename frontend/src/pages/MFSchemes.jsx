@@ -8,6 +8,7 @@ const MFSchemes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false); // 💡 Added isSaving state
 
   const categories = {
     "Equity": ["Large Cap", "Mid Cap", "Small Cap", "Multi Cap", "Flexi Cap", "ELSS", "Sectoral/Thematic", "Focused", "Value/Contra"],
@@ -55,6 +56,7 @@ const MFSchemes = () => {
       return toast.warn(`⚠️ Allocation must be exactly 100%. Current: ${grandTotal}%`);
     }
 
+    setIsSaving(true); // 💡 Start animation
     const url = isEditing ? `/mf-schemes/${editingId}` : `/mf-schemes`;
 
     const payload = {
@@ -84,6 +86,8 @@ const MFSchemes = () => {
       
     } catch (err) { 
       toast.error(err.response?.data?.error || "❌ Network Error saving scheme"); 
+    } finally {
+      setIsSaving(false); // 💡 Stop animation
     }
   };
 
@@ -190,7 +194,9 @@ const MFSchemes = () => {
               </div>
           </div>
 
-          <button type="submit" style={{ marginTop: '20px', padding: '12px 40px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '900' }}>{isEditing ? "Update Scheme" : "Add Scheme"}</button>
+          <button type="submit" disabled={isSaving} style={{ marginTop: '20px', padding: '12px 40px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900' }}>
+            {isSaving ? (isEditing ? "Updating..." : "Adding Scheme...") : (isEditing ? "Update Scheme" : "Add Scheme")}
+          </button>
           {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ marginLeft: '10px', color: 'var(--text-muted)', cursor:'pointer', border:'none', background:'none', fontWeight: '900' }}>Cancel</button>}
         </form>
       </div>

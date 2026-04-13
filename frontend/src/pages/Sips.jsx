@@ -12,6 +12,7 @@ const Sips = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false); // 💡 Added isSaving state
   const [selectedIds, setSelectedIds] = useState([]);
 
   const initialState = {
@@ -47,6 +48,7 @@ const Sips = () => {
     if (!formData.client_id) return toast.warning("Please select a valid Client ID");
     if (!formData.scheme_id) return toast.warning("Please select a Scheme");
 
+    setIsSaving(true); // 💡 Start animation
     const payload = { 
       ...formData, 
       amount: formData.amount.toString().replace(/,/g, ''),
@@ -60,6 +62,7 @@ const Sips = () => {
       toast.success("✅ Success"); 
       setIsEditing(false); setClientName(''); setFormData(initialState); fetchInitialData();
     } catch (e) { toast.error(e.response?.data?.error || "Error saving"); }
+    finally { setIsSaving(false); } // 💡 Stop animation
   };
 
   const toggleSelect = (id) => {
@@ -147,14 +150,13 @@ const Sips = () => {
               <select style={inputStyle} value={formData.status} disabled={isViewing} onChange={e=>setFormData({...formData, status:e.target.value})}>
                 <option>Active</option><option>Paused</option><option>Stopped</option>
               </select></div>
-              {/* 💡 FIX: Removed background override to let global CSS handle native icon color */}
               <div><label style={labelStyle}>Start Date</label><input type="date" style={inputStyle} value={formData.start_date} readOnly={isViewing} onChange={e=>setFormData({...formData, start_date:e.target.value})} required /></div>
               <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} value={formData.end_date} readOnly={isViewing} onChange={e=>setFormData({...formData, end_date:e.target.value})} /></div>
               <div><label style={labelStyle}>Platform</label><select style={inputStyle} value={formData.platform} disabled={isViewing} onChange={e=>setFormData({...formData, platform:e.target.value})}><option>NSE</option><option>BSE</option></select></div>
            </div>
            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-             <button type="submit" style={{padding:'10px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color:'#fff', border:'none', borderRadius:'6px', fontWeight:'bold', cursor: 'pointer'}}>
-               {isEditing ? "Update" : isViewing ? "Close View" : "Add SIP"}
+             <button type="submit" disabled={isSaving} style={{padding:'10px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color:'#fff', border:'none', borderRadius:'6px', fontWeight:'bold', cursor: isSaving ? 'not-allowed' : 'pointer'}}>
+               {isSaving ? (isEditing ? "Updating..." : "Syncing SIP...") : (isEditing ? "Update" : isViewing ? "Close View" : "Add SIP")}
              </button>
              {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{padding:'10px 20px', background:'var(--bg-main)', color:'var(--text-main)', border:'1px solid var(--border)', borderRadius:'6px'}}>Cancel</button>}
            </div>

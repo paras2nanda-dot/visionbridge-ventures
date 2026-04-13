@@ -11,6 +11,7 @@ const Clients = () => {
   const [isViewing, setIsViewing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false); // 💡 Added isSaving state
   const [selectedIds, setSelectedIds] = useState([]);
 
   const formatDateForInput = (dateString) => {
@@ -63,12 +64,15 @@ const Clients = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isViewing) return setIsViewing(false);
+    
+    setIsSaving(true); // 💡 Start animation
     try {
       if (isEditing) await api.put(`/clients/${editingId}`, formData);
       else await api.post(`/clients`, formData);
       toast.success("✅ Success");
       setIsEditing(false); setFormData(initialState); fetchClients(); setActiveSubTab('basic'); 
     } catch (err) { toast.error("Error saving client details"); }
+    finally { setIsSaving(false); } // 💡 Stop animation
   };
 
   const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -115,7 +119,6 @@ const Clients = () => {
             <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
               <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: 'var(--bg-main)'}} value={formData.client_code} readOnly /></div>
               <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
-              {/* 💡 FIX: Removed background override to let global CSS handle native icon color */}
               <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
               <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
@@ -133,7 +136,9 @@ const Clients = () => {
             </div>
           </div>
           <div style={{marginTop: '20px', display: 'flex', gap: '10px'}}>
-             <button type="submit" style={{padding: '12px 30px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold'}}>{isEditing ? "Update" : isViewing ? "Close" : "Add Client"}</button>
+             <button type="submit" disabled={isSaving} style={{padding: '12px 30px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '6px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold'}}>
+                {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update" : isViewing ? "Close" : "Add Client")}
+             </button>
              {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 20px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
           </div>
         </form>
