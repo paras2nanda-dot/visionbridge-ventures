@@ -113,13 +113,9 @@
   background-color: #000000 !important;
   color: #ffffff !important;
   border: 1px solid #333333 !important;
-  transition: all 0.3s ease !important; /* Smooth transition for the glow */
-}
-
-/* 💡 FIX: Force native browser calendar icons to invert to white in Obsidian mode */
-[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(100%) !important;
-  cursor: pointer;
+  transition: all 0.3s ease !important;
+  /* 💡 FIX: Forces native browser UI (like calendar icons & scrollbars) into Dark Mode natively */
+  color-scheme: dark !important; 
 }
 
 /* The glowing effect on focus */
