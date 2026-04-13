@@ -37,54 +37,28 @@
 [data-theme='midnight'] h3,
 [data-theme='midnight'] h4,
 [data-theme='midnight'] td,
-[data-theme='midnight'] th,
-[data-theme='midnight'] .card-label,
-[data-theme='midnight'] .card-sub {
+[data-theme='midnight'] th {
   color: #ffffff !important;
-  opacity: 1 !important;
 }
 
-/* 🏢 DASHBOARD & CARDS IN OBSIDIAN */
-[data-theme='midnight'] .executive-card,
-[data-theme='midnight'] .card,
-[data-theme='midnight'] .tab-content,
-[data-theme='midnight'] .feed-item {
+[data-theme='midnight'] .card {
   background: #000000 !important;
   border: 1px solid #333333 !important;
-  box-shadow: none !important;
 }
 
-/* 📝 FORMS & INPUTS IN OBSIDIAN */
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
   background-color: #000000 !important;
   color: #ffffff !important;
   border: 1px solid #333333 !important;
-  transition: all 0.3s ease !important;
-  /* 💡 Tells browser to use native dark UI for pickers */
   color-scheme: dark !important; 
 }
 
-/* 💡 THE ULTIMATE DATE ICON FIX */
-[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(100%) !important;
-  cursor: pointer;
-}
-
-/* Global Reset & Base */
+/* Global Reset */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
-}
-
-/* 🥇 ICON CONTAINER */
-.icon-container-3d {
-  width: 52px; height: 52px;
-  background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 50%, #b45309 100%);
-  border-radius: 14px; display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid #78350f;
-  box-shadow: 4px 8px 18px rgba(0,0,0,0.6);
 }
