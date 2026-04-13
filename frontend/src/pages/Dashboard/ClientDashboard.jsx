@@ -98,7 +98,7 @@ const ClientDashboard = () => {
               .filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.client_code || '').toLowerCase().includes(searchTerm.toLowerCase()))
               .map(c => (
                 <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '12px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border, #f1f5f9)', fontWeight: '500', color: 'var(--text-main, #334155)' }}>
-                  <span style={{ color: '#38bdf8', marginRight: '10px' }}>{c.client_code || 'C'+c.id}</span> {c.full_name}
+                  <span style={{ color: '#6366f1', marginRight: '10px' }}>{c.client_code || 'C'+c.id}</span> {c.full_name}
                 </div>
               ))}
           </div>
@@ -109,7 +109,7 @@ const ClientDashboard = () => {
         <div style={{ textAlign: 'center', padding: '50px', color: 'var(--text-muted, #64748b)', fontWeight: 'bold' }}>⏳ Loading Client Portfolio...</div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          <div style={{ background: 'var(--bg-card, #fff)', padding: '20px', borderRadius: '12px', borderLeft: '6px solid #0ea5e9', marginBottom: '25px', border: '1px solid var(--border, #e0f2fe)' }}>
+          <div style={{ background: 'var(--bg-card, #fff)', padding: '20px', borderRadius: '12px', borderLeft: '6px solid #6366f1', marginBottom: '25px', border: '1px solid var(--border, #e0f2fe)' }}>
             <h2 style={{ margin: '0 0 8px 0', color: 'var(--text-main, #0f172a)', fontSize: '26px' }}>{selectedClient.full_name} <span style={{fontSize: '16px', color: 'var(--text-muted, #64748b)', fontWeight: '500'}}>({selectedClient.client_code || 'C' + selectedClient.id})</span></h2>
             <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: 'var(--text-muted, #475569)' }}>
               <span>Age: <strong style={{ color: 'var(--text-main, #0f172a)' }}>{selectedClient.age ? `${selectedClient.age} years` : 'Not Set'}</strong></span>
@@ -119,7 +119,7 @@ const ClientDashboard = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-            <div style={cardStyle}><div style={labelStyle}>Client Invested AUM</div><div style={{...valStyle, color: '#0ea5e9'}}>₹{formatINR(summary.totalAUM)}</div></div>
+            <div style={cardStyle}><div style={labelStyle}>Client Invested AUM</div><div style={{...valStyle, color: '#6366f1'}}>₹{formatINR(summary.totalAUM)}</div></div>
             <div style={cardStyle}><div style={labelStyle}>Active SIP Amount</div><div style={{...valStyle, color: '#8b5cf6'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '14px', color: 'var(--text-muted, #94a3b8)', fontWeight: '500'}}>/ mo</span></div></div>
             <div style={cardStyle}><div style={labelStyle}>Active SIPs</div><div style={valStyle}>{summary.sipCount}</div></div>
             <div style={cardStyle}><div style={labelStyle}>Client Since</div><div style={valStyle}>{selectedClient.since_formatted}</div></div>
@@ -150,7 +150,7 @@ const ClientDashboard = () => {
                 )}
                 
                 {portfolio.length > 0 && (
-                  <tr style={{ background: 'var(--bg-main, #f0f9ff)', borderTop: '2px solid #0ea5e9' }}>
+                  <tr style={{ background: 'var(--bg-main, #f0f9ff)', borderTop: '2px solid #6366f1' }}>
                     <td style={{ padding: '16px', fontWeight: '800', color: 'var(--text-main, #0f172a)' }}>TOTAL</td>
                     <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main, #0f172a)' }}>₹{formatINR(summary.totalSipBook)}</td>
                     <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main, #0f172a)' }}>₹{formatINR(summary.totalAUM)}</td>
@@ -168,7 +168,7 @@ const ClientDashboard = () => {
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={labelStyle}>Asset Allocation</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px', marginTop: '5px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px', marginTop: '5px', color: 'var(--text-main)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '10px', height: '10px', background: '#3b82f6', borderRadius: '2px' }}></div>Large: <strong>{pct.large.toFixed(1)}%</strong></div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '10px', height: '10px', background: '#8b5cf6', borderRadius: '2px' }}></div>Mid: <strong>{pct.mid.toFixed(1)}%</strong></div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '10px', height: '10px', background: '#f59e0b', borderRadius: '2px' }}></div>Small: <strong>{pct.small.toFixed(1)}%</strong></div>

@@ -13,8 +13,8 @@ const Dashboard = () => {
     background: 'none',
     fontSize: '15px',
     fontWeight: activeTab === tabName ? '900' : '600',
-    color: activeTab === tabName ? '#0ea5e9' : '#94a3b8',
-    borderBottom: activeTab === tabName ? '4px solid #0ea5e9' : '4px solid transparent',
+    color: activeTab === tabName ? '#6366f1' : 'var(--text-muted)',
+    borderBottom: activeTab === tabName ? '4px solid #6366f1' : '4px solid transparent',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
@@ -24,19 +24,19 @@ const Dashboard = () => {
   });
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', padding: '25px', background: '#f8fafc' }}>
+    <div style={{ width: '100%', minHeight: '100vh', padding: '25px', background: 'var(--bg-main)' }}>
       
       {/* 💡 Main Page Header */}
-      <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '20px' }}>
+      <h1 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)', marginBottom: '20px' }}>
         Dashboard
       </h1>
       
-      {/* 💡 NAVIGATION TABS - Fixed sticky positioning and padding for zoom levels */}
+      {/* 💡 NAVIGATION TABS */}
       <div style={{ 
         display: 'flex', 
         gap: '5px', 
-        borderBottom: '2px solid #e2e8f0',
-        background: '#f8fafc',
+        borderBottom: '2px solid var(--border)',
+        background: 'var(--bg-main)',
         position: 'sticky',
         top: '0', 
         paddingTop: '10px',
