@@ -71,26 +71,31 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         flexShrink: 0,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'flex-start'
+        alignItems: 'center'
       }}>
-        <div>
-          <div style={{ fontWeight: '900', fontSize: '20px', color: '#fff', whiteSpace: 'nowrap' }}>VisionBridge 📈</div>
-          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', fontWeight: '700' }}>
-            WELCOME, {userName.toUpperCase()}
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ fontWeight: '900', fontSize: '18px', color: '#fff', whiteSpace: 'nowrap' }}>VisionBridge 📈</div>
+          <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '4px', fontWeight: '700' }}>
+            {userName.toUpperCase()}
           </div>
         </div>
 
+        {/* Improved Close Button for Mobile */}
         <button 
           onClick={closeMobileMenu}
+          className="mobile-close-btn"
           style={{ 
             background: 'rgba(255,255,255,0.1)', 
             border: 'none', 
             color: 'white', 
-            fontSize: '20px', 
-            padding: '5px 10px', 
-            borderRadius: '6px', 
-            cursor: 'pointer',
-            display: window.innerWidth < 1024 ? 'block' : 'none'
+            fontSize: '18px', 
+            width: '35px',
+            height: '35px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%', 
+            cursor: 'pointer'
           }}
         >
           ✕
@@ -107,7 +112,6 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
       </nav>
 
       <div style={{ padding: '20px', borderTop: '1px solid var(--border, #334155)', flexShrink: 0, background: 'rgba(0,0,0,0.1)' }}>
-        {/* 🚪 LOGOUT BUTTON - NOW ON TOP */}
         <button onClick={handleLogout} disabled={isLoggingOut}
           style={{ 
             width: '100%', 
@@ -128,12 +132,17 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
         </button>
 
-        {/* 🌓 APPEARANCE BUTTON - NOW ON BOTTOM */}
         <div>
           <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1px' }}>APPEARANCE</p>
           <ThemeSwitcher />
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 1024px) {
+          .mobile-close-btn { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 };

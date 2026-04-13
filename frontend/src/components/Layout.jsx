@@ -16,7 +16,7 @@ const Layout = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main, #f8fafc)', transition: 'background 0.3s ease' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main, #f8fafc)', transition: 'background 0.3s ease', overflowX: 'hidden' }}>
       <AutoLogout timeoutMinutes={15} />
       <CommandPalette />
 
@@ -39,13 +39,13 @@ const Layout = () => {
       {/* OVERLAY */}
       {isSidebarOpen && <div onClick={toggleSidebar} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999997, backdropFilter: 'blur(8px)' }} />}
 
-      {/* SIDEBAR WRAPPER */}
+      {/* SIDEBAR WRAPPER - Fixed Mobile Width and Shadow */}
       <div style={{ 
         width: '280px', position: 'fixed', top: 0, left: 0, bottom: 0, 
-        zIndex: 999998, transition: 'transform 0.3s ease', 
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' 
+        zIndex: 999998, transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        boxShadow: isSidebarOpen ? '10px 0 30px rgba(0,0,0,0.5)' : 'none'
       }} className="sidebar-wrapper">
-        {/* Pass the toggle function so the sidebar can close itself */}
         <Sidebar closeMobileMenu={() => setIsSidebarOpen(false)} isMobileOpen={isSidebarOpen} />
       </div>
 
@@ -81,6 +81,7 @@ const Layout = () => {
         }
         @media (max-width: 1023px) { 
           .main-content-layout { padding: 90px 20px 40px 20px !important; margin-left: 0 !important; width: 100% !important; } 
+          .sidebar-wrapper { width: 85% !important; max-width: 300px !important; }
         }
       `}</style>
     </div>
