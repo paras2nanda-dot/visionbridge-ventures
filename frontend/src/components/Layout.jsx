@@ -35,7 +35,8 @@ const Layout = () => {
         </button>
       )}
 
-      {isSidebarOpen && <div onClick={toggleSidebar} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999997, backdropFilter: 'blur(8px)' }} />}
+      {/* OVERLAY: Reduced opacity for a cleaner look */}
+      {isSidebarOpen && <div onClick={toggleSidebar} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 999997, backdropFilter: 'blur(4px)' }} />}
 
       <div style={{ 
         position: 'fixed', top: 0, left: 0, bottom: 0, 
@@ -78,7 +79,8 @@ const Layout = () => {
         }
         @media (max-width: 1023px) { 
           .main-content-layout { padding: 80px 15px 40px 15px !important; margin-left: 0 !important; width: 100% !important; } 
-          .sidebar-wrapper { width: 80% !important; max-width: 300px !important; }
+          /* 💡 FIXED: Tightened width to 260px so it doesn't waste space on the right */
+          .sidebar-wrapper { width: 260px !important; }
         }
       `}</style>
     </div>

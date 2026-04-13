@@ -8,7 +8,7 @@
   --card-bg-navy: linear-gradient(145deg, #1e293b, #0f172a);
 }
 
-/* 🌑 THE OBSIDIAN MODE */
+/* 🌑 THE OBSIDIAN MODE (Midnight) */
 [data-theme='midnight'] {
   --bg-main: #000000 !important;
   --bg-card: #000000 !important;
@@ -30,7 +30,6 @@
   border-color: #333333 !important;
 }
 
-/* 📊 SMART TEXT VISIBILITY */
 [data-theme='midnight'] label,
 [data-theme='midnight'] p,
 [data-theme='midnight'] h1,
@@ -45,7 +44,7 @@
   opacity: 1 !important;
 }
 
-/* 🏢 DASHBOARD & CARDS */
+/* 🏢 DASHBOARD & CARDS IN OBSIDIAN */
 [data-theme='midnight'] .executive-card,
 [data-theme='midnight'] .card,
 [data-theme='midnight'] .tab-content,
@@ -55,31 +54,22 @@
   box-shadow: none !important;
 }
 
-/* 🎨 UNIVERSAL BRANDING */
-[data-theme='midnight'] [style*="background: #38bdf8"],
-[data-theme='midnight'] [style*="background-color: #38bdf8"] {
-  background-color: #6366f1 !important;
-}
-
-/* 📝 FORMS & INPUTS */
+/* 📝 FORMS & INPUTS IN OBSIDIAN */
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
   background-color: #000000 !important;
   color: #ffffff !important;
   border: 1px solid #333333 !important;
+  transition: all 0.3s ease !important;
+  /* 💡 Tells browser to use native dark UI for pickers */
   color-scheme: dark !important; 
 }
 
-[data-theme='midnight'] input::-webkit-calendar-picker-indicator {
-  filter: invert(100%) brightness(200%) !important;
-}
-
-[data-theme='midnight'] input:focus, 
-[data-theme='midnight'] select:focus, 
-[data-theme='midnight'] textarea:focus {
-  border-color: #6366f1 !important; 
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4) !important;
+/* 💡 THE ULTIMATE DATE ICON FIX */
+[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%) !important;
+  cursor: pointer;
 }
 
 /* Global Reset & Base */
@@ -88,39 +78,13 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
-.executive-card {
-  background: var(--card-bg-navy);
-  border-radius: 20px;
-  padding: 24px;
-  color: #ffffff;
-}
-
-/* 📱 UNIVERSAL MOBILE OPTIMIZATION ENGINE */
-@media (max-width: 768px) {
-  /* 1. Force Containers to fit screen */
-  .container { padding: 10px !important; width: 100% !important; }
-  
-  /* 2. Force all Grids (Clients, SIPs, Schemes) to 1 Column */
-  [style*="grid-template-columns"] {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-  
-  /* 3. Scale Title Fonts */
-  .title { font-size: 24px !important; margin-bottom: 15px !important; }
-  
-  /* 4. Make Form Cards Padding smaller */
-  .card { padding: 15px !important; }
-  
-  /* 5. Fix Search Bars */
-  [style*="width: 400px"], [style*="width: 350px"] {
-    width: 100% !important;
-  }
-  
-  /* 6. Hide Sidebar (Assuming standard layout) or shrink logo */
-  .sidebar { width: 60px !important; }
-  .main-content { margin-left: 60px !important; width: calc(100% - 60px) !important; }
+/* 🥇 ICON CONTAINER */
+.icon-container-3d {
+  width: 52px; height: 52px;
+  background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 50%, #b45309 100%);
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #78350f;
+  box-shadow: 4px 8px 18px rgba(0,0,0,0.6);
 }
