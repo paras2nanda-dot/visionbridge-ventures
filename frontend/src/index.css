@@ -3,11 +3,20 @@
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #0f172a;
+  --text-muted: #64748b; /* Added fallback for light mode */
   --border: rgba(226, 232, 240, 0.8);
   --card-bg-navy: linear-gradient(145deg, #1e293b, #0f172a);
 }
 
-/* 🌑 THE OBSIDIAN MODE (Midnight) - GLOBAL SWEEP */
+/* 🌑 THE OBSIDIAN MODE (Midnight) - GLOBAL SWEEP & CSS VARIABLES */
+[data-theme='midnight'] {
+  --bg-main: #000000 !important;
+  --bg-card: #000000 !important;
+  --text-main: #ffffff !important;
+  --text-muted: #ffffff !important; /* 💡 FIX: Forces all previously grey text to PURE WHITE */
+  --border: #333333 !important;
+}
+
 [data-theme='midnight'], 
 [data-theme='midnight'] body,
 [data-theme='midnight'] #root,
@@ -16,13 +25,12 @@
 [data-theme='midnight'] section,
 [data-theme='midnight'] article {
   background-color: #000000 !important;
-  background-image: none !important; /* 💡 FIX: Removed radial texture for pure black */
+  background-image: none !important;
   color: #ffffff !important;
-  border-color: #262626 !important;
+  border-color: #333333 !important;
 }
 
-/* 📊 SMART TEXT VISIBILITY IN OBSIDIAN */
-/* Forces standard text elements to white safely */
+/* 📊 SMART TEXT VISIBILITY IN OBSIDIAN (Pure White Guarantee) */
 [data-theme='midnight'] label,
 [data-theme='midnight'] p,
 [data-theme='midnight'] h1,
@@ -37,8 +45,7 @@
   opacity: 1 !important;
 }
 
-/* 💡 FIX: TARGET SPECIFIC DARK INLINE COLORS & FLIP THEM TO LIGHT */
-/* Prevents black-on-black text without destroying your colored metrics (like green/yellow) */
+/* 💡 TARGET SPECIFIC DARK INLINE COLORS & FLIP THEM TO PURE WHITE */
 [data-theme='midnight'] [style*="color: #0f172a"],
 [data-theme='midnight'] [style*="color:#0f172a"],
 [data-theme='midnight'] [style*="color: rgb(15, 23, 42)"],
@@ -51,7 +58,7 @@
 [data-theme='midnight'] [style*="color:#475569"],
 [data-theme='midnight'] [style*="color: rgb(71, 85, 105)"],
 [data-theme='midnight'] [style*="color:rgb(71, 85, 105)"] {
-  color: #f8fafc !important; 
+  color: #ffffff !important; 
 }
 
 /* 🏢 DASHBOARD & CARDS IN OBSIDIAN */
@@ -64,8 +71,7 @@
   box-shadow: none !important;
 }
 
-/* 💡 FIX: TARGET SPECIFIC LIGHT INLINE BACKGROUNDS & FLIP THEM TO PURE BLACK */
-/* Safely turns white/light-grey backgrounds black without destroying your colored pulse dots or 3D icons */
+/* 💡 TARGET SPECIFIC LIGHT INLINE BACKGROUNDS & FLIP THEM TO PURE BLACK */
 [data-theme='midnight'] [style*="background: #f8fafc"],
 [data-theme='midnight'] [style*="background:#f8fafc"],
 [data-theme='midnight'] [style*="background: rgb(248, 250, 252)"],
@@ -82,13 +88,41 @@
   background: #000000 !important;
 }
 
-/* 📝 FORMS & INPUTS IN OBSIDIAN */
+/* 🎨 UNIVERSAL BRANDING UPGRADE: Map old light-blue accents to Premium Indigo (#6366f1) globally in Obsidian */
+[data-theme='midnight'] [style*="background: #38bdf8"],
+[data-theme='midnight'] [style*="background:#38bdf8"],
+[data-theme='midnight'] [style*="background-color: #38bdf8"] {
+  background-color: #6366f1 !important;
+  background: #6366f1 !important;
+}
+
+[data-theme='midnight'] [style*="color: #38bdf8"],
+[data-theme='midnight'] [style*="color:#38bdf8"] {
+  color: #6366f1 !important;
+}
+
+[data-theme='midnight'] [style*="border-top: 4px solid #38bdf8"],
+[data-theme='midnight'] [style*="border-top: 4px solid rgb(56, 189, 248)"] {
+  border-top-color: #6366f1 !important;
+}
+
+/* 📝 FORMS & INPUTS IN OBSIDIAN - Premium Glowing Vibe */
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
   background-color: #000000 !important;
   color: #ffffff !important;
-  border: 1.5px solid #333333 !important;
+  border: 1px solid #333333 !important;
+  transition: all 0.3s ease !important; /* Smooth transition for the glow */
+}
+
+/* 💡 FIX: The glowing effect on focus (Indigo/Purple to match MF Schemes universally) */
+[data-theme='midnight'] input:focus, 
+[data-theme='midnight'] select:focus, 
+[data-theme='midnight'] textarea:focus {
+  border-color: #6366f1 !important; 
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4) !important;
+  outline: none !important;
 }
 
 [data-theme='midnight'] input::placeholder,
