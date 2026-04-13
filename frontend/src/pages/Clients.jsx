@@ -11,7 +11,7 @@ const Clients = () => {
   const [isViewing, setIsViewing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false); // 💡 Added isSaving state
+  const [isSaving, setIsSaving] = useState(false); 
   const [selectedIds, setSelectedIds] = useState([]);
 
   const formatDateForInput = (dateString) => {
@@ -65,19 +65,19 @@ const Clients = () => {
     e.preventDefault();
     if (isViewing) return setIsViewing(false);
     
-    // 💡 Double Check: Ensure it's exactly 10 digits before sending to API
+    // 🛡️ STRICT VALIDATION: Block save if not exactly 10 digits
     if (formData.mobile_number.length !== 10) {
-      return toast.warn("⚠️ Mobile number must be exactly 10 digits.");
+      return toast.error("❌ Mobile number must be exactly 10 digits.");
     }
 
-    setIsSaving(true); // 💡 Start animation
+    setIsSaving(true); 
     try {
       if (isEditing) await api.put(`/clients/${editingId}`, formData);
       else await api.post(`/clients`, formData);
       toast.success("✅ Success");
       setIsEditing(false); setFormData(initialState); fetchClients(); setActiveSubTab('basic'); 
     } catch (err) { toast.error("Error saving client details"); }
-    finally { setIsSaving(false); } // 💡 Stop animation
+    finally { setIsSaving(false); } 
   };
 
   const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -127,18 +127,23 @@ const Clients = () => {
               <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
               <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
-              {/* 💡 FIX: Added maxLength and strict 10-digit slicing in onChange */}
+              
+              {/* 🛡️ STRICT MOBILE INPUT: Prevents character entry > 10 */}
               <div>
                 <label style={labelStyle}>Mobile *</label>
                 <input 
                   style={inputStyle} 
-                  type="text" 
-                  maxLength="10" 
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  placeholder="10 digit number"
                   value={formData.mobile_number} 
                   readOnly={isViewing} 
                   onChange={e => {
                     const onlyNums = e.target.value.replace(/\D/g, '');
-                    setFormData({...formData, mobile_number: onlyNums.slice(0, 10)});
+                    if (onlyNums.length <= 10) {
+                      setFormData({...formData, mobile_number: onlyNums});
+                    }
                   }} 
                   required 
                 />
@@ -165,7 +170,7 @@ const Clients = () => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
-        <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '400px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' }} />
+        <input type="text" placeholder="🔍 Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '400px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border, #e2e8f0)', background: 'var(--bg-card, #ffffff)', color: 'var(--text-main)', outline: 'none' }} />
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Delete ({selectedIds.length})</button>}
       </div>
 
