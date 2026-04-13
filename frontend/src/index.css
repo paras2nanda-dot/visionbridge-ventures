@@ -114,8 +114,15 @@
   color: #ffffff !important;
   border: 1px solid #333333 !important;
   transition: all 0.3s ease !important;
-  /* 💡 FIX: Forces native browser UI (like calendar icons & scrollbars) into Dark Mode natively */
   color-scheme: dark !important; 
+}
+
+/* 💡 THE ULTIMATE NATIVE CALENDAR FIX */
+/* Forces the exact pseudo-element injected by Chrome/Edge/Safari to invert its pixels */
+[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.5) !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
 }
 
 /* The glowing effect on focus */
