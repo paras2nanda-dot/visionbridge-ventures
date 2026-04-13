@@ -13,19 +13,17 @@
 [data-theme='midnight'] #root,
 [data-theme='midnight'] .main-content,
 [data-theme='midnight'] .container,
-[data-theme='midnight'] div:not(.icon-container-3d):not(.sidebar-logo), /* Target all containers */
 [data-theme='midnight'] section,
 [data-theme='midnight'] article {
   background-color: #000000 !important;
-  background-image: radial-gradient(#1a1a1a 1px, transparent 1px) !important; /* Subtle texture */
-  background-size: 30px 30px !important;
+  background-image: none !important; /* 💡 FIX: Removed radial texture for pure black */
   color: #ffffff !important;
   border-color: #262626 !important;
 }
 
-/* 📊 FORCING PURE WHITE TEXT IN OBSIDIAN */
+/* 📊 SMART TEXT VISIBILITY IN OBSIDIAN */
+/* Forces standard text elements to white safely */
 [data-theme='midnight'] label,
-[data-theme='midnight'] span,
 [data-theme='midnight'] p,
 [data-theme='midnight'] h1,
 [data-theme='midnight'] h2,
@@ -39,15 +37,49 @@
   opacity: 1 !important;
 }
 
-/* 🏢 DASHBOARD & TAB CARDS IN OBSIDIAN */
+/* 💡 FIX: TARGET SPECIFIC DARK INLINE COLORS & FLIP THEM TO LIGHT */
+/* Prevents black-on-black text without destroying your colored metrics (like green/yellow) */
+[data-theme='midnight'] [style*="color: #0f172a"],
+[data-theme='midnight'] [style*="color:#0f172a"],
+[data-theme='midnight'] [style*="color: rgb(15, 23, 42)"],
+[data-theme='midnight'] [style*="color:rgb(15, 23, 42)"],
+[data-theme='midnight'] [style*="color: #64748b"],
+[data-theme='midnight'] [style*="color:#64748b"],
+[data-theme='midnight'] [style*="color: rgb(100, 116, 139)"],
+[data-theme='midnight'] [style*="color:rgb(100, 116, 139)"],
+[data-theme='midnight'] [style*="color: #475569"],
+[data-theme='midnight'] [style*="color:#475569"],
+[data-theme='midnight'] [style*="color: rgb(71, 85, 105)"],
+[data-theme='midnight'] [style*="color:rgb(71, 85, 105)"] {
+  color: #f8fafc !important; 
+}
+
+/* 🏢 DASHBOARD & CARDS IN OBSIDIAN */
 [data-theme='midnight'] .executive-card,
 [data-theme='midnight'] .card,
 [data-theme='midnight'] .tab-content,
-[data-theme='midnight'] .feed-item, /* For Recent Activity */
-[data-theme='midnight'] div[style*="background"] { /* Overrides inline styles */
+[data-theme='midnight'] .feed-item {
   background: #000000 !important;
   border: 1px solid #333333 !important;
   box-shadow: none !important;
+}
+
+/* 💡 FIX: TARGET SPECIFIC LIGHT INLINE BACKGROUNDS & FLIP THEM TO PURE BLACK */
+/* Safely turns white/light-grey backgrounds black without destroying your colored pulse dots or 3D icons */
+[data-theme='midnight'] [style*="background: #f8fafc"],
+[data-theme='midnight'] [style*="background:#f8fafc"],
+[data-theme='midnight'] [style*="background: rgb(248, 250, 252)"],
+[data-theme='midnight'] [style*="background:rgb(248, 250, 252)"],
+[data-theme='midnight'] [style*="background: #f1f5f9"],
+[data-theme='midnight'] [style*="background:#f1f5f9"],
+[data-theme='midnight'] [style*="background: rgb(241, 245, 249)"],
+[data-theme='midnight'] [style*="background:rgb(241, 245, 249)"],
+[data-theme='midnight'] [style*="background: white"],
+[data-theme='midnight'] [style*="background:white"],
+[data-theme='midnight'] [style*="background: #ffffff"],
+[data-theme='midnight'] [style*="background:#ffffff"] {
+  background-color: #000000 !important;
+  background: #000000 !important;
 }
 
 /* 📝 FORMS & INPUTS IN OBSIDIAN */
@@ -59,7 +91,8 @@
   border: 1.5px solid #333333 !important;
 }
 
-[data-theme='midnight'] input::placeholder {
+[data-theme='midnight'] input::placeholder,
+[data-theme='midnight'] textarea::placeholder {
   color: #666666 !important;
 }
 
