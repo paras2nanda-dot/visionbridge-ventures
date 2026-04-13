@@ -26,20 +26,22 @@ const Dashboard = () => {
   return (
     <div style={{ width: '100%', minHeight: '100vh', padding: '25px', background: '#f8fafc' }}>
       
-      <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '25px' }}>
+      {/* 💡 Main Page Header */}
+      <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '20px' }}>
         Dashboard
       </h1>
       
-      {/* 💡 NAVIGATION TABS */}
+      {/* 💡 NAVIGATION TABS - Added solid background to prevent overlap transparency */}
       <div style={{ 
         display: 'flex', 
         gap: '5px', 
         borderBottom: '2px solid #e2e8f0',
         background: '#f8fafc',
         position: 'sticky',
-        top: '0',
+        top: '-25px', // Adjusted to account for parent padding
         zIndex: 100,
-        overflowX: 'auto'
+        overflowX: 'auto',
+        marginBottom: '10px'
       }}>
         <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>
           🏢 Business Analytics
@@ -52,7 +54,8 @@ const Dashboard = () => {
         </button>
       </div>
 
-      <div style={{ paddingTop: '35px' }}>
+      {/* 💡 CONTENT AREA - Optimized padding to fix card overlap */}
+      <div style={{ paddingTop: '15px' }}>
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
         

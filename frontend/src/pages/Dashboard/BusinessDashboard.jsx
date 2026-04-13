@@ -48,7 +48,6 @@ const BusinessDashboard = () => {
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
-      <h2 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', marginBottom: '40px', letterSpacing: '-2.5px' }}>Dashboard</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px', marginBottom: '24px' }}>
         <MetricCard label="Total Clients" value={data.total_clients} sub="MASTER DATABASE" icon={Icons.Users} />
