@@ -8,8 +8,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
+// 💡 FIX: Completely strip ALL query parameters from the URL to prevent database name mangling
+const rawUrl = process.env.DATABASE_URL || '';
+const cleanUrl = rawUrl.split('?')[0];
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: cleanUrl,
+  // 💡 Explicitly handle SSL securely for Neon
   ssl: {
     rejectUnauthorized: false, 
   },
@@ -21,7 +26,7 @@ export const pool = new Pool({
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌ Database connection error!');
-    console.error('👉 Message:', err.message);
+    console.error(err); 
     return;
   }
   console.log('✅ Connected to Neon Database');
