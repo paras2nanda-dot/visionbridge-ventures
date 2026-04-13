@@ -37,72 +37,66 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
       height: '100vh', 
       width: '100%',
       background: 'var(--sidebar, #1e293b)', 
-      transition: 'background 0.3s ease',
-      overflow: 'hidden',
-      borderRight: '1.5px solid var(--border, #334155)',
-      zIndex: 999999
+      borderRight: '1px solid var(--border)',
+      zIndex: 999999,
+      overflow: 'hidden'
     }}>
       
       <style>{`
+        .sidebar-nav { flex: 1; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
         .sidebar-nav::-webkit-scrollbar { display: none; }
-        .sidebar-nav { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .spin-icon { display: inline-block; animation: spin 1s linear infinite; }
         
         .sidebar-link {
           display: block;
           padding: 14px 20px;
           color: #94a3b8;
           text-decoration: none;
-          transition: all 0.2s;
-          font-weight: 900;
+          font-weight: 700;
           font-size: 14px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .sidebar-link.active {
           background: rgba(14, 165, 233, 0.15);
           color: #0ea5e9;
           border-right: 4px solid #0ea5e9;
         }
+
+        @media (max-width: 768px) {
+          .sidebar-logo-text { font-size: 16px !important; }
+          .sidebar-link { padding: 12px 15px; font-size: 13px; }
+          .mobile-close-btn { display: flex !important; }
+        }
       `}</style>
 
       <div className="sidebar-logo" style={{ 
-        padding: '25px 20px', 
-        borderBottom: '1px solid var(--border, #334155)', 
-        flexShrink: 0,
+        padding: '20px 15px', 
+        borderBottom: '1px solid var(--border)', 
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexShrink: 0
       }}>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ fontWeight: '900', fontSize: '18px', color: '#fff', whiteSpace: 'nowrap' }}>VisionBridge 📈</div>
-          <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '4px', fontWeight: '700' }}>
-            {userName.toUpperCase()}
+        <div style={{ minWidth: 0 }}>
+          <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '18px', color: '#fff' }}>VisionBridge 📈</div>
+          <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase' }}>
+            {userName}
           </div>
         </div>
 
-        {/* Improved Close Button for Mobile */}
         <button 
           onClick={closeMobileMenu}
           className="mobile-close-btn"
           style={{ 
-            background: 'rgba(255,255,255,0.1)', 
-            border: 'none', 
-            color: 'white', 
-            fontSize: '18px', 
-            width: '35px',
-            height: '35px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%', 
-            cursor: 'pointer'
+            display: 'none', background: 'rgba(255,255,255,0.1)', border: 'none', 
+            color: 'white', fontSize: '18px', width: '32px', height: '32px',
+            alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer'
           }}
-        >
-          ✕
-        </button>
+        >✕</button>
       </div>
       
-      <nav className="sidebar-nav" style={{ flex: 1, paddingTop: '15px', overflowY: 'auto' }}>
+      <nav className="sidebar-nav" style={{ paddingTop: '10px' }}>
         {menuItems.map((item) => (
           <NavLink key={item.name} to={item.path} onClick={closeMobileMenu} 
             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}>
@@ -111,38 +105,19 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         ))}
       </nav>
 
-      <div style={{ padding: '20px', borderTop: '1px solid var(--border, #334155)', flexShrink: 0, background: 'rgba(0,0,0,0.1)' }}>
+      <div style={{ padding: '15px', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)' }}>
         <button onClick={handleLogout} disabled={isLoggingOut}
           style={{ 
-            width: '100%', 
-            textAlign: 'left', 
-            border: 'none', 
-            background: 'none', 
-            cursor: isLoggingOut ? 'not-allowed' : 'pointer', 
-            fontWeight: '900', 
-            color: isLoggingOut ? '#fca5a5' : '#ef4444', 
-            opacity: isLoggingOut ? 0.7 : 1, 
-            padding: '8px 0', 
-            fontSize: '14px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            marginBottom: '15px' 
+            width: '100%', textAlign: 'left', border: 'none', background: 'none', 
+            cursor: 'pointer', fontWeight: '800', color: '#ef4444', 
+            fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' 
           }}>
-          {isLoggingOut ? <span><span className="spin-icon">⏳</span> Logging out...</span> : <span>🚪 Logout</span>}
+          🚪 {isLoggingOut ? "Logging out..." : "Logout"}
         </button>
 
-        <div>
-          <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: '800', marginBottom: '10px', letterSpacing: '1px' }}>APPEARANCE</p>
-          <ThemeSwitcher />
-        </div>
+        <p style={{ color: '#94a3b8', fontSize: '8px', fontWeight: '900', marginBottom: '8px', letterSpacing: '1px' }}>APPEARANCE</p>
+        <ThemeSwitcher />
       </div>
-
-      <style>{`
-        @media (min-width: 1024px) {
-          .mobile-close-btn { display: none !important; }
-        }
-      `}</style>
     </div>
   );
 };
