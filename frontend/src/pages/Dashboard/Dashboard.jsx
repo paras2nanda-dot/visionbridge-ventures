@@ -34,27 +34,27 @@ const PasskeyManager = () => {
   useEffect(() => { fetchPasskeys(); }, []);
 
   return (
-    <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
+      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800' }}>
         🛡️ Biometric Security
       </h3>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', fontWeight: '500' }}>
         Manage the devices authorized to log in with your fingerprint or face recognition.
       </p>
 
       {loading ? <p>Loading devices...</p> : passkeys.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No biometric devices registered.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {passkeys.map(key => (
-            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-main)', borderRadius: '8px', border: '2px solid var(--border)' }}>
               <div>
-                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Registered Device</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Added on: {new Date(key.created_at).toLocaleDateString()}</div>
+                <div style={{ fontWeight: '800', fontSize: '14px', color: 'var(--text-main)' }}>Registered Device</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Added on: {new Date(key.created_at).toLocaleDateString()}</div>
               </div>
               <button 
                 onClick={() => handleDelete(key.id)}
-                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: '800' }}
               >
                 Remove
               </button>
@@ -70,7 +70,6 @@ const PasskeyManager = () => {
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
   
-  // Tab order remains consistent for swipe logic
   const tabOrder = ['business', 'client', 'activity', 'security'];
   
   const touchStartX = useRef(null);
@@ -120,18 +119,20 @@ const Dashboard = () => {
   };
 
   const tabStyle = (tabName) => ({
-    padding: '12px 20px', 
+    padding: '14px 24px', 
     cursor: 'pointer',
     border: 'none',
     background: 'none',
     fontSize: '14px', 
-    fontWeight: activeTab === tabName ? '900' : '600',
-    color: activeTab === tabName ? '#6366f1' : 'var(--text-muted)',
-    borderBottom: activeTab === tabName ? '4px solid #6366f1' : '4px solid transparent',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    fontWeight: activeTab === tabName ? '900' : '700',
+    color: activeTab === tabName ? '#38bdf8' : 'var(--text-muted)',
+    borderBottom: activeTab === tabName ? '4px solid #38bdf8' : '4px solid transparent',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '10px',
     outline: 'none',
     whiteSpace: 'nowrap', 
     flexShrink: 0 
@@ -141,9 +142,10 @@ const Dashboard = () => {
     <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
+        .dashboard-tabs button:hover { color: #38bdf8; opacity: 0.8; }
       `}</style>
       
-      <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '20px' }}>
+      <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '25px', fontSize: '32px' }}>
         Dashboard
       </h1>
       
@@ -152,8 +154,8 @@ const Dashboard = () => {
         ref={tabContainerRef}
         style={{ 
             display: 'flex', 
-            gap: '5px', 
-            borderBottom: '2px solid var(--border)',
+            gap: '10px', 
+            borderBottom: '2.5px solid var(--border)',
             background: 'var(--bg-main)',
             position: 'sticky',
             top: '0', 
@@ -163,7 +165,7 @@ const Dashboard = () => {
             overflowX: 'auto', 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none', 
-            marginBottom: '20px',
+            marginBottom: '30px',
             scrollBehavior: 'smooth'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
