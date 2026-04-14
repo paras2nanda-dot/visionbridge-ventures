@@ -125,7 +125,7 @@ const ActivityFeed = () => {
 
   // 🔍 Filter Logic
   const filteredActivities = activities.filter(act => {
-    // 1. Search Filter (checks details, entity name, and user)
+    // 1. Search Filter
     const searchString = `${act.details} ${act.entity_name} ${act.user_name}`.toLowerCase();
     if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return false;
     
@@ -141,7 +141,6 @@ const ActivityFeed = () => {
     return true;
   });
 
-  // Handle Select All
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedIds(filteredActivities.map(act => act.id));
@@ -166,21 +165,41 @@ const ActivityFeed = () => {
 
   return (
     <div className="fade-in" style={{ padding: '10px 0' }}>
-      {/* 📱 Inject Mobile CSS specific for the filter bar */}
       <style>{`
         .mobile-table-wrapper::-webkit-scrollbar { display: none; }
         .filter-input {
             padding: 10px 15px;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.1);
-            background: #1e293b; /* Dark slate background */
-            color: #f8fafc; /* White text */
+            background: #1e293b; 
+            color: #f8fafc; 
             font-size: 13px;
             outline: none;
-            color-scheme: dark; /* Ensures date picker calendar is dark */
+            color-scheme: dark; 
         }
         .filter-input::placeholder { color: #94a3b8; }
         
+        /* 📱 MOBILE DATE INPUT FIX */
+        .date-input-placeholder {
+            position: relative;
+        }
+        .date-input-placeholder input[type="date"] {
+            color: transparent; /* Hide text initially if empty */
+        }
+        /* Show the date text when it has a value, or when it's focused */
+        .date-input-placeholder input[type="date"]:focus,
+        .date-input-placeholder input[type="date"]:valid {
+            color: #f8fafc;
+        }
+        /* Inject the placeholder string */
+        .date-input-placeholder input[type="date"]:invalid::before {
+            content: 'Filter by Date';
+            color: #94a3b8;
+            position: absolute;
+            left: 15px;
+            pointer-events: none; /* Let clicks pass through to the input */
+        }
+
         @media (max-width: 600px) {
             .filter-container { flex-direction: column; align-items: stretch !important; gap: 10px; }
             .filter-input-wrapper { width: 100%; display: flex; }
@@ -217,7 +236,6 @@ const ActivityFeed = () => {
       {/* 🎛️ CONTROL CENTER / FILTER BAR */}
       <div className="filter-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', background: '#0f172a', padding: '15px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', alignItems: 'center' }}>
         
-        {/* Checkbox for Select All */}
         <div className="select-all-wrapper" style={{ display: 'flex', alignItems: 'center', marginRight: '5px' }}>
             <input 
                 type="checkbox" 
@@ -228,7 +246,6 @@ const ActivityFeed = () => {
             <span style={{marginLeft: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: '700', display: window.innerWidth <= 600 ? 'inline' : 'none'}}>Select All</span>
         </div>
 
-        {/* Search */}
         <div className="filter-input-wrapper" style={{ flex: 1, minWidth: '200px' }}>
             <input 
               type="text" 
@@ -240,18 +257,18 @@ const ActivityFeed = () => {
             />
         </div>
 
-        {/* Date Filter */}
-        <div className="filter-input-wrapper">
+        {/* 💡 MOBILE DATE FIX APPLIED HERE */}
+        <div className="filter-input-wrapper date-input-placeholder">
             <input 
               type="date" 
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
+              required // The 'required' attribute makes the :invalid pseudo-class trigger when empty
               className="filter-input"
               style={{ cursor: 'pointer', boxSizing: 'border-box' }}
             />
         </div>
 
-        {/* Action Type Filter */}
         <div className="filter-input-wrapper">
             <select 
               value={filterAction}
@@ -279,7 +296,6 @@ const ActivityFeed = () => {
             <div key={act.id} style={{ display: 'flex', flexDirection: 'column', padding: '22px', borderRadius: '24px', background: isSelected ? 'rgba(99, 102, 241, 0.05)' : '#0f172a', border: isSelected ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 15px 35px -12px rgba(0, 0, 0, 0.5)', transition: 'all 0.2s ease' }}>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                 
-                {/* Checkbox for individual log */}
                 <input 
                     type="checkbox" 
                     checked={isSelected}
