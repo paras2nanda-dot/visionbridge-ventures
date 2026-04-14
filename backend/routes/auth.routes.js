@@ -7,8 +7,11 @@ import {
   generateRegOptions,
   verifyReg,
   generateAuthOptions,
-  verifyAuth
+  verifyAuth,
+  getPasskeys,    // 🟢 New Controller function
+  deletePasskey   // 🟢 New Controller function
 } from "../controllers/auth.controller.js";
+import authMiddleware from "../middleware/auth.middleware.js"; // 🔒 Needed for security
 
 const router = express.Router();
 
@@ -23,8 +26,6 @@ const validate = (req, res, next) => {
 
 /**
  * 🔓 Standard Login Route
- * We removed the "min: 6" check here because if a user already has 
- * a shorter password in the DB, this validator would block them.
  */
 router.post("/login", [
   body('username').trim().notEmpty().withMessage("Username is required"),
@@ -49,7 +50,7 @@ router.post("/logout", logout);
 // 🛡️ BIOMETRIC (WEBAUTHN/PASSKEY) ROUTES
 // ==========================================
 
-// Phase 1: Registration (Creating the fingerprint lock on the device)
+// Phase 1: Registration
 router.post("/webauthn/register/generate", [
   body('username').trim().notEmpty().withMessage("Username required")
 ], validate, generateRegOptions);
@@ -59,8 +60,7 @@ router.post("/webauthn/register/verify", [
   body('data').notEmpty().withMessage("Biometric data required")
 ], validate, verifyReg);
 
-
-// Phase 2: Authentication (Logging in using the registered fingerprint)
+// Phase 2: Authentication
 router.post("/webauthn/login/generate", [
   body('username').trim().notEmpty().withMessage("Username required")
 ], validate, generateAuthOptions);
@@ -69,5 +69,15 @@ router.post("/webauthn/login/verify", [
   body('username').trim().notEmpty().withMessage("Username required"),
   body('data').notEmpty().withMessage("Biometric data required")
 ], validate, verifyAuth);
+
+// ==========================================
+// ⚙️ PASSKEY MANAGEMENT ROUTES
+// ==========================================
+
+// Fetch all registered biometrics for the logged-in user
+router.get("/webauthn/passkeys", authMiddleware, getPasskeys);
+
+// Remove a specific biometric record
+router.delete("/webauthn/passkeys/:id", authMiddleware, deletePasskey);
 
 export default router;

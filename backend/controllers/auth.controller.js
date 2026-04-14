@@ -208,3 +208,41 @@ export const verifyAuth = async (req, res) => {
     return res.status(400).json({ error: error.message });
   }
 };
+
+// ==========================================
+// ⚙️ PASSKEY MANAGEMENT (NEW)
+// ==========================================
+
+// Fetch all registered passkeys for the logged-in user
+export const getPasskeys = async (req, res) => {
+  try {
+    const username = req.user.username; // Taken from authMiddleware token
+    const result = await pool.query(
+      'SELECT id, username, created_at FROM user_passkeys WHERE username = $1 ORDER BY created_at DESC',
+      [username]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete a specific passkey
+export const deletePasskey = async (req, res) => {
+  const { id } = req.params;
+  const username = req.user.username;
+  try {
+    const result = await pool.query(
+      'DELETE FROM user_passkeys WHERE id = $1 AND username = $2 RETURNING *', 
+      [id, username]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Passkey not found or unauthorized." });
+    }
+
+    res.json({ message: "Passkey removed successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
