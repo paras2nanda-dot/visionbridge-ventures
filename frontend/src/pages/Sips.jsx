@@ -94,8 +94,6 @@ const Sips = () => {
   );
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  
-  /* 🪄 Explicitly added border mapping for high contrast visibility */
   const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
@@ -103,12 +101,10 @@ const Sips = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
         <h1 className="title" style={{ color: 'var(--text-main)', margin: 0, fontWeight: '800' }}>SIP Tracker</h1>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {/* 💎 Executive Metric Tile 1 */}
-          <div style={{ padding: '12px 20px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.05)', borderLeft: '4px solid #10b981', flex: '1 1 auto', minWidth: '160px' }}>
-            <div style={{ fontSize: '11px', color: '#10b981', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly SIP Book</div>
+          <div style={{ padding: '12px 20px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.05)', borderLeft: '4px solid #38bdf8', flex: '1 1 auto', minWidth: '160px' }}>
+            <div style={{ fontSize: '11px', color: '#38bdf8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly SIP Book</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', marginTop: '4px' }}>₹{formatINR(sips.filter(s => s.status === 'Active').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}</div>
           </div>
-          {/* 💎 Executive Metric Tile 2 */}
           <div style={{ padding: '12px 20px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.05)', borderLeft: '4px solid #6366f1', flex: '1 1 auto', minWidth: '160px' }}>
             <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL SIP AUM</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', marginTop: '4px' }}>₹{formatINR(sips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}</div>
@@ -116,7 +112,7 @@ const Sips = () => {
         </div>
       </div>
       
-      <div className="card" style={{ marginBottom: '32px', borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#6366f1'}` }}>
+      <div className="card" style={{ marginBottom: '32px', borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8'}` }}>
         <form onSubmit={handleSubmit}>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
               <div><label style={labelStyle}>SID</label><input style={inputStyle} value={formData.sip_id} readOnly /></div>
@@ -150,9 +146,8 @@ const Sips = () => {
               <div><label style={labelStyle}>Platform</label><select style={inputStyle} value={formData.platform} disabled={isViewing} onChange={e=>setFormData({...formData, platform:e.target.value})}><option>NSE</option><option>BSE</option></select></div>
               <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
            </div>
-           {/* 🪄 FIX: Removed flex-grow so button stays standard size on desktop */}
            <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-             <button type="submit" disabled={isSaving} style={{padding:'12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color:'#fff', border:'none', borderRadius:'8px', fontWeight:'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
+             <button type="submit" disabled={isSaving} style={{padding:'12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#38bdf8', color:'#fff', border:'none', borderRadius:'8px', fontWeight:'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.4)'}}>
                 {isSaving ? (isEditing ? "Updating..." : "Syncing SIP...") : (isEditing ? "Update" : isViewing ? "Close View" : "Add SIP")}
              </button>
              {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{padding:'12px 24px', background:'transparent', color:'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', fontWeight: 'bold'}}>Cancel</button>}
@@ -188,9 +183,9 @@ const Sips = () => {
             </thead>
             <tbody>
               {filteredSips.map(s => (
-                <tr key={s.id} style={{borderBottom:'1px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(99, 102, 241, 0.04)' : 'transparent', transition: 'background 0.2s'}}>
+                <tr key={s.id} style={{borderBottom:'1px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(56, 189, 248, 0.04)' : 'transparent', transition: 'background 0.2s'}}>
                   <td style={{ padding: '12px' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} /></td>
-                  <td style={{ padding: '12px', color: '#6366f1', fontWeight: 'bold' }}>{s.sip_id}</td>
+                  <td style={{ padding: '12px', color: '#38bdf8', fontWeight: 'bold' }}>{s.sip_id}</td>
                   <td style={{ padding: '12px', color: 'var(--text-main)', fontWeight: '600' }}>{s.client_code} - {s.client_name}</td>
                   <td style={{ padding: '12px', color: 'var(--text-main)' }}>
                     <div style={{fontWeight:'bold'}}>{s.scheme_name}</div>
@@ -207,7 +202,7 @@ const Sips = () => {
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                           <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'var(--text-muted)', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>VIEW</button>
-                          <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#6366f1', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>EDIT</button>
+                          <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#38bdf8', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>EDIT</button>
                           <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>DELETE</button>
                       </div>
                   </td>
