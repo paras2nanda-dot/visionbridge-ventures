@@ -72,27 +72,8 @@ export const updateClient = async (req, res) => {
     const result = await pool.query(query, values);
     const newData = result.rows[0];
 
-    // Identify specific field changes for the human-readable summary
-    let changes = [];
-    const watchFields = [
-        { key: 'full_name', label: 'Name' },
-        { key: 'mobile_number', label: 'Mobile' },
-        { key: 'email', label: 'Email' },
-        { key: 'risk_profile', label: 'Risk Profile' },
-        { key: 'monthly_income', label: 'Income' }
-    ];
-
-    watchFields.forEach(f => {
-        const oldVal = String(oldData[f.key] || '');
-        const newVal = String(newData[f.key] || '');
-        if (newVal !== oldVal) {
-            changes.push(`${f.label}: ${oldVal || 'None'} → ${newVal}`);
-        }
-    });
-
-    const detailMsg = changes.length > 0 
-        ? `Modified fields: ${changes.join(', ')}.` 
-        : "Client profile updated with no primary field changes.";
+    // 💡 FIX: Removed the redundant string generation. Just a clean summary title.
+    const detailMsg = `Updated profile information for ${newData.full_name}.`;
 
     // Forensic Log: Capture both snapshots
     await logActivity(username, 'UPDATE', newData.full_name, detailMsg, oldData, newData);
