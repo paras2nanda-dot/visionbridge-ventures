@@ -1,6 +1,26 @@
 import { pool } from '../config/db.js';
 import { logActivity } from './activityController.js';
 
+// Helper function to swap IDs for Names in SIP snapshots
+const enhanceSipSnapshotWithNames = async (snapshot) => {
+  if (!snapshot) return null;
+  const enhanced = { ...snapshot };
+
+  if (enhanced.client_id) {
+    const clientRes = await pool.query('SELECT full_name FROM clients WHERE id::TEXT = $1::TEXT', [enhanced.client_id]);
+    enhanced.client_name = clientRes.rows[0]?.full_name || enhanced.client_id;
+    delete enhanced.client_id; // Hide raw ID from the diff
+  }
+
+  if (enhanced.scheme_id) {
+    const schemeRes = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id::TEXT = $1::TEXT', [enhanced.scheme_id]);
+    enhanced.scheme_name = schemeRes.rows[0]?.scheme_name || enhanced.scheme_id;
+    delete enhanced.scheme_id; // Hide raw ID from the diff
+  }
+
+  return enhanced;
+};
+
 export const getSips = async (req, res) => {
   try {
     const query = `
@@ -31,18 +51,17 @@ export const createSip = async (req, res) => {
     const result = await pool.query(query, values);
     const newSip = result.rows[0];
 
-    // Fetch client name for the log title
-    const clientRes = await pool.query('SELECT full_name FROM clients WHERE id::TEXT = $1::TEXT', [s.client_id]);
-    const clientName = clientRes.rows[0]?.full_name || 'Client';
+    // Enhance the snapshot to swap IDs for Names
+    const enhancedNewSip = await enhanceSipSnapshotWithNames(newSip);
 
-    // Forensic Log: Capture the full new object
+    // Forensic Log: Capture the full enhanced object
     await logActivity(
         user, 
         'CREATE', 
-        clientName, 
+        enhancedNewSip.client_name, 
         `📈 Started New SIP Mandate (${s.sip_id}).`,
         null, 
-        newSip
+        enhancedNewSip
     );
     
     res.status(201).json(newSip);
@@ -69,11 +88,15 @@ export const updateSip = async (req, res) => {
     const result = await pool.query(query, values);
     const newData = result.rows[0];
 
-    // 💡 Clean summary title for the Activity Feed
+    // 💡 ENHANCEMENT: Swap IDs for Names in both snapshots
+    const enhancedOldData = await enhanceSipSnapshotWithNames(oldData);
+    const enhancedNewData = await enhanceSipSnapshotWithNames(newData);
+
+    // Clean summary title for the Activity Feed
     const detailMsg = `Updated SIP mandate parameters (${newData.sip_id}).`;
 
-    // Forensic Log: Capture both snapshots
-    await logActivity(user, 'UPDATE', s.client_name || 'SIP', detailMsg, oldData, newData);
+    // Forensic Log: Capture both enhanced snapshots
+    await logActivity(user, 'UPDATE', enhancedNewData.client_name || 'SIP', detailMsg, enhancedOldData, enhancedNewData);
 
     res.json(newData);
   } catch (err) { 
@@ -85,25 +108,24 @@ export const deleteSip = async (req, res) => {
   const { id } = req.params;
   const user = req.user?.username || "System";
   try {
-    // 1. Snapshot BEFORE deletion (grabbing all data + client name)
-    const sipData = await pool.query(`
-        SELECT s.*, c.full_name as client_name 
-        FROM sips s 
-        JOIN clients c ON s.client_id::TEXT = c.id::TEXT 
-        WHERE s.id = $1`, [id]);
+    // 1. Snapshot BEFORE deletion
+    const sipData = await pool.query('SELECT * FROM sips WHERE id = $1', [id]);
 
     if (sipData.rows.length === 0) return res.status(404).json({ error: "Not found" });
     const deletedRecord = sipData.rows[0];
 
     await pool.query('DELETE FROM sips WHERE id = $1', [id]);
 
-    // Forensic Log: Pass deleted record as old_data
+    // Enhance the snapshot to swap IDs for Names
+    const enhancedDeletedRecord = await enhanceSipSnapshotWithNames(deletedRecord);
+
+    // Forensic Log: Pass enhanced deleted record as old_data
     await logActivity(
         user, 
         'DELETE', 
-        deletedRecord.client_name, 
-        `🗑️ Terminated and purged SIP Mandate (${deletedRecord.sip_id}).`,
-        deletedRecord,
+        enhancedDeletedRecord.client_name, 
+        `🗑️ Terminated and purged SIP Mandate (${enhancedDeletedRecord.sip_id}).`,
+        enhancedDeletedRecord,
         null
     );
     
@@ -121,7 +143,9 @@ export const bulkDeleteSips = async (req, res) => {
     
     // 1. Snapshot of all records about to be deleted
     const recordsToPurge = await pool.query('SELECT * FROM sips WHERE id::text = ANY($1::text[])', [cleanIds]);
-    const snapshots = recordsToPurge.rows;
+    
+    // Enhance all snapshots in the batch
+    const enhancedSnapshots = await Promise.all(recordsToPurge.rows.map(enhanceSipSnapshotWithNames));
 
     await pool.query('DELETE FROM sips WHERE id::text = ANY($1::text[])', [cleanIds]);
     
@@ -131,7 +155,7 @@ export const bulkDeleteSips = async (req, res) => {
         'DELETE', 
         'SIP Database', 
         `🚨 Execution of bulk deletion for ${ids.length} SIP records.`,
-        { deleted_records: snapshots },
+        { deleted_records: enhancedSnapshots },
         null
     );
     
