@@ -108,7 +108,6 @@ const ActivityFeed = () => {
           MODIFICATION ANALYSIS
         </div>
         <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <style>{`.mobile-table-wrapper::-webkit-scrollbar { display: none; }`}</style>
             <table className="mobile-table-wrapper" style={{ width: '100%', minWidth: '400px', borderCollapse: 'collapse', fontSize: '13px', paddingRight: '20px' }}>
             <thead>
                 <tr style={{ color: '#64748b', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -167,13 +166,35 @@ const ActivityFeed = () => {
 
   return (
     <div className="fade-in" style={{ padding: '10px 0' }}>
-      
+      {/* 📱 Inject Mobile CSS specific for the filter bar */}
+      <style>{`
+        .mobile-table-wrapper::-webkit-scrollbar { display: none; }
+        .filter-input {
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: #1e293b; /* Dark slate background */
+            color: #f8fafc; /* White text */
+            font-size: 13px;
+            outline: none;
+            color-scheme: dark; /* Ensures date picker calendar is dark */
+        }
+        .filter-input::placeholder { color: #94a3b8; }
+        
+        @media (max-width: 600px) {
+            .filter-container { flex-direction: column; align-items: stretch !important; gap: 10px; }
+            .filter-input-wrapper { width: 100%; display: flex; }
+            .filter-input { width: 100%; }
+            .select-all-wrapper { margin-bottom: 5px; }
+        }
+      `}</style>
+
       {/* HEADER ROW */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 5px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 5px', flexWrap: 'wrap', gap: '10px' }}>
         <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '22px', fontWeight: '900', letterSpacing: '-0.5px' }}>
           Recent Activity Feed
         </h3>
-        <div style={{display: 'flex', gap: '10px'}}>
+        <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
             {selectedIds.length > 0 && (
                 <button 
                 onClick={handleDeleteSelected} 
@@ -194,46 +215,56 @@ const ActivityFeed = () => {
       </div>
 
       {/* 🎛️ CONTROL CENTER / FILTER BAR */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', background: '#0f172a', padding: '15px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', alignItems: 'center' }}>
+      <div className="filter-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', background: '#0f172a', padding: '15px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', alignItems: 'center' }}>
         
         {/* Checkbox for Select All */}
-        <div style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
+        <div className="select-all-wrapper" style={{ display: 'flex', alignItems: 'center', marginRight: '5px' }}>
             <input 
                 type="checkbox" 
                 checked={selectedIds.length > 0 && selectedIds.length === filteredActivities.length}
                 onChange={handleSelectAll}
                 style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#6366f1' }}
             />
+            <span style={{marginLeft: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: '700', display: window.innerWidth <= 600 ? 'inline' : 'none'}}>Select All</span>
         </div>
 
         {/* Search */}
-        <input 
-          type="text" 
-          placeholder="Search activity..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ flex: 1, minWidth: '200px', padding: '10px 15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', fontSize: '13px', outline: 'none' }}
-        />
+        <div className="filter-input-wrapper" style={{ flex: 1, minWidth: '200px' }}>
+            <input 
+              type="text" 
+              placeholder="Search activity..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="filter-input"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+        </div>
 
         {/* Date Filter */}
-        <input 
-          type="date" 
-          value={filterDate}
-          onChange={(e) => setFilterDate(e.target.value)}
-          style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: '#94a3b8', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
-        />
+        <div className="filter-input-wrapper">
+            <input 
+              type="date" 
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="filter-input"
+              style={{ cursor: 'pointer', boxSizing: 'border-box' }}
+            />
+        </div>
 
         {/* Action Type Filter */}
-        <select 
-          value={filterAction}
-          onChange={(e) => setFilterAction(e.target.value)}
-          style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: '#94a3b8', fontSize: '13px', outline: 'none', cursor: 'pointer' }}
-        >
-          <option value="ALL">All Actions</option>
-          <option value="CREATE">Creates (✨)</option>
-          <option value="UPDATE">Updates (📝)</option>
-          <option value="DELETE">Deletes (🗑️)</option>
-        </select>
+        <div className="filter-input-wrapper">
+            <select 
+              value={filterAction}
+              onChange={(e) => setFilterAction(e.target.value)}
+              className="filter-input"
+              style={{ cursor: 'pointer', boxSizing: 'border-box' }}
+            >
+              <option value="ALL">All Actions</option>
+              <option value="CREATE">Creates (✨)</option>
+              <option value="UPDATE">Updates (📝)</option>
+              <option value="DELETE">Deletes (🗑️)</option>
+            </select>
+        </div>
       </div>
       
       {/* ACTIVITY LIST */}
