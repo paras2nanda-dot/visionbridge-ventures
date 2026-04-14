@@ -137,7 +137,7 @@ const MFSchemes = () => {
     <div className="container fade-in">
       <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '800' }}>Mutual Fund Master</h1>
 
-      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : '#6366f1'}`, marginBottom: '32px' }}>
+      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : '#38bdf8'}`, marginBottom: '32px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '24px' }}>
             <div><label style={labelStyle}>AMC Name *</label><input style={inputStyle} value={formData.amc_name} onChange={e => setFormData({...formData, amc_name: e.target.value})} required /></div>
@@ -160,25 +160,24 @@ const MFSchemes = () => {
             </div>
 
             <div>
-                <label style={{...labelStyle, color: '#6366f1'}}>Commission Rate (%)</label>
-                <input style={{...inputStyle, border: '1px solid rgba(99, 102, 241, 0.4) !important'}} type="number" step="any" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
+                <label style={{...labelStyle, color: '#38bdf8'}}>Commission Rate (%)</label>
+                <input style={{...inputStyle, border: '1px solid rgba(56, 189, 248, 0.4)'}} type="number" step="any" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
             </div>
           </div>
 
-          {/* Dashboards and Allocations ... */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-              <div style={{ padding: '20px', background: 'rgba(99, 102, 241, 0.03)', borderRadius: '16px', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
-                <label style={{...labelStyle, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1px'}}>Total Market Value (₹)</label>
+              <div style={{ padding: '20px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
+                <label style={{...labelStyle, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1px'}}>Total Market Value (₹)</label>
                 <input 
-                    style={{...inputStyle, fontSize: '22px', fontWeight: '900', background: 'transparent !important', border: 'none !important', padding: '0', marginTop: '8px'}} 
+                    style={{...inputStyle, fontSize: '22px', fontWeight: '900', background: 'transparent', border: 'none', padding: '0', marginTop: '8px'}} 
                     type="number" 
                     step="any"
                     value={formData.total_current_value} 
                     onChange={e => setFormData({...formData, total_current_value: e.target.value})} 
                     placeholder="0.00"
                 />
-                <div style={{marginTop: '12px', padding: '8px 12px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', display: 'inline-block'}}>
-                  <span style={{color: '#6366f1', fontSize: '10px', fontWeight: '800'}}>AGGREGATE PORTFOLIO VALUE</span>
+                <div style={{marginTop: '12px', padding: '8px 12px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', display: 'inline-block'}}>
+                  <span style={{color: '#38bdf8', fontSize: '10px', fontWeight: '800'}}>AGGREGATE PORTFOLIO VALUE</span>
                 </div>
               </div>
 
@@ -205,7 +204,7 @@ const MFSchemes = () => {
           </div>
 
           <div style={{ marginTop: '32px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-            <button type="submit" disabled={isSaving} style={{ padding: '12px 48px', background: isEditing ? '#f59e0b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)' }}>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 48px', background: isEditing ? '#f59e0b' : '#38bdf8', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)' }}>
               {isSaving ? (isEditing ? "Updating..." : "Adding Scheme...") : (isEditing ? "Update Master Scheme" : "Register New Scheme")}
             </button>
             {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ padding: '12px 24px', color: 'var(--text-muted)', cursor:'pointer', border:'1px solid var(--border)', background:'transparent', borderRadius: '8px', fontWeight: '800' }}>Cancel</button>}
@@ -235,10 +234,10 @@ const MFSchemes = () => {
                 <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
                   <td style={{ padding: '14px 16px' }}><strong style={{color: 'var(--text-main)', fontSize: '14px'}}>{s.amc_name}</strong><br/><span style={{color: 'var(--text-muted)', fontSize: '11px'}}>{s.scheme_name}</span></td>
                   <td style={{ padding: '14px 16px', color: 'var(--text-main)' }}>{s.category}<br/><small style={{color: 'var(--text-muted)', fontWeight: '600'}}>{s.sub_category}</small></td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight:'800', color: '#6366f1' }}>{s.commission_rate || '0.8'}%</td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight:'800', color: '#38bdf8' }}>{s.commission_rate || '0.8'}%</td>
                   <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
                   <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#6366f1', background: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px', marginRight: '12px' }}>EDIT</button>
+                    <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#38bdf8', background: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px', marginRight: '12px' }}>EDIT</button>
                     <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px' }}>DELETE</button>
                   </td>
                 </tr>
