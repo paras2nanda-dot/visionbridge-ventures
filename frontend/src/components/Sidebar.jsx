@@ -64,7 +64,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           line-height: 1.5;
           transition: all 0.2s ease;
           border-left: 4px solid transparent;
-          text-transform: none !important; /* 🪄 Ensures sentence case */
+          text-transform: none !important;
         }
 
         .sidebar-link:hover {
@@ -109,8 +109,8 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
       }}>
         <div style={{ minWidth: 0 }}>
           <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '22px', color: '#fff' }}>VisionBridge 📈</div>
-          <div style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: '800', textTransform: 'none', marginTop: '4px', letterSpacing: '1px' }}>
-            {userName}
+          <div style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: '900', textTransform: 'uppercase', marginTop: '6px', letterSpacing: '1.5px' }}>
+            WELCOME, {userName.toUpperCase()}
           </div>
         </div>
 
@@ -134,19 +134,18 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         ))}
       </nav>
 
-      {/* 🪄 Footing Refinement: Force removal of any global borders from logout */}
       <div style={{ padding: '20px', borderTop: '1.5px solid var(--border)', background: 'transparent' }}>
         <button onClick={handleLogout} disabled={isLoggingOut}
           style={{ 
-            width: '100%', textAlign: 'left', border: 'none !important', background: 'none !important', 
+            width: '100%', textAlign: 'left', border: 'none !important', background: 'transparent !important', 
             cursor: 'pointer', fontWeight: '800', color: '#ef4444', 
             fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px',
-            padding: '10px 0', outline: 'none !important', boxShadow: 'none !important' 
+            padding: '4px 0', outline: 'none !important', boxShadow: 'none !important' 
           }}>
-          🚪 {isLoggingOut ? "Logging out..." : "Logout"}
+          <span style={{ fontSize: '18px' }}>🚪</span> {isLoggingOut ? "LOGGING OUT..." : "Logout"}
         </button>
 
-        <p style={{ color: '#64748b', fontSize: '10px', fontWeight: '900', marginBottom: '12px', letterSpacing: '1.5px' }}>APPEARANCE</p>
+        <p style={{ color: '#64748b', fontSize: '10px', fontWeight: '900', marginBottom: '12px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Appearance</p>
         <ThemeSwitcher />
       </div>
     </div>
