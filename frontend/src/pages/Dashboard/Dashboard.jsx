@@ -35,7 +35,9 @@ const PasskeyManager = () => {
 
   return (
     <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)' }}>🛡️ Biometric Security</h3>
+      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        🛡️ Biometric Security
+      </h3>
       <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
         Manage the devices authorized to log in with your fingerprint or face recognition.
       </p>
@@ -68,7 +70,7 @@ const PasskeyManager = () => {
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
   
-  // 🟢 Updated tab order to include Security
+  // Tab order remains consistent for swipe logic
   const tabOrder = ['business', 'client', 'activity', 'security'];
   
   const touchStartX = useRef(null);
@@ -165,13 +167,13 @@ const Dashboard = () => {
             scrollBehavior: 'smooth'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
-          🏢 Business
+          🏢 Business Analytics
         </button>
         <button ref={tabRefs.client} style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
-          👤 Clients
+          👤 Client Insights
         </button>
         <button ref={tabRefs.activity} style={tabStyle('activity')} onClick={(e) => handleTabClick(e, 'activity')}>
-          🕒 Activity
+          🕒 Recent Activities
         </button>
         <button ref={tabRefs.security} style={tabStyle('security')} onClick={(e) => handleTabClick(e, 'security')}>
           🛡️ Security
