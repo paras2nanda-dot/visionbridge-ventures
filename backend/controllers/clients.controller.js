@@ -14,7 +14,9 @@ export const createClient = async (req, res) => {
   const c = req.body;
   const username = req.user?.username || "System";
   try {
-    const dobValue = c.dob || c.date_of_birth || null;
+    // 💡 FIX: Prioritize 'date_of_birth' from the frontend form
+    const dobValue = c.date_of_birth || c.dob || null;
+    
     const query = `
       INSERT INTO clients (
         client_code, full_name, dob, onboarding_date, added_by, 
@@ -62,7 +64,8 @@ export const updateClient = async (req, res) => {
     if (oldRes.rows.length === 0) return res.status(404).json({ error: "Client not found" });
     const oldData = oldRes.rows[0];
 
-    const dobValue = c.dob || c.date_of_birth || null;
+    // 💡 FIX: Flipped priority so the fresh 'date_of_birth' overwrites the old 'dob'
+    const dobValue = c.date_of_birth || c.dob || null;
     const cleanIncome = c.monthly_income?.toString().replace(/,/g, '') || null;
 
     const query = `UPDATE clients SET client_code=$1, full_name=$2, dob=$3, onboarding_date=$4, added_by=$5, sourcing=$6, sourcing_type=$7, mobile_number=$8, monthly_income=$9, risk_profile=$10, investment_experience=$11, pan=$12, aadhaar=$13, nominee_name=$14, nominee_relation=$15, nominee_mobile=$16, notes=$17, email=$18, is_active=true WHERE id=$19 RETURNING *`;
@@ -72,7 +75,6 @@ export const updateClient = async (req, res) => {
     const result = await pool.query(query, values);
     const newData = result.rows[0];
 
-    // 💡 FIX: Removed the redundant string generation. Just a clean summary title.
     const detailMsg = `Updated profile information for ${newData.full_name}.`;
 
     // Forensic Log: Capture both snapshots
