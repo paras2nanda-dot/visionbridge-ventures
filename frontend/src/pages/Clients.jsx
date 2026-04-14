@@ -172,11 +172,12 @@ const Clients = () => {
               <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '80px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
             </div>
           </div>
-          <div style={{marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
-             <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)', flex: '1 1 auto', minWidth: '150px'}}>
+          {/* 🪄 FIX: Removed the flex property so buttons stay small and aligned to the left */}
+          <div style={{marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
+             <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
                 {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update Client" : isViewing ? "Close View" : "Add Client")}
              </button>
-             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold', flex: '0 1 auto'}}>Cancel</button>}
+             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
           </div>
         </form>
       </div>
