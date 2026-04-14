@@ -4,7 +4,7 @@ import api from '../services/api';
 const ActivityFeed = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null); // Tracks which forensic log is open
+  const [expandedId, setExpandedId] = useState(null); 
 
   const fetchActivities = async () => {
     setLoading(true);
@@ -33,23 +33,65 @@ const ActivityFeed = () => {
     }
   };
 
+  // 🪄 Smart Date Formatter
+  const formatValue = (val) => {
+    if (val === null || val === undefined || val === '') return '—';
+    
+    // If it looks like an ISO date string
+    if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) {
+      const date = new Date(val);
+      return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    
+    // If it's a simple YYYY-MM-DD date
+    if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = val.split('-');
+        return `${day}/${month}/${year}`;
+    }
+
+    return String(val);
+  };
+
   /**
    * 🛡️ FORENSIC DIFF ENGINE
-   * Compares two JSON objects and renders a table showing only modified fields.
    */
   const renderDiff = (oldData, newData) => {
     if (!oldData && !newData) return null;
     
-    // Combine all keys, excluding technical timestamps/IDs
+    // Combine keys, ONLY hide actual technical fields
     const allKeys = Object.keys({ ...oldData, ...newData }).filter(
-      k => !['id', 'created_at', 'updated_at', 'is_active', 'added_by'].includes(k)
+      k => !['id', 'created_at', 'updated_at', 'is_active'].includes(k)
     );
 
+    let hasVisibleChanges = false;
+
+    const rows = allKeys.map(key => {
+      const rawOld = oldData ? oldData[key] : null;
+      const rawNew = newData ? newData[key] : null;
+      
+      const displayOld = formatValue(rawOld);
+      const displayNew = formatValue(rawNew);
+      
+      // If the formatted, human-readable values are the same, skip it
+      if (displayOld === displayNew) return null;
+
+      hasVisibleChanges = true;
+
+      return (
+        <tr key={key} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+          <td style={{ padding: '10px 0', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', fontSize: '11px' }}>
+            {key.replace(/_/g, ' ')}
+          </td>
+          <td style={{ padding: '10px 0', color: '#ef4444', opacity: 0.8 }}>{displayOld}</td>
+          <td style={{ padding: '10px 0', color: '#10b981', fontWeight: '700' }}>{displayNew}</td>
+        </tr>
+      );
+    });
+
+    if (!hasVisibleChanges) return null;
+
     return (
-      <div className="fade-in" style={{ 
-        marginTop: '20px', padding: '20px', background: 'rgba(0,0,0,0.35)', 
-        borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' 
-      }}>
+      <div className="fade-in" style={{ marginTop: '20px', padding: '20px', background: 'rgba(0,0,0,0.35)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ fontSize: '10px', fontWeight: '900', color: '#6366f1', marginBottom: '12px', letterSpacing: '1px' }}>
           MODIFICATION ANALYSIS
         </div>
@@ -62,23 +104,7 @@ const ActivityFeed = () => {
             </tr>
           </thead>
           <tbody>
-            {allKeys.map(key => {
-              const oldVal = oldData ? oldData[key] : null;
-              const newVal = newData ? newData[key] : null;
-              
-              // Only show the row if the value actually changed
-              if (JSON.stringify(oldVal) === JSON.stringify(newVal)) return null;
-
-              return (
-                <tr key={key} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <td style={{ padding: '10px 0', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', fontSize: '11px' }}>
-                    {key.replace(/_/g, ' ')}
-                  </td>
-                  <td style={{ padding: '10px 0', color: '#ef4444', opacity: 0.8 }}>{String(oldVal || '—')}</td>
-                  <td style={{ padding: '10px 0', color: '#10b981', fontWeight: '700' }}>{String(newVal || '—')}</td>
-                </tr>
-              );
-            })}
+            {rows}
           </tbody>
         </table>
       </div>
@@ -100,19 +126,7 @@ const ActivityFeed = () => {
         <button 
           onClick={fetchActivities} 
           disabled={loading}
-          style={{ 
-            background: loading ? 'rgba(99, 102, 241, 0.2)' : '#6366f1', 
-            border: 'none', 
-            color: 'white', 
-            padding: '10px 22px', 
-            borderRadius: '12px', 
-            fontSize: '11px', 
-            fontWeight: '900', 
-            cursor: loading ? 'not-allowed' : 'pointer', 
-            transition: 'all 0.2s', 
-            letterSpacing: '0.5px',
-            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
-          }}
+          style={{ background: loading ? 'rgba(99, 102, 241, 0.2)' : '#6366f1', border: 'none', color: 'white', padding: '10px 22px', borderRadius: '12px', fontSize: '11px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', letterSpacing: '0.5px', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)' }}
         >
           {loading ? "SYNCING..." : "REFRESH FEED"}
         </button>
@@ -125,29 +139,9 @@ const ActivityFeed = () => {
           const hasDiffData = act.old_data || act.new_data;
 
           return (
-            <div key={act.id} style={{ 
-              display: 'flex', flexDirection: 'column', padding: '22px', borderRadius: '24px', 
-              background: '#0f172a', 
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              boxShadow: '0 15px 35px -12px rgba(0, 0, 0, 0.5)',
-              transition: 'all 0.3s ease'
-            }}>
-              
+            <div key={act.id} style={{ display: 'flex', flexDirection: 'column', padding: '22px', borderRadius: '24px', background: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 15px 35px -12px rgba(0, 0, 0, 0.5)', transition: 'all 0.3s ease' }}>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                {/* Glowing Icon Halo */}
-                <div style={{ 
-                  background: style.glow, 
-                  border: `1px solid ${style.color}50`,
-                  color: style.color, 
-                  width: '56px', height: '56px', 
-                  borderRadius: '16px', 
-                  fontSize: '26px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  flexShrink: 0,
-                  boxShadow: `0 0 20px ${style.glow}`
-                }}>
+                <div style={{ background: style.glow, border: `1px solid ${style.color}50`, color: style.color, width: '56px', height: '56px', borderRadius: '16px', fontSize: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 20px ${style.glow}` }}>
                   {style.icon}
                 </div>
 
@@ -156,12 +150,7 @@ const ActivityFeed = () => {
                     {act.details || "System Activity"}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    <span style={{ 
-                      fontSize: '10px', fontWeight: '900', color: '#38bdf8', 
-                      background: 'rgba(56, 189, 248, 0.1)',
-                      border: '1px solid rgba(56, 189, 248, 0.2)', 
-                      padding: '4px 12px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.8px' 
-                    }}>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '4px 12px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                       USER: {act.user_name}
                     </span>
                     <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '700' }}>
