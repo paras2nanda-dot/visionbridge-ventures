@@ -64,6 +64,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           line-height: 1.5;
           transition: all 0.2s ease;
           border-left: 4px solid transparent;
+          text-transform: none; /* 🪄 Ensures no all-caps */
         }
 
         .sidebar-link:hover {
@@ -78,15 +79,14 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           font-weight: 800;
         }
 
-        /* 📱 MOBILE OPTIMIZATION ENGINE */
         @media (max-width: 768px) {
           .sidebar-logo-text { 
              font-size: 22px !important; 
              letter-spacing: -0.5px;
           }
           .sidebar-link { 
-             padding: 18px 24px; /* Taller touch targets for fingers */
-             font-size: 16px; /* Maintaining desktop-level readability */
+             padding: 18px 24px; 
+             font-size: 16px; 
              font-weight: 700;
           }
           .mobile-close-btn { 
@@ -94,7 +94,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
              margin-right: -5px;
           }
           .sidebar-logo {
-             padding: 30px 20px !important; /* Spacious mobile header */
+             padding: 30px 20px !important; 
           }
         }
       `}</style>
@@ -109,7 +109,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
       }}>
         <div style={{ minWidth: 0 }}>
           <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '22px', color: '#fff' }}>VisionBridge 📈</div>
-          <div style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: '800', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '1px' }}>
+          <div style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: '800', textTransform: 'none', marginTop: '4px', letterSpacing: '1px' }}>
             {userName}
           </div>
         </div>
@@ -134,12 +134,14 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         ))}
       </nav>
 
-      <div style={{ padding: '20px', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)' }}>
+      {/* 🪄 Clean Footer: Background changed to simple dark, border-top visible, no border on button */}
+      <div style={{ padding: '20px', borderTop: '1.5px solid var(--border)', background: 'transparent' }}>
         <button onClick={handleLogout} disabled={isLoggingOut}
           style={{ 
             width: '100%', textAlign: 'left', border: 'none', background: 'none', 
             cursor: 'pointer', fontWeight: '800', color: '#ef4444', 
-            fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' 
+            fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px',
+            padding: '10px 0', outline: 'none', boxShadow: 'none' /* Ensures no border-look */
           }}>
           🚪 {isLoggingOut ? "Logging out..." : "Logout"}
         </button>
