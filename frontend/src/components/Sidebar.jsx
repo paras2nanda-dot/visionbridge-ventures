@@ -43,36 +43,53 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
     }}>
       
       <style>{`
-        .sidebar-nav { flex: 1; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .sidebar-nav { 
+          flex: 1; 
+          overflow-y: auto; 
+          scrollbar-width: none; 
+          -ms-overflow-style: none; 
+          padding-top: 15px;
+        }
         .sidebar-nav::-webkit-scrollbar { display: none; }
         
         .sidebar-link {
           display: block;
-          padding: 14px 20px;
+          /* 💎 Professional Spacing: Increased padding for a larger touch target */
+          padding: 16px 24px;
           color: #94a3b8;
           text-decoration: none;
-          font-weight: 700;
-          font-size: 14px;
-          /* 💡 FIX: Removed ellipsis and allowed text to wrap if necessary */
+          font-weight: 600;
+          /* 💎 Readable Typography: Bumped from 14px to 16px */
+          font-size: 16px;
           white-space: normal; 
           word-wrap: break-word;
-          line-height: 1.4;
+          line-height: 1.5;
+          transition: all 0.2s ease;
+          border-left: 4px solid transparent;
         }
+
+        .sidebar-link:hover {
+          background: rgba(255, 255, 255, 0.05);
+          color: #fff;
+        }
+
         .sidebar-link.active {
-          background: rgba(14, 165, 233, 0.15);
+          /* 💎 Executive Glow: Better contrast and background for active state */
+          background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 100%);
           color: #0ea5e9;
-          border-right: 4px solid #0ea5e9;
+          border-left: 4px solid #0ea5e9;
+          font-weight: 800;
         }
 
         @media (max-width: 768px) {
-          .sidebar-logo-text { font-size: 16px !important; }
-          .sidebar-link { padding: 12px 15px; font-size: 13px; }
+          .sidebar-logo-text { font-size: 18px !important; }
+          .sidebar-link { padding: 15px 20px; font-size: 15px; }
           .mobile-close-btn { display: flex !important; }
         }
       `}</style>
 
       <div className="sidebar-logo" style={{ 
-        padding: '20px 15px', 
+        padding: '25px 20px', 
         borderBottom: '1px solid var(--border)', 
         display: 'flex',
         justifyContent: 'space-between',
@@ -80,8 +97,8 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         flexShrink: 0
       }}>
         <div style={{ minWidth: 0 }}>
-          <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '18px', color: '#fff' }}>VisionBridge 📈</div>
-          <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase' }}>
+          <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '22px', color: '#fff', letterSpacing: '-0.5px' }}>VisionBridge 📈</div>
+          <div style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: '800', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '1px' }}>
             {userName}
           </div>
         </div>
@@ -91,13 +108,13 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           className="mobile-close-btn"
           style={{ 
             display: 'none', background: 'rgba(255,255,255,0.1)', border: 'none', 
-            color: 'white', fontSize: '18px', width: '32px', height: '32px',
+            color: 'white', fontSize: '18px', width: '36px', height: '36px',
             alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer'
           }}
         >✕</button>
       </div>
       
-      <nav className="sidebar-nav" style={{ paddingTop: '10px' }}>
+      <nav className="sidebar-nav">
         {menuItems.map((item) => (
           <NavLink key={item.name} to={item.path} onClick={closeMobileMenu} 
             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}>
@@ -106,17 +123,17 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         ))}
       </nav>
 
-      <div style={{ padding: '15px', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)' }}>
+      <div style={{ padding: '20px', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)' }}>
         <button onClick={handleLogout} disabled={isLoggingOut}
           style={{ 
             width: '100%', textAlign: 'left', border: 'none', background: 'none', 
             cursor: 'pointer', fontWeight: '800', color: '#ef4444', 
-            fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' 
+            fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' 
           }}>
           🚪 {isLoggingOut ? "Logging out..." : "Logout"}
         </button>
 
-        <p style={{ color: '#94a3b8', fontSize: '8px', fontWeight: '900', marginBottom: '8px', letterSpacing: '1px' }}>APPEARANCE</p>
+        <p style={{ color: '#64748b', fontSize: '10px', fontWeight: '900', marginBottom: '12px', letterSpacing: '1.5px' }}>APPEARANCE</p>
         <ThemeSwitcher />
       </div>
     </div>
