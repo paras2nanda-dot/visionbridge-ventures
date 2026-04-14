@@ -6,12 +6,21 @@ import ActivityFeed from '../../components/ActivityFeed';
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
 
+  // 💡 Auto-Centering logic for mobile tabs
+  const handleTabClick = (e, tabName) => {
+    setActiveTab(tabName);
+    // Smoothly scrolls the clicked tab into the center of the screen.
+    // On desktop, this does nothing since it already fits.
+    // On mobile, this makes sure adjacent tabs "peek" into view!
+    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+
   const tabStyle = (tabName) => ({
-    padding: '12px 20px', // 📱 Slightly smaller padding for mobile
+    padding: '12px 20px', 
     cursor: 'pointer',
     border: 'none',
     background: 'none',
-    fontSize: '14px', // 📱 Optimized font size
+    fontSize: '14px', 
     fontWeight: activeTab === tabName ? '900' : '600',
     color: activeTab === tabName ? '#6366f1' : 'var(--text-muted)',
     borderBottom: activeTab === tabName ? '4px solid #6366f1' : '4px solid transparent',
@@ -20,19 +29,23 @@ const Dashboard = () => {
     alignItems: 'center',
     gap: '8px',
     outline: 'none',
-    whiteSpace: 'nowrap' // 📱 Vital: prevents tabs from breaking into lines
+    whiteSpace: 'nowrap', 
+    flexShrink: 0 // 📱 Vital: forces overflow on mobile instead of squishing text
   });
 
   return (
-    /* 📱 Mobile: Reduced outer padding from 25px to 15px */
     <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)' }}>
+      {/* 📱 Inject Mobile CSS to hide the ugly native scrollbar */}
+      <style>{`
+        .dashboard-tabs::-webkit-scrollbar { display: none; }
+      `}</style>
       
       <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '20px' }}>
         Dashboard
       </h1>
       
       {/* 💡 NAVIGATION TABS - Optimized for Touch Scrolling */}
-      <div style={{ 
+      <div className="dashboard-tabs" style={{ 
         display: 'flex', 
         gap: '5px', 
         borderBottom: '2px solid var(--border)',
@@ -42,18 +55,19 @@ const Dashboard = () => {
         paddingTop: '5px',
         paddingBottom: '0',
         zIndex: 100,
-        overflowX: 'auto', // 📱 Vital: Allows swiping through tabs on mobile
-        scrollbarWidth: 'none', // Hides scrollbar on Firefox
-        msOverflowStyle: 'none', // Hides scrollbar on IE
-        marginBottom: '20px'
+        overflowX: 'auto', 
+        scrollbarWidth: 'none', 
+        msOverflowStyle: 'none', 
+        marginBottom: '20px',
+        scrollBehavior: 'smooth'
       }}>
-        <button style={tabStyle('business')} onClick={() => setActiveTab('business')}>
+        <button style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
           🏢 Business Analytics
         </button>
-        <button style={tabStyle('client')} onClick={() => setActiveTab('client')}>
+        <button style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
           👤 Client Insights
         </button>
-        <button style={tabStyle('activity')} onClick={() => setActiveTab('activity')}>
+        <button style={tabStyle('activity')} onClick={(e) => handleTabClick(e, 'activity')}>
           🕒 Recent Activity
         </button>
       </div>
