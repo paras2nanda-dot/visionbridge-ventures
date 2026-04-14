@@ -121,12 +121,12 @@ const Dashboard = () => {
   const tabStyle = (tabName) => ({
     padding: '14px 24px', 
     cursor: 'pointer',
-    border: 'none',
+    border: 'none', // 🪄 Explicitly remove borders
     background: 'none',
-    fontSize: '14px', 
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase',
-    fontWeight: activeTab === tabName ? '900' : '700',
+    fontSize: '15px', 
+    letterSpacing: '0.3px',
+    textTransform: 'none', // 🪄 Forces sentence case (Business Analytics)
+    fontWeight: activeTab === tabName ? '900' : '600',
     color: activeTab === tabName ? '#38bdf8' : 'var(--text-muted)',
     borderBottom: activeTab === tabName ? '4px solid #38bdf8' : '4px solid transparent',
     transition: 'all 0.2s ease',
@@ -134,6 +134,7 @@ const Dashboard = () => {
     alignItems: 'center',
     gap: '10px',
     outline: 'none',
+    boxShadow: 'none', // 🪄 Ensure no global button shadows/borders appear
     whiteSpace: 'nowrap', 
     flexShrink: 0 
   });
@@ -143,6 +144,7 @@ const Dashboard = () => {
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
         .dashboard-tabs button:hover { color: #38bdf8; opacity: 0.8; }
+        .dashboard-tabs button { border: none !important; box-shadow: none !important; } 
       `}</style>
       
       <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '25px', fontSize: '32px' }}>
