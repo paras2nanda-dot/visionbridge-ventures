@@ -9,8 +9,11 @@ import {
 } from "@simplewebauthn/server";
 
 const rpName = 'VisionBridge Ventures';
+// 🔴 PRODUCTION SETTINGS: Change this to your actual Vercel domain
+const rpID = 'visionbridge-ventures.vercel.app';
+const origin = `https://${rpID}`;
 
-// Temporary memory store for cryptographic challenges during the 30-second login window
+// Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
 
 // ==========================================
@@ -67,13 +70,12 @@ export const generateRegOptions = async (req, res) => {
   }
 
   try {
-    // Check if they already have keys registered to avoid duplicates
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
     const options = await generateRegistrationOptions({
       rpName,
-      rpID: req.hostname,
-      userID: Buffer.from(username), // Device requires a byte array
+      rpID,
+      userID: Buffer.from(username), 
       userName: username,
       excludeCredentials: userPasskeys.rows.map(key => ({
         id: Buffer.from(key.credential_id, 'base64url'),
@@ -82,20 +84,18 @@ export const generateRegOptions = async (req, res) => {
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'preferred',
-        authenticatorAttachment: 'platform', // Forces built-in scanners (TouchID, Windows Hello, Android Fingerprint)
+        authenticatorAttachment: 'platform', 
       },
     });
 
-    // Save the challenge temporarily
     challengeStore.set(`reg_${username}`, options.challenge);
-
     res.json(options);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 2. Verify the generated lock and save the Public Key to the database
+// 2. Verify the generated lock and save the Public Key
 export const verifyReg = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
@@ -107,14 +107,13 @@ export const verifyReg = async (req, res) => {
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: req.headers.origin,
-      expectedRPID: req.hostname,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
     });
 
     if (verification.verified && verification.registrationInfo) {
       const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
 
-      // Save the Public Key & Credential ID to PostgreSQL as base64url strings
       await pool.query(
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
@@ -144,7 +143,7 @@ export const generateAuthOptions = async (req, res) => {
     if (userKeys.rows.length === 0) return res.status(404).json({ error: "No biometrics registered for this user." });
 
     const options = await generateAuthenticationOptions({
-      rpID: req.hostname,
+      rpID,
       allowCredentials: userKeys.rows.map(key => ({
         id: Buffer.from(key.credential_id, 'base64url'),
         type: 'public-key',
@@ -159,7 +158,7 @@ export const generateAuthOptions = async (req, res) => {
   }
 };
 
-// 4. Login: Verify the puzzle answer and issue the JWT Login Token
+// 4. Login: Verify the puzzle answer
 export const verifyAuth = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
@@ -176,8 +175,8 @@ export const verifyAuth = async (req, res) => {
     const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: req.headers.origin,
-      expectedRPID: req.hostname,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
       authenticator: {
         credentialPublicKey: Buffer.from(passkey.public_key, 'base64url'),
         credentialID: Buffer.from(passkey.credential_id, 'base64url'),
@@ -186,11 +185,9 @@ export const verifyAuth = async (req, res) => {
     });
 
     if (verification.verified) {
-      // Prevent replay attacks by incrementing the counter
       await pool.query('UPDATE user_passkeys SET counter = $1 WHERE id = $2', [verification.authenticationInfo.newCounter, passkey.id]);
       challengeStore.delete(`auth_${username}`);
 
-      // Issue Standard JWT Token for seamless login
       const token = jwt.sign(
         { username, role: 'admin' }, 
         process.env.JWT_SECRET || 'fallback_secret_key', 
