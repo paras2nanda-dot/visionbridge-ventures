@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
+  // 🟢 LIVE SERVER (Restored for Production/Deployment)
   baseURL: "https://visionbridge-backend.onrender.com/api",
+  
   withCredentials: true, 
   timeout: 10000, 
 });

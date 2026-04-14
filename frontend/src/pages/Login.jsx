@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { toast } from "react-toastify";
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -35,12 +36,87 @@ export default function Login() {
     } catch (e) {}
   };
 
+  // ==============================================
+  // 🛡️ PASSKEY: REGISTER FINGERPRINT (After Login)
+  // ==============================================
+  const promptFingerprintRegistration = async (authUsername) => {
+    // Only Paras and Himanshu are allowed to register devices
+    if (!['paras', 'himanshu'].includes(authUsername.toLowerCase())) return;
+
+    // Ask user if they want to register this device
+    const wantsToRegister = window.confirm("Would you like to register this device for Fingerprint/FaceID login?");
+    if (!wantsToRegister) return;
+
+    try {
+      // 1. Get registration options from our backend
+      const { data: options } = await api.post('/auth/webauthn/register/generate', { username: authUsername });
+
+      // 2. Trigger the browser's native biometric prompt
+      const registrationResponse = await startRegistration(options);
+
+      // 3. Send the generated public key back to our backend to save it
+      await api.post('/auth/webauthn/register/verify', {
+        username: authUsername,
+        data: registrationResponse,
+      });
+
+      toast.success("✅ Device registered! You can now use Fingerprint login.");
+    } catch (err) {
+      console.error(err);
+      if (err.name !== 'NotAllowedError') {
+         toast.error("Fingerprint registration failed or was cancelled.");
+      }
+    }
+  };
+
+  // ==============================================
+  // 🛡️ PASSKEY: LOGIN WITH FINGERPRINT
+  // ==============================================
+  const handleBiometricLogin = async () => {
+    const cleanUsername = username.trim().toLowerCase();
+    
+    if (!cleanUsername) {
+      return toast.error("Please enter your username first to use fingerprint login.");
+    }
+
+    triggerPop();
+    setIsLoggingIn(true);
+
+    try {
+      // 1. Get the authentication challenge from the backend
+      const { data: options } = await api.post('/auth/webauthn/login/generate', { username: cleanUsername });
+
+      // 2. Trigger the browser's native biometric prompt
+      const authenticationResponse = await startAuthentication(options);
+
+      // 3. Send the signed challenge back to the backend to verify and log in
+      const res = await api.post('/auth/webauthn/login/verify', {
+        username: cleanUsername,
+        data: authenticationResponse
+      });
+
+      // 4. Success! Set the session exactly like a normal password login
+      sessionStorage.setItem("username", res.data.user?.username || cleanUsername); 
+      sessionStorage.setItem("token", res.data.token); 
+      toast.success(`Welcome back via Biometrics!`);
+      navigate("/dashboard");
+
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Biometric login failed or was cancelled.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // ==============================================
+  // STANDARD LOGIN
+  // ==============================================
   const handleLogin = async (e) => {
     e.preventDefault();
     triggerPop(); 
     setIsLoggingIn(true); 
 
-    // 💡 FIX: We trim spaces but keep original casing to match DB exactly.
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
 
@@ -53,9 +129,12 @@ export default function Login() {
       sessionStorage.setItem("username", res.data.user?.full_name || cleanUsername); 
       sessionStorage.setItem("token", res.data.token); 
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
+      
+      // ✅ Trigger Biometric Registration prompt if they just logged in successfully with a password
+      await promptFingerprintRegistration(cleanUsername);
+
       navigate("/dashboard");
     } catch (err) {
-      // 💡 Improved error feedback
       const errorMsg = err.response?.data?.error || "Invalid username or password";
       toast.error(errorMsg);
     } finally {
@@ -101,12 +180,13 @@ export default function Login() {
               <img src="/logo.jpeg" alt="Logo" style={styles.logoImage} />
           </div>
           <h2 style={styles.formTitle}>Welcome Back</h2>
+          
           <form onSubmit={handleLogin} style={{width: '100%'}}>
             <label style={styles.label}>Username</label>
             <input 
                 style={styles.input} 
                 className="login-field" 
-                placeholder="Username" 
+                placeholder="Username (e.g., paras)" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
                 autoCapitalize="none"
@@ -125,8 +205,25 @@ export default function Login() {
               />
               <span style={styles.eyeIcon} onClick={() => { triggerPop(); setShowPassword(!showPassword); }}>{showPassword ? "🙈" : "👁️"}</span>
             </div>
-            <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>{isLoggingIn ? "Authenticating..." : "Sign In"}</button>
+            
+            <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>
+              {isLoggingIn ? "Authenticating..." : "Sign In with Password"}
+            </button>
           </form>
+
+          {/* 🛡️ BIOMETRIC LOGIN BUTTON */}
+          <div style={{ width: '100%', marginTop: '15px' }}>
+             <button 
+                type="button" 
+                onClick={handleBiometricLogin} 
+                style={styles.biometricBtn} 
+                disabled={isLoggingIn || !username.trim()}
+                title="Enter your username first, then click here to login with your fingerprint."
+              >
+                <span style={{ fontSize: '18px' }}>👆</span> Login with Fingerprint
+             </button>
+          </div>
+
           <p style={styles.forgot} onClick={() => { triggerPop(); setShowReset(true); }}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
         </div>
       </div>
@@ -178,6 +275,10 @@ const styles = {
   passwordInput: { width: "100%", padding: "14px 16px", borderRadius: "10px", border: "1.5px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '16px', outline: 'none' },
   eyeIcon: { position: "absolute", right: "15px", top: "50%", transform: 'translateY(-50%)', cursor: "pointer", fontSize: '18px', opacity: 0.6 },
   loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s', fontSize: '16px' },
+  
+  // 🛡️ New Style for Biometric Button
+  biometricBtn: { width: "100%", padding: "14px", background: "transparent", color: "var(--text-main)", border: "2px solid #10b981", borderRadius: "10px", cursor: "pointer", fontWeight: "800", transition: 'all 0.2s', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
+  
   cancelBtn: { width: "100%", padding: "14px", background: "none", color: "var(--text-muted)", border: "none", cursor: "pointer", marginTop: "10px", fontWeight: '700' },
   forgot: { marginTop: "30px", fontSize: "14px", color: "var(--text-muted)", cursor: "pointer" },
   resetLink: { color: "#2563eb", fontWeight: '900' },
