@@ -1,18 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import BusinessDashboard from './BusinessDashboard';
 import ClientDashboard from './ClientDashboard';
 import ActivityFeed from '../../components/ActivityFeed';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
+  
+  // Array defining the logical order of tabs for swiping
+  const tabOrder = ['business', 'client', 'activity'];
+  
+  // Refs for touch tracking and scrolling the tab container
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+  const tabContainerRef = useRef(null);
+  const tabRefs = {
+    business: useRef(null),
+    client: useRef(null),
+    activity: useRef(null)
+  };
 
-  // 💡 Auto-Centering logic for mobile tabs
+  // Minimum distance (in pixels) required to trigger a swipe change
+  const minSwipeDistance = 50;
+
+  // 💡 Centralized function to change tabs and ensure the tab bar scrolls correctly
+  const switchTab = (newTab) => {
+    setActiveTab(newTab);
+    
+    // Smoothly scroll the newly selected tab into the center of the viewport
+    if (tabRefs[newTab] && tabRefs[newTab].current) {
+      tabRefs[newTab].current.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  };
+
   const handleTabClick = (e, tabName) => {
-    setActiveTab(tabName);
-    // Smoothly scrolls the clicked tab into the center of the screen.
-    // On desktop, this does nothing since it already fits.
-    // On mobile, this makes sure adjacent tabs "peek" into view!
-    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    switchTab(tabName);
+  };
+
+  // 🖐️ Touch Event Handlers
+  const onTouchStart = (e) => {
+    touchEndX.current = null; // Reset end position
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe || isRightSwipe) {
+      const currentIndex = tabOrder.indexOf(activeTab);
+      
+      if (isLeftSwipe && currentIndex < tabOrder.length - 1) {
+        // Swiped Left: Move to the NEXT tab
+        switchTab(tabOrder[currentIndex + 1]);
+      } else if (isRightSwipe && currentIndex > 0) {
+        // Swiped Right: Move to the PREVIOUS tab
+        switchTab(tabOrder[currentIndex - 1]);
+      }
+    }
   };
 
   const tabStyle = (tabName) => ({
@@ -30,12 +81,11 @@ const Dashboard = () => {
     gap: '8px',
     outline: 'none',
     whiteSpace: 'nowrap', 
-    flexShrink: 0 // 📱 Vital: forces overflow on mobile instead of squishing text
+    flexShrink: 0 
   });
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)' }}>
-      {/* 📱 Inject Mobile CSS to hide the ugly native scrollbar */}
+    <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
       `}</style>
@@ -44,35 +94,58 @@ const Dashboard = () => {
         Dashboard
       </h1>
       
-      {/* 💡 NAVIGATION TABS - Optimized for Touch Scrolling */}
-      <div className="dashboard-tabs" style={{ 
-        display: 'flex', 
-        gap: '5px', 
-        borderBottom: '2px solid var(--border)',
-        background: 'var(--bg-main)',
-        position: 'sticky',
-        top: '0', 
-        paddingTop: '5px',
-        paddingBottom: '0',
-        zIndex: 100,
-        overflowX: 'auto', 
-        scrollbarWidth: 'none', 
-        msOverflowStyle: 'none', 
-        marginBottom: '20px',
-        scrollBehavior: 'smooth'
+      {/* NAVIGATION TABS */}
+      <div 
+        className="dashboard-tabs" 
+        ref={tabContainerRef}
+        style={{ 
+            display: 'flex', 
+            gap: '5px', 
+            borderBottom: '2px solid var(--border)',
+            background: 'var(--bg-main)',
+            position: 'sticky',
+            top: '0', 
+            paddingTop: '5px',
+            paddingBottom: '0',
+            zIndex: 100,
+            overflowX: 'auto', 
+            scrollbarWidth: 'none', 
+            msOverflowStyle: 'none', 
+            marginBottom: '20px',
+            scrollBehavior: 'smooth'
       }}>
-        <button style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
+        <button 
+            ref={tabRefs.business}
+            style={tabStyle('business')} 
+            onClick={(e) => handleTabClick(e, 'business')}
+        >
           🏢 Business Analytics
         </button>
-        <button style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
+        <button 
+            ref={tabRefs.client}
+            style={tabStyle('client')} 
+            onClick={(e) => handleTabClick(e, 'client')}
+        >
           👤 Client Insights
         </button>
-        <button style={tabStyle('activity')} onClick={(e) => handleTabClick(e, 'activity')}>
+        <button 
+            ref={tabRefs.activity}
+            style={tabStyle('activity')} 
+            onClick={(e) => handleTabClick(e, 'activity')}
+        >
           🕒 Recent Activity
         </button>
       </div>
 
-      <div style={{ paddingTop: '5px' }}>
+      {/* 🖐️ SWIPEABLE CONTENT CONTAINER 
+        We wrap the active tab content in a div that listens for touch events.
+      */}
+      <div 
+        style={{ paddingTop: '5px', minHeight: '60vh', width: '100%' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
         
