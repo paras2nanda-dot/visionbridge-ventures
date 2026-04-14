@@ -64,7 +64,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           line-height: 1.5;
           transition: all 0.2s ease;
           border-left: 4px solid transparent;
-          text-transform: none; /* 🪄 Ensures no all-caps */
+          text-transform: none !important; /* 🪄 Ensures sentence case */
         }
 
         .sidebar-link:hover {
@@ -134,14 +134,14 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         ))}
       </nav>
 
-      {/* 🪄 Clean Footer: Background changed to simple dark, border-top visible, no border on button */}
+      {/* 🪄 Footing Refinement: Force removal of any global borders from logout */}
       <div style={{ padding: '20px', borderTop: '1.5px solid var(--border)', background: 'transparent' }}>
         <button onClick={handleLogout} disabled={isLoggingOut}
           style={{ 
-            width: '100%', textAlign: 'left', border: 'none', background: 'none', 
+            width: '100%', textAlign: 'left', border: 'none !important', background: 'none !important', 
             cursor: 'pointer', fontWeight: '800', color: '#ef4444', 
             fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px',
-            padding: '10px 0', outline: 'none', boxShadow: 'none' /* Ensures no border-look */
+            padding: '10px 0', outline: 'none !important', boxShadow: 'none !important' 
           }}>
           🚪 {isLoggingOut ? "Logging out..." : "Logout"}
         </button>
