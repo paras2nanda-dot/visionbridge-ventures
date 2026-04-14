@@ -62,3 +62,29 @@ export const logActivity = async (user, type, entity, details, oldData = null, n
     console.error("❌ Logger Error:", err.message);
   }
 };
+
+/**
+ * 🗑️ Bulk Deletes selected activity logs from the database.
+ * Used by the Command Center to clear out old or unwanted audit trails.
+ */
+export const bulkDeleteActivities = async (req, res) => {
+  const { ids } = req.body;
+  
+  try {
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "No activity IDs provided for deletion." });
+    }
+
+    // Type-cast to string for PostgreSQL ANY() array compatibility
+    const cleanIds = ids.map(id => String(id));
+    
+    await pool.query('DELETE FROM activities WHERE id::text = ANY($1::text[])', [cleanIds]);
+    
+    console.log(`🚨 Forensic Log Purge: Permanently deleted ${ids.length} activity records.`);
+
+    res.json({ message: "Successfully deleted selected activities." });
+  } catch (err) {
+    console.error("❌ Bulk Delete Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
