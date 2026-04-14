@@ -1,44 +1,99 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import BusinessDashboard from './BusinessDashboard';
 import ClientDashboard from './ClientDashboard';
 import ActivityFeed from '../../components/ActivityFeed';
+import api from '../../services/api';
 
+// --- Internal Security Component ---
+const PasskeyManager = () => {
+  const [passkeys, setPasskeys] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPasskeys = async () => {
+    try {
+      const res = await api.get('/auth/webauthn/passkeys');
+      setPasskeys(res.data);
+    } catch (err) {
+      console.error("Failed to fetch passkeys", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this biometric login?")) return;
+    try {
+      await api.delete(`/auth/webauthn/passkeys/${id}`);
+      setPasskeys(passkeys.filter(k => k.id !== id));
+      alert("Biometric device removed.");
+    } catch (err) {
+      alert("Failed to remove device.");
+    }
+  };
+
+  useEffect(() => { fetchPasskeys(); }, []);
+
+  return (
+    <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)' }}>🛡️ Biometric Security</h3>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+        Manage the devices authorized to log in with your fingerprint or face recognition.
+      </p>
+
+      {loading ? <p>Loading devices...</p> : passkeys.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No biometric devices registered.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {passkeys.map(key => (
+            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Registered Device</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Added on: {new Date(key.created_at).toLocaleDateString()}</div>
+              </div>
+              <button 
+                onClick={() => handleDelete(key.id)}
+                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Main Dashboard Component ---
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
   
-  // Array defining the logical order of tabs for swiping
-  const tabOrder = ['business', 'client', 'activity'];
+  // 🟢 Updated tab order to include Security
+  const tabOrder = ['business', 'client', 'activity', 'security'];
   
-  // Refs for touch tracking and scrolling the tab container
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const tabContainerRef = useRef(null);
   const tabRefs = {
     business: useRef(null),
     client: useRef(null),
-    activity: useRef(null)
+    activity: useRef(null),
+    security: useRef(null)
   };
 
-  // Minimum distance (in pixels) required to trigger a swipe change
   const minSwipeDistance = 50;
 
-  // 💡 Centralized function to change tabs and ensure the tab bar scrolls correctly
   const switchTab = (newTab) => {
     setActiveTab(newTab);
-    
-    // Smoothly scroll the newly selected tab into the center of the viewport
     if (tabRefs[newTab] && tabRefs[newTab].current) {
       tabRefs[newTab].current.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
   };
 
-  const handleTabClick = (e, tabName) => {
-    switchTab(tabName);
-  };
+  const handleTabClick = (e, tabName) => switchTab(tabName);
 
-  // 🖐️ Touch Event Handlers
   const onTouchStart = (e) => {
-    touchEndX.current = null; // Reset end position
+    touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
   };
 
@@ -48,19 +103,15 @@ const Dashboard = () => {
 
   const onTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe || isRightSwipe) {
       const currentIndex = tabOrder.indexOf(activeTab);
-      
       if (isLeftSwipe && currentIndex < tabOrder.length - 1) {
-        // Swiped Left: Move to the NEXT tab
         switchTab(tabOrder[currentIndex + 1]);
       } else if (isRightSwipe && currentIndex > 0) {
-        // Swiped Right: Move to the PREVIOUS tab
         switchTab(tabOrder[currentIndex - 1]);
       }
     }
@@ -94,7 +145,6 @@ const Dashboard = () => {
         Dashboard
       </h1>
       
-      {/* NAVIGATION TABS */}
       <div 
         className="dashboard-tabs" 
         ref={tabContainerRef}
@@ -114,32 +164,20 @@ const Dashboard = () => {
             marginBottom: '20px',
             scrollBehavior: 'smooth'
       }}>
-        <button 
-            ref={tabRefs.business}
-            style={tabStyle('business')} 
-            onClick={(e) => handleTabClick(e, 'business')}
-        >
-          🏢 Business Analytics
+        <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
+          🏢 Business
         </button>
-        <button 
-            ref={tabRefs.client}
-            style={tabStyle('client')} 
-            onClick={(e) => handleTabClick(e, 'client')}
-        >
-          👤 Client Insights
+        <button ref={tabRefs.client} style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
+          👤 Clients
         </button>
-        <button 
-            ref={tabRefs.activity}
-            style={tabStyle('activity')} 
-            onClick={(e) => handleTabClick(e, 'activity')}
-        >
-          🕒 Recent Activity
+        <button ref={tabRefs.activity} style={tabStyle('activity')} onClick={(e) => handleTabClick(e, 'activity')}>
+          🕒 Activity
+        </button>
+        <button ref={tabRefs.security} style={tabStyle('security')} onClick={(e) => handleTabClick(e, 'security')}>
+          🛡️ Security
         </button>
       </div>
 
-      {/* 🖐️ SWIPEABLE CONTENT CONTAINER 
-        We wrap the active tab content in a div that listens for touch events.
-      */}
       <div 
         style={{ paddingTop: '5px', minHeight: '60vh', width: '100%' }}
         onTouchStart={onTouchStart}
@@ -148,12 +186,8 @@ const Dashboard = () => {
       >
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
-        
-        {activeTab === 'activity' && (
-          <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'block' }}>
-            <ActivityFeed />
-          </div>
-        )}
+        {activeTab === 'activity' && <div style={{ maxWidth: '1000px', margin: '0 auto' }}><ActivityFeed /></div>}
+        {activeTab === 'security' && <div style={{ maxWidth: '600px', margin: '0 auto' }}><PasskeyManager /></div>}
       </div>
     </div>
   );
