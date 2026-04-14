@@ -106,7 +106,9 @@ const Clients = () => {
   });
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'all 0.2s ease' };
+  
+  /* 🪄 Stripped out explicit borders and backgrounds to let index.css take over */
+  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none' };
 
   return (
     <div className="container fade-in" style={{ paddingBottom: '50px' }}>
@@ -137,7 +139,7 @@ const Clients = () => {
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
             <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
-              <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, background: 'var(--bg-main)', border: '1px dashed var(--border)'}} value={formData.client_code} readOnly /></div>
+              <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code} readOnly /></div>
               <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
               <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
               <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
@@ -171,17 +173,17 @@ const Clients = () => {
             </div>
           </div>
           <div style={{marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
-             <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
+             <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)', flex: '1 1 auto', minWidth: '150px'}}>
                 {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update Client" : isViewing ? "Close View" : "Add Client")}
              </button>
-             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
+             {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold', flex: '0 1 auto'}}>Cancel</button>}
           </div>
         </form>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
-          <input type="text" placeholder="Search clients..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ ...inputStyle, paddingLeft: '40px', borderRadius: '12px' }} />
+          <input type="text" placeholder="Search clients..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ ...inputStyle, paddingLeft: '40px' }} />
           <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
         </div>
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Delete selected ({selectedIds.length})</button>}

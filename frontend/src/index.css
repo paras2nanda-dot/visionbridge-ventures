@@ -1,11 +1,11 @@
-/* VisionBridge Premium Executive Suite */
+/* VisionBridge Premium Executive Suite - Ultimate Polish */
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  /* 🪄 Refined: Transparent borders for a seamless look */
-  --border: rgba(0, 0, 0, 0.05); 
+  /* 🪄 Executive Border: Ultra-subtle for a seamless look */
+  --border: rgba(15, 23, 42, 0.08); 
   --sidebar: #1e293b;
 }
 
@@ -15,8 +15,7 @@
   --bg-card: #0d0d0d;
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  /* 🪄 Refined: Subtle etched borders for dark mode */
-  --border: rgba(255, 255, 255, 0.08); 
+  --border: rgba(255, 255, 255, 0.1); 
   --sidebar: #000000;
 }
 
@@ -46,26 +45,42 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 💎 THE EXECUTIVE CARD: Soft shadow + Subtle border */
+/* 💎 THE EXECUTIVE CARD */
 .card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border) !important;
   border-radius: 16px; 
   padding: 24px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
 }
 
-/* 💎 INPUT POLISH: Softer outlines */
+/* 💎 FIELD BORDERS FIX: Forces all inputs to be subtle */
 input, select, textarea {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  outline: none !important;
   transition: all 0.2s ease;
 }
 
-input:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   border-color: #6366f1 !important;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
-  outline: none;
+}
+
+/* 💎 GLOBAL BUTTON STANDARDIZATION */
+button {
+  transition: all 0.2s ease !important;
+}
+
+/* 📱 CLEAN TABLE SWIPING (Hides ugly scrollbars) */
+.table-container {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.table-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* 💎 ICON HALO */
@@ -83,17 +98,15 @@ input:focus, select:focus {
   transition: all 0.3s ease;
 }
 
-/* Force dark UI for native pickers in Midnight */
+/* Force Native Dark Pickers */
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
   background-color: #121214 !important;
-  color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color-scheme: dark !important; 
 }
 
-/* Date Icon Fix */
 [data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(100%);
   opacity: 0.5;
@@ -102,7 +115,7 @@ input:focus, select:focus {
 /* 📱 SURGICAL MOBILE UI ENGINE */
 @media (max-width: 768px) {
   .container { padding: 15px !important; }
-  .card { padding: 20px !important; margin-bottom: 20px !important; border-radius: 12px; }
+  .card { padding: 20px !important; margin-bottom: 20px !important; }
   
   [style*="grid-template-columns"] {
     grid-template-columns: 1fr !important;
@@ -110,20 +123,39 @@ input:focus, select:focus {
   }
 
   .card[style*="overflow-x: auto"], 
-  div[style*="overflow-x: auto"] {
+  div[style*="overflow-x: auto"],
+  .table-container {
     margin: 0 -15px !important; 
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
   }
   
-  table {
-    min-width: 700px !important; 
+  table { min-width: 700px !important; }
+
+  /* MAIN ACTION BUTTONS: Big and tappable */
+  form button[type="submit"], form button[type="button"], .card > button {
+    height: 48px !important; 
+    font-size: 15px !important;
+    width: 100% !important; 
+    margin-bottom: 10px;
+  }
+  
+  /* TABLE ACTION BUTTONS: Keep them small and inline! */
+  td button {
+    width: auto !important;
+    height: auto !important;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    margin-bottom: 0 !important;
   }
 
-  input, select, button {
-    height: 48px !important; 
-    font-size: 16px !important; 
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS auto-zoom */
+  }
+  
+  input, select {
+    height: 48px !important;
   }
   
   .title { font-size: 28px !important; margin-bottom: 20px !important; }

@@ -94,7 +94,9 @@ const Sips = () => {
   );
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'all 0.2s ease' };
+  
+  /* 🪄 Stripped out explicit borders, background, and color to let index.css take over */
+  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease' };
 
   return (
     <div className="container fade-in">
@@ -117,7 +119,7 @@ const Sips = () => {
       <div className="card" style={{ marginBottom: '32px', borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#6366f1'}` }}>
         <form onSubmit={handleSubmit}>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-              <div><label style={labelStyle}>SID</label><input style={{...inputStyle, background:'var(--bg-main)', border: '1px dashed var(--border)'}} value={formData.sip_id} readOnly /></div>
+              <div><label style={labelStyle}>SID</label><input style={inputStyle} value={formData.sip_id} readOnly /></div>
               <div><label style={labelStyle}>Client ID *</label>
               <input style={inputStyle} value={formData.client_code_input} readOnly={isViewing} placeholder="e.g. C001" onChange={(e)=> {
                 const val = e.target.value.toUpperCase();
@@ -125,7 +127,7 @@ const Sips = () => {
                 setClientName(found ? found.full_name : '');
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
               }} required /></div>
-              <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, background: 'var(--bg-main)'}} value={clientName} readOnly /></div>
+              <div><label style={labelStyle}>Client Name</label><input style={inputStyle} value={clientName} readOnly /></div>
               <div><label style={labelStyle}>MF Scheme Name *</label>
               <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e=>setFormData({...formData, scheme_id:e.target.value})} required>
                 <option value="">Select Scheme...</option>{schemes.map(s=><option key={s.id} value={s.id}>{s.scheme_name}</option>)}
@@ -152,14 +154,14 @@ const Sips = () => {
              <button type="submit" disabled={isSaving} style={{padding:'12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color:'#fff', border:'none', borderRadius:'8px', fontWeight:'bold', cursor: isSaving ? 'not-allowed' : 'pointer', flex: '1 1 auto', minWidth: '150px', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
                {isSaving ? (isEditing ? "Updating..." : "Syncing SIP...") : (isEditing ? "Update" : isViewing ? "Close View" : "Add SIP")}
              </button>
-             {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{padding:'12px 24px', background:'transparent', color:'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', fontWeight: 'bold'}}>Cancel</button>}
+             {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{padding:'12px 24px', background:'transparent', color:'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', fontWeight: 'bold', flex: '0 1 auto'}}>Cancel</button>}
            </div>
         </form>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ position: 'relative', maxWidth: '350px', width: '100%' }}>
-          <input type="text" placeholder="Search SIP mandates..." style={{ ...inputStyle, paddingLeft: '40px', borderRadius: '12px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <input type="text" placeholder="Search SIP mandates..." style={{ ...inputStyle, paddingLeft: '40px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
         </div>
         {selectedIds.length > 0 && (

@@ -95,7 +95,9 @@ const Transactions = () => {
   );
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'all 0.2s ease' };
+  
+  /* 🪄 Stripped out explicit borders, background, and color to let index.css take over */
+  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease' };
 
   return (
     <div className="container fade-in">
@@ -103,7 +105,7 @@ const Transactions = () => {
       <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#10b981'}`, marginBottom: '32px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-            <div><label style={labelStyle}>TID</label><input style={{...inputStyle, background:'var(--bg-main)', border: '1px dashed var(--border)'}} value={formData.transaction_id} readOnly /></div>
+            <div><label style={labelStyle}>TID</label><input style={inputStyle} value={formData.transaction_id} readOnly /></div>
             <div><label style={labelStyle}>Date</label><input style={inputStyle} type="date" value={formData.transaction_date} readOnly={isViewing} onChange={e => setFormData({...formData, transaction_date: e.target.value})} required /></div>
             <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code_input} readOnly={isViewing} onChange={e => {
                 const val = e.target.value.toUpperCase();
@@ -111,7 +113,7 @@ const Transactions = () => {
                 setClientName(found ? found.full_name : '');
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
             }} required /></div>
-            <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, background:'var(--bg-main)', border: '1px dashed var(--border)'}} value={clientName} readOnly /></div>
+            <div><label style={labelStyle}>Client Name</label><input style={inputStyle} value={clientName} readOnly /></div>
             <div><label style={labelStyle}>Scheme Name *</label>
               <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
                 <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
@@ -133,7 +135,7 @@ const Transactions = () => {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
-          <input type="text" placeholder="Search transactions..." style={{ ...inputStyle, paddingLeft: '40px', borderRadius: '12px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <input type="text" placeholder="Search transactions..." style={{ ...inputStyle, paddingLeft: '40px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
         </div>
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Delete Selected ({selectedIds.length})</button>}

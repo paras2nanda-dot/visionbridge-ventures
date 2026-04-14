@@ -70,18 +70,13 @@ const Reports = () => {
     }
   };
 
-  const cardStyle = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: '16px',
-    padding: '24px',
+  /* 🪄 Stripped out explicit borders, background, and padding. Added to className="card" instead */
+  const cardLayout = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '20px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    gap: '20px'
   };
 
   const btnStyle = (color) => ({
@@ -117,7 +112,7 @@ const Reports = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
         
         {/* CARD 1: CLIENT-WISE INVESTED AUM */}
-        <div style={cardStyle}>
+        <div className="card" style={cardLayout}>
           <div style={{ flex: '1' }}>
             <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Client-wise Invested AUM</h3>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Detailed client metrics including SIP ratios and Risk Profiles.</p>
@@ -132,7 +127,7 @@ const Reports = () => {
         </div>
 
         {/* CARD 2: SCHEME-WISE AUM */}
-        <div style={cardStyle}>
+        <div className="card" style={cardLayout}>
           <div style={{ flex: '1' }}>
             <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Scheme-wise AUM</h3>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
@@ -147,7 +142,7 @@ const Reports = () => {
         </div>
 
         {/* CARD 3: MONTHLY SIP BOOK */}
-        <div style={cardStyle}>
+        <div className="card" style={cardLayout}>
           <div style={{ flex: '1' }}>
             <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Monthly SIP Book</h3>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Active SIP counts and amounts aggregated by scheme.</p>
@@ -162,7 +157,7 @@ const Reports = () => {
         </div>
 
         {/* CARD 4: MONTHLY COMMISSION REPORT */}
-        <div style={cardStyle}>
+        <div className="card" style={cardLayout}>
           <div style={{ flex: '1' }}>
             <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Monthly Commission Report</h3>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Revenue projections based on Invested and Market AUM.</p>
@@ -177,7 +172,7 @@ const Reports = () => {
         </div>
 
         {/* CARD 5: CLIENTS DATABASE (FULL) */}
-        <div style={cardStyle}>
+        <div className="card" style={cardLayout}>
           <div style={{ flex: '1' }}>
             <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>Clients Database (Full)</h3>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Export all client records with complete KYC and contact details.</p>
@@ -192,7 +187,7 @@ const Reports = () => {
         </div>
 
         {/* CARD 6: MF SCHEMES DATABASE (FULL) */}
-        <div style={cardStyle}>
+        <div className="card" style={cardLayout}>
           <div style={{ flex: '1' }}>
             <h3 style={{ margin: 0, fontWeight: '700', color: 'var(--text-main)', fontSize: '16px' }}>MF Schemes Database (Full)</h3>
             <p style={{ margin: '6px 0 0 0', color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>Master export of all mutual fund schemes and their allocations.</p>
@@ -207,10 +202,9 @@ const Reports = () => {
         </div>
 
         {/* 🛡️ SYSTEM MAINTENANCE: DISASTER RECOVERY */}
-        <div style={{ 
-          ...cardStyle, 
+        <div className="card" style={{ 
+          ...cardLayout, 
           background: 'rgba(239, 68, 68, 0.03)', 
-          border: '1px solid rgba(239, 68, 68, 0.2)',
           marginTop: '32px' 
         }}>
           <div style={{ flex: '1' }}>

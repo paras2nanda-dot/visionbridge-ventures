@@ -131,7 +131,9 @@ const MFSchemes = () => {
   );
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'all 0.2s ease' };
+  
+  /* 🪄 Stripped explicit borders, background, and color to let index.css take over */
+  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease' };
 
   return (
     <div className="container fade-in">
@@ -161,7 +163,8 @@ const MFSchemes = () => {
 
             <div>
                 <label style={{...labelStyle, color: '#6366f1'}}>Commission Rate (%)</label>
-                <input style={{...inputStyle, borderColor: 'rgba(99, 102, 241, 0.2)'}} type="number" step="any" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
+                {/* Need inline border override here just to highlight commission field */}
+                <input style={{...inputStyle, border: '1px solid rgba(99, 102, 241, 0.4) !important'}} type="number" step="any" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
             </div>
           </div>
 
@@ -170,7 +173,7 @@ const MFSchemes = () => {
               <div style={{ padding: '20px', background: 'rgba(99, 102, 241, 0.03)', borderRadius: '16px', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
                 <label style={{...labelStyle, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '1px'}}>Total Market Value (₹)</label>
                 <input 
-                    style={{...inputStyle, fontSize: '22px', fontWeight: '900', background: 'transparent', border: 'none', padding: '0', marginTop: '8px'}} 
+                    style={{...inputStyle, fontSize: '22px', fontWeight: '900', background: 'transparent !important', border: 'none !important', padding: '0', marginTop: '8px'}} 
                     type="number" 
                     step="any"
                     value={formData.total_current_value} 
