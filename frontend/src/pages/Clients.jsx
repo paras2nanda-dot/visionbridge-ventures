@@ -107,8 +107,8 @@ const Clients = () => {
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
   
-  /* 🪄 Stripped out explicit borders and backgrounds to let index.css take over */
-  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none' };
+  /* 🪄 Explicitly added the border property referencing the new high-contrast variable */
+  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
     <div className="container fade-in" style={{ paddingBottom: '50px' }}>
@@ -172,7 +172,6 @@ const Clients = () => {
               <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '80px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
             </div>
           </div>
-          {/* 🪄 FIX: Removed the flex property so buttons stay small and aligned to the left */}
           <div style={{marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
              <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
                 {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update Client" : isViewing ? "Close View" : "Add Client")}

@@ -4,8 +4,8 @@
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  /* 🪄 Executive Border: Solid Slate Gray for perfect crispness on all screens */
-  --border: #cbd5e1; 
+  /* 🪄 Executive Border: High Contrast Slate 400 for guaranteed visibility */
+  --border: #94a3b8; 
   --sidebar: #1e293b;
 }
 
@@ -15,8 +15,8 @@
   --bg-card: #0d0d0d;
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  /* 🪄 Executive Border: Solid dark slate for clear definition in dark mode */
-  --border: #334155; 
+  /* 🪄 Executive Border: High Contrast Slate 600 for dark mode */
+  --border: #475569; 
   --sidebar: #000000;
 }
 
@@ -55,7 +55,7 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
 }
 
-/* 💎 FIELD BORDERS FIX: Forces all inputs to be subtle */
+/* 💎 FIELD BORDERS FIX: Forces all inputs to be subtle but clearly visible */
 input, select, textarea {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
