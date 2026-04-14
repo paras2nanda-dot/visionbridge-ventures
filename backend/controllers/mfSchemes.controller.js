@@ -30,8 +30,20 @@ export const createScheme = async (req, res) => {
         Number(s.commission_rate || 0.8), Number(s.total_current_value || 0)
       ]
     );
-    await logActivity(user, 'CREATE', s.scheme_name, `Added scheme: ${s.scheme_name}`);
-    res.status(201).json(result.rows[0]);
+    
+    const newScheme = result.rows[0];
+
+    // Forensic Log: Capture the full new object
+    await logActivity(
+      user, 
+      'CREATE', 
+      newScheme.scheme_name, 
+      `✨ Added new mutual fund scheme (${newScheme.scheme_name}).`,
+      null,
+      newScheme
+    );
+
+    res.status(201).json(newScheme);
   } catch (err) { 
     console.error("DB Error:", err.message);
     res.status(400).json({ error: "Database save error: " + err.message }); 
@@ -44,6 +56,11 @@ export const updateScheme = async (req, res) => {
   const user = req.user?.username || "System";
   
   try {
+    // 1. Snapshot BEFORE update
+    const oldRes = await pool.query('SELECT * FROM mf_schemes WHERE id = $1', [id]);
+    if (oldRes.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const oldData = oldRes.rows[0];
+
     // 💡 REMOVED risk_level entirely to fix the "column does not exist" error
     const query = `
       UPDATE mf_schemes SET 
@@ -75,9 +92,17 @@ export const updateScheme = async (req, res) => {
       id
     ];
 
+    // 2. Snapshot AFTER update
     const result = await pool.query(query, values);
-    await logActivity(user, 'UPDATE', s.scheme_name, `Updated scheme: ${s.scheme_name}`);
-    res.json(result.rows[0]);
+    const newData = result.rows[0];
+
+    // 💡 Clean summary title for the Activity Feed
+    const detailMsg = `Updated mutual fund scheme parameters (${newData.scheme_name}).`;
+
+    // Forensic Log: Capture both snapshots
+    await logActivity(user, 'UPDATE', newData.scheme_name, detailMsg, oldData, newData);
+
+    res.json(newData);
   } catch (err) { 
     console.error("Update Error:", err.message);
     res.status(400).json({ error: err.message }); 
@@ -87,11 +112,27 @@ export const updateScheme = async (req, res) => {
 export const deleteScheme = async (req, res) => {
   const { id } = req.params;
   const user = req.user?.username || "System";
+  
   try {
-    const schemeData = await pool.query('SELECT scheme_name FROM mf_schemes WHERE id = $1', [id]);
-    const schemeName = schemeData.rows[0]?.scheme_name || "Scheme";
+    // 1. Snapshot BEFORE deletion
+    const schemeData = await pool.query('SELECT * FROM mf_schemes WHERE id = $1', [id]);
+    if (schemeData.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const deletedRecord = schemeData.rows[0];
+
     await pool.query('DELETE FROM mf_schemes WHERE id = $1', [id]);
-    await logActivity(user, 'DELETE', schemeName, `Removed scheme: ${schemeName}`);
+    
+    // Forensic Log: Pass deleted record as old_data
+    await logActivity(
+      user, 
+      'DELETE', 
+      deletedRecord.scheme_name, 
+      `🗑️ Removed mutual fund scheme (${deletedRecord.scheme_name}).`,
+      deletedRecord,
+      null
+    );
+
     res.json({ message: "Scheme deleted" });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
+  }
 };
