@@ -4,8 +4,8 @@
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  /* 🪄 Executive Border: Increased opacity to 0.16 for crisp, visible definition */
-  --border: rgba(15, 23, 42, 0.16); 
+  /* 🪄 Executive Border: Solid Slate Gray for perfect crispness on all screens */
+  --border: #cbd5e1; 
   --sidebar: #1e293b;
 }
 
@@ -15,8 +15,8 @@
   --bg-card: #0d0d0d;
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  /* 🪄 Executive Border: Increased opacity to 0.15 for dark mode visibility */
-  --border: rgba(255, 255, 255, 0.15); 
+  /* 🪄 Executive Border: Solid dark slate for clear definition in dark mode */
+  --border: #334155; 
   --sidebar: #000000;
 }
 
