@@ -100,7 +100,7 @@ const Transactions = () => {
   return (
     <div className="container fade-in">
       <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '800' }}>Transactions</h1>
-      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#10b981'}`, marginBottom: '32px' }}>
+      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8'}`, marginBottom: '32px' }}>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
             <div><label style={labelStyle}>TID</label><input style={inputStyle} value={formData.transaction_id} readOnly /></div>
@@ -124,14 +124,14 @@ const Transactions = () => {
             <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
           </div>
           <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.4)' }}>
                 {isSaving ? (isEditing ? "Updating..." : "Saving Transaction...") : (isEditing ? "Update" : isViewing ? "Close" : "Save")}
             </button>
             {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 24px', background: 'transparent', color: 'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
           </div>
         </form>
       </div>
-      {/* ... rest of the component remains unchanged ... */}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
           <input type="text" placeholder="Search transactions..." style={{ ...inputStyle, paddingLeft: '40px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -139,6 +139,7 @@ const Transactions = () => {
         </div>
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Delete Selected ({selectedIds.length})</button>}
       </div>
+
       <div className="card" style={{ padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
@@ -155,9 +156,9 @@ const Transactions = () => {
               </tr>
             </thead>
             <tbody>{filteredTransactions.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(t.id) ? 'rgba(16, 185, 129, 0.04)' : 'transparent', color: 'var(--text-main)', transition: 'background 0.2s' }}>
+                <tr key={t.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(t.id) ? 'rgba(56, 189, 248, 0.04)' : 'transparent', color: 'var(--text-main)', transition: 'background 0.2s' }}>
                   <td style={{ padding: '12px', textAlign:'center' }}><input type="checkbox" checked={selectedIds.includes(t.id)} onChange={() => toggleSelect(t.id)} /></td>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>{t.transaction_id}</td>
+                  <td style={{ padding: '12px', fontWeight: 'bold', color: '#38bdf8' }}>{t.transaction_id}</td>
                   <td style={{ padding: '12px' }}>{t.transaction_date}</td>
                   <td style={{ padding: '12px', fontWeight: '600' }}>{t.client_code} - {t.client_name}</td>
                   <td style={{ padding: '12px' }}>{t.scheme_name}</td>
@@ -172,7 +173,7 @@ const Transactions = () => {
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
                       <button onClick={() => { setIsViewing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0}); }} style={{color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>VIEW</button>
-                      <button onClick={() => { setIsEditing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0}); }} style={{color:'#6366f1', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>EDIT</button>
+                      <button onClick={() => { setIsEditing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0}); }} style={{color:'#38bdf8', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>EDIT</button>
                       <button onClick={() => handleDelete(t.id)} style={{color:'#ef4444', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>DELETE</button>
                     </div>
                   </td></tr>))}
