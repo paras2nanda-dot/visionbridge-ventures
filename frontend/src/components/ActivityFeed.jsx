@@ -79,11 +79,11 @@ const ActivityFeed = () => {
 
       return (
         <tr key={key} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-          <td style={{ padding: '10px 0', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', fontSize: '11px' }}>
+          <td style={{ padding: '10px 15px 10px 0', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', fontSize: '11px', whiteSpace: 'nowrap' }}>
             {key.replace(/_/g, ' ')}
           </td>
-          <td style={{ padding: '10px 0', color: '#ef4444', opacity: 0.8 }}>{displayOld}</td>
-          <td style={{ padding: '10px 0', color: '#10b981', fontWeight: '700' }}>{displayNew}</td>
+          <td style={{ padding: '10px 15px', color: '#ef4444', opacity: 0.8, whiteSpace: 'nowrap' }}>{displayOld}</td>
+          <td style={{ padding: '10px 0 10px 15px', color: '#10b981', fontWeight: '700', whiteSpace: 'nowrap' }}>{displayNew}</td>
         </tr>
       );
     });
@@ -91,22 +91,34 @@ const ActivityFeed = () => {
     if (!hasVisibleChanges) return null;
 
     return (
-      <div className="fade-in" style={{ marginTop: '20px', padding: '20px', background: 'rgba(0,0,0,0.35)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ fontSize: '10px', fontWeight: '900', color: '#6366f1', marginBottom: '12px', letterSpacing: '1px' }}>
+      <div className="fade-in" style={{ marginTop: '20px', padding: '20px 0 20px 20px', background: 'rgba(0,0,0,0.35)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ fontSize: '10px', fontWeight: '900', color: '#6366f1', marginBottom: '12px', letterSpacing: '1px', paddingRight: '20px' }}>
           MODIFICATION ANALYSIS
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead>
-            <tr style={{ color: '#64748b', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-              <th style={{ paddingBottom: '10px', fontWeight: '800' }}>DATA FIELD</th>
-              <th style={{ paddingBottom: '10px', fontWeight: '800' }}>PREVIOUS STATE</th>
-              <th style={{ paddingBottom: '10px', fontWeight: '800' }}>MODIFIED STATE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows}
-          </tbody>
-        </table>
+        {/* 📱 MOBILE FIX: Scrollable wrapper for the table */}
+        <div style={{ 
+            width: '100%', 
+            overflowX: 'auto', 
+            WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+            scrollbarWidth: 'none', // Hide scrollbar Firefox
+            msOverflowStyle: 'none' // Hide scrollbar IE
+        }}>
+            <style>{`
+                .mobile-table-wrapper::-webkit-scrollbar { display: none; }
+            `}</style>
+            <table className="mobile-table-wrapper" style={{ width: '100%', minWidth: '400px', borderCollapse: 'collapse', fontSize: '13px', paddingRight: '20px' }}>
+            <thead>
+                <tr style={{ color: '#64748b', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <th style={{ paddingBottom: '10px', fontWeight: '800', whiteSpace: 'nowrap' }}>DATA FIELD</th>
+                <th style={{ paddingBottom: '10px', paddingLeft: '15px', fontWeight: '800', whiteSpace: 'nowrap' }}>PREVIOUS STATE</th>
+                <th style={{ paddingBottom: '10px', paddingLeft: '15px', fontWeight: '800', whiteSpace: 'nowrap' }}>MODIFIED STATE</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows}
+            </tbody>
+            </table>
+        </div>
       </div>
     );
   };
