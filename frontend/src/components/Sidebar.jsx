@@ -54,12 +54,10 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         
         .sidebar-link {
           display: block;
-          /* 💎 Professional Spacing: Increased padding for a larger touch target */
           padding: 16px 24px;
           color: #94a3b8;
           text-decoration: none;
           font-weight: 600;
-          /* 💎 Readable Typography: Bumped from 14px to 16px */
           font-size: 16px;
           white-space: normal; 
           word-wrap: break-word;
@@ -74,17 +72,30 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         }
 
         .sidebar-link.active {
-          /* 💎 Executive Glow: Better contrast and background for active state */
           background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 100%);
           color: #0ea5e9;
           border-left: 4px solid #0ea5e9;
           font-weight: 800;
         }
 
+        /* 📱 MOBILE OPTIMIZATION ENGINE */
         @media (max-width: 768px) {
-          .sidebar-logo-text { font-size: 18px !important; }
-          .sidebar-link { padding: 15px 20px; font-size: 15px; }
-          .mobile-close-btn { display: flex !important; }
+          .sidebar-logo-text { 
+             font-size: 22px !important; 
+             letter-spacing: -0.5px;
+          }
+          .sidebar-link { 
+             padding: 18px 24px; /* Taller touch targets for fingers */
+             font-size: 16px; /* Maintaining desktop-level readability */
+             font-weight: 700;
+          }
+          .mobile-close-btn { 
+             display: flex !important; 
+             margin-right: -5px;
+          }
+          .sidebar-logo {
+             padding: 30px 20px !important; /* Spacious mobile header */
+          }
         }
       `}</style>
 
@@ -97,7 +108,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         flexShrink: 0
       }}>
         <div style={{ minWidth: 0 }}>
-          <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '22px', color: '#fff', letterSpacing: '-0.5px' }}>VisionBridge 📈</div>
+          <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '22px', color: '#fff' }}>VisionBridge 📈</div>
           <div style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: '800', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '1px' }}>
             {userName}
           </div>
@@ -108,7 +119,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           className="mobile-close-btn"
           style={{ 
             display: 'none', background: 'rgba(255,255,255,0.1)', border: 'none', 
-            color: 'white', fontSize: '18px', width: '36px', height: '36px',
+            color: 'white', fontSize: '18px', width: '38px', height: '38px',
             alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer'
           }}
         >✕</button>
