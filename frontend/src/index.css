@@ -4,9 +4,10 @@
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  /* 🪄 Executive Border: High Contrast Slate 400 for guaranteed visibility */
+  /* 🪄 Executive Border: Slate 400 for strong visibility in Light Mode */
   --border: #94a3b8; 
   --sidebar: #1e293b;
+  --vb-blue: #38bdf8;
 }
 
 /* 🌑 MIDNIGHT THEME REFINEMENT */
@@ -15,8 +16,8 @@
   --bg-card: #0d0d0d;
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  /* 🪄 Executive Border: High Contrast Slate 600 for dark mode */
-  --border: #475569; 
+  /* 🪄 High Contrast Slate 500 for Midnight Mode visibility */
+  --border: #64748b; 
   --sidebar: #000000;
 }
 
@@ -49,25 +50,41 @@ body {
 /* 💎 THE EXECUTIVE CARD */
 .card {
   background: var(--bg-card);
-  border: 1px solid var(--border) !important;
+  border: 1.5px solid var(--border) !important;
   border-radius: 16px; 
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* 💎 FIELD BORDERS FIX: Forces all inputs to be subtle but clearly visible */
+/* 💎 FIELD BORDERS: High-Visibility Enforcement */
 input, select, textarea {
-  border: 1px solid var(--border) !important;
+  border: 1.5px solid var(--border) !important;
   border-radius: 8px !important;
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
   outline: none !important;
+  padding: 12px !important;
   transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #6366f1 !important;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
+  border-color: var(--vb-blue) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
+}
+
+/* 💎 TABLE BORDER REFINEMENT */
+table {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px;
+}
+
+th, td {
+  border-bottom: 1.5px solid var(--border) !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+th {
+  background: rgba(148, 163, 184, 0.05);
 }
 
 /* 💎 GLOBAL BUTTON STANDARDIZATION */
@@ -75,42 +92,22 @@ button {
   transition: all 0.2s ease !important;
 }
 
-/* 📱 CLEAN TABLE SWIPING (Hides ugly scrollbars) */
+/* 📱 CLEAN TABLE SWIPING */
 .table-container {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .table-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
 }
 
-/* 💎 ICON HALO */
-.icon-container-3d {
-  width: 48px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(4px);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-}
-
-/* Force Native Dark Pickers */
+/* Dark Mode Input Overrides */
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
   background-color: #121214 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1.5px solid var(--border) !important;
   color-scheme: dark !important; 
-}
-
-[data-theme='midnight'] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(100%);
-  opacity: 0.5;
 }
 
 /* 📱 SURGICAL MOBILE UI ENGINE */
@@ -130,11 +127,12 @@ button {
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
+    border-top: 1.5px solid var(--border) !important;
+    border-bottom: 1.5px solid var(--border) !important;
   }
   
   table { min-width: 700px !important; }
 
-  /* MAIN ACTION BUTTONS: Big and tappable */
   form button[type="submit"], form button[type="button"], .card > button {
     height: 48px !important; 
     font-size: 15px !important;
@@ -142,20 +140,15 @@ button {
     margin-bottom: 10px;
   }
   
-  /* TABLE ACTION BUTTONS: Keep them small and inline! */
   td button {
     width: auto !important;
     height: auto !important;
     padding: 6px 12px !important;
     font-size: 11px !important;
-    margin-bottom: 0 !important;
   }
 
   input, select, textarea {
-    font-size: 16px !important; /* Prevents iOS auto-zoom */
-  }
-  
-  input, select {
+    font-size: 16px !important;
     height: 48px !important;
   }
   
