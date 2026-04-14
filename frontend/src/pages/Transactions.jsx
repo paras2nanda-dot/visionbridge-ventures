@@ -95,9 +95,7 @@ const Transactions = () => {
   );
 
   const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  
-  /* 🪄 Stripped out explicit borders, background, and color to let index.css take over */
-  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease' };
+  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)' };
 
   return (
     <div className="container fade-in">
@@ -125,14 +123,15 @@ const Transactions = () => {
             <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
             <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
           </div>
-          <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer', flex: '1 1 auto', minWidth: '150px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}>
+          <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}>
                 {isSaving ? (isEditing ? "Updating..." : "Saving Transaction...") : (isEditing ? "Update" : isViewing ? "Close" : "Save")}
             </button>
-            {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 24px', background: 'transparent', color: 'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', cursor: 'pointer', flex: '0 1 auto', fontWeight: 'bold' }}>Cancel</button>}
+            {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 24px', background: 'transparent', color: 'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
           </div>
         </form>
       </div>
+      {/* ... rest of the component remains unchanged ... */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
           <input type="text" placeholder="Search transactions..." style={{ ...inputStyle, paddingLeft: '40px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
