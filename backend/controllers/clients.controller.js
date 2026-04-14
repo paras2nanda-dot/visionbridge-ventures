@@ -14,7 +14,6 @@ export const createClient = async (req, res) => {
   const c = req.body;
   const username = req.user?.username || "System";
   try {
-    // 💡 FIX: Prioritize 'date_of_birth' from the frontend form
     const dobValue = c.date_of_birth || c.dob || null;
     
     const query = `
@@ -37,7 +36,6 @@ export const createClient = async (req, res) => {
     const result = await pool.query(query, values);
     const newClient = result.rows[0];
 
-    // Forensic Log: Capture the full new object
     await logActivity(
         username, 
         'CREATE', 
@@ -59,25 +57,20 @@ export const updateClient = async (req, res) => {
   const username = req.user?.username || "System";
 
   try {
-    // 1. Snapshot BEFORE update
     const oldRes = await pool.query('SELECT * FROM clients WHERE id = $1', [id]);
     if (oldRes.rows.length === 0) return res.status(404).json({ error: "Client not found" });
     const oldData = oldRes.rows[0];
 
-    // 💡 FIX: Flipped priority so the fresh 'date_of_birth' overwrites the old 'dob'
     const dobValue = c.date_of_birth || c.dob || null;
     const cleanIncome = c.monthly_income?.toString().replace(/,/g, '') || null;
 
     const query = `UPDATE clients SET client_code=$1, full_name=$2, dob=$3, onboarding_date=$4, added_by=$5, sourcing=$6, sourcing_type=$7, mobile_number=$8, monthly_income=$9, risk_profile=$10, investment_experience=$11, pan=$12, aadhaar=$13, nominee_name=$14, nominee_relation=$15, nominee_mobile=$16, notes=$17, email=$18, is_active=true WHERE id=$19 RETURNING *`;
     const values = [c.client_code, c.full_name, dobValue, c.onboarding_date, c.added_by, c.sourcing, c.sourcing_type, c.mobile_number, cleanIncome, c.risk_profile, c.investment_experience, c.pan, c.aadhaar, c.nominee_name, c.nominee_relation, c.nominee_mobile, c.notes, c.email, id];
     
-    // 2. Snapshot AFTER update
     const result = await pool.query(query, values);
     const newData = result.rows[0];
 
     const detailMsg = `Updated profile information for ${newData.full_name}.`;
-
-    // Forensic Log: Capture both snapshots
     await logActivity(username, 'UPDATE', newData.full_name, detailMsg, oldData, newData);
 
     res.json(newData);
@@ -90,14 +83,12 @@ export const deleteClient = async (req, res) => {
   const { id } = req.params;
   const username = req.user?.username || "System";
   try {
-    // 1. Snapshot BEFORE deletion
     const clientData = await pool.query('SELECT * FROM clients WHERE id = $1', [id]);
     if (clientData.rows.length === 0) return res.status(404).json({ error: "Not found" });
     const deletedRecord = clientData.rows[0];
     
     await pool.query('DELETE FROM clients WHERE id = $1', [id]);
 
-    // Forensic Log: Pass deleted record as old_data
     await logActivity(
         username, 
         'DELETE', 
@@ -118,8 +109,6 @@ export const bulkDeleteClients = async (req, res) => {
   const username = req.user?.username || "System";
   try {
     const cleanIds = ids.map(id => String(id));
-    
-    // 1. Snapshot of all records about to be deleted
     const recordsToPurge = await pool.query('SELECT * FROM clients WHERE id::text = ANY($1::text[])', [cleanIds]);
     const snapshots = recordsToPurge.rows;
 
