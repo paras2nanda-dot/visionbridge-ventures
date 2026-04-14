@@ -31,19 +31,15 @@ const Clients = () => {
 
   const onTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe || isRightSwipe) {
       const currentIndex = tabOrder.indexOf(activeSubTab);
-      
       if (isLeftSwipe && currentIndex < tabOrder.length - 1) {
-        // Swiped Left: Move to NEXT tab
         setActiveSubTab(tabOrder[currentIndex + 1]);
       } else if (isRightSwipe && currentIndex > 0) {
-        // Swiped Right: Move to PREVIOUS tab
         setActiveSubTab(tabOrder[currentIndex - 1]);
       }
     }
@@ -147,77 +143,68 @@ const Clients = () => {
     <div className="container fade-in" style={{ paddingBottom: '50px' }}>
       <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '800' }}>Clients Database</h1>
 
-      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#6366f1'}`, marginBottom: '32px' }}>
+      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8'}`, marginBottom: '32px' }}>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'var(--bg-main)', padding: '6px', borderRadius: '12px' }}>
           <button 
             type="button" 
             onClick={() => setActiveSubTab('basic')} 
             style={{ 
-              flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', border: 'none', fontWeight: 'bold', transition: 'all 0.2s',
-              background: activeSubTab === 'basic' ? 'var(--bg-card)' : 'transparent',
-              color: activeSubTab === 'basic' ? '#6366f1' : 'var(--text-muted)',
-              boxShadow: activeSubTab === 'basic' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
-            }}>📋 Basic Details</button>
+              flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', border: 'none', fontWeight: 'bold', transition: 'all 0.2s',
+              background: activeSubTab === 'basic' ? '#38bdf8' : 'transparent',
+              color: activeSubTab === 'basic' ? 'white' : 'var(--text-muted)',
+              boxShadow: activeSubTab === 'basic' ? '0 4px 12px rgba(56, 189, 248, 0.3)' : 'none'
+            }}>📋 1. Basic Details</button>
           <button 
             type="button" 
             onClick={() => setActiveSubTab('other')} 
             style={{ 
-              flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', border: 'none', fontWeight: 'bold', transition: 'all 0.2s',
-              background: activeSubTab === 'other' ? 'var(--bg-card)' : 'transparent',
-              color: activeSubTab === 'other' ? '#6366f1' : 'var(--text-muted)',
-              boxShadow: activeSubTab === 'other' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
-            }}>📝 Other Details</button>
+              flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', border: 'none', fontWeight: 'bold', transition: 'all 0.2s',
+              background: activeSubTab === 'other' ? '#38bdf8' : 'transparent',
+              color: activeSubTab === 'other' ? 'white' : 'var(--text-muted)',
+              boxShadow: activeSubTab === 'other' ? '0 4px 12px rgba(56, 189, 248, 0.3)' : 'none'
+            }}>📝 2. Other Details</button>
         </div>
 
-        {/* 🖐️ SWIPEABLE FORM CONTAINER */}
-        <div 
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-        >
-            <form onSubmit={handleSubmit}>
+        <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+          <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
                 <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
-                <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code} readOnly /></div>
-                <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
-                <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
-                <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
-                <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
-                <div>
-                    <label style={labelStyle}>Mobile *</label>
-                    <input 
-                    style={inputStyle} 
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="10 digit number"
-                    value={formData.mobile_number} 
-                    readOnly={isViewing} 
-                    onChange={e => {
-                        const onlyNums = e.target.value.replace(/\D/g, '');
-                        if (onlyNums.length <= 10) setFormData({...formData, mobile_number: onlyNums});
-                    }} 
-                    required 
-                    />
-                </div>
+                  <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code} readOnly /></div>
+                  <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
+                  <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
+                  <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
+                  <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
+                  <div>
+                      <label style={labelStyle}>Mobile *</label>
+                      <input style={inputStyle} type="text" inputMode="numeric" placeholder="10 digit number" value={formData.mobile_number} readOnly={isViewing} onChange={e => {
+                          const onlyNums = e.target.value.replace(/\D/g, '');
+                          if (onlyNums.length <= 10) setFormData({...formData, mobile_number: onlyNums});
+                      }} required />
+                  </div>
+                  <div><label style={labelStyle}>Client Sourcing</label><select style={inputStyle} value={formData.sourcing} disabled={isViewing} onChange={e => setFormData({...formData, sourcing: e.target.value})}><option>Internal</option><option>External</option></select></div>
+                  <div><label style={labelStyle}>Sourcing Type</label><select style={inputStyle} value={formData.sourcing_type} disabled={isViewing} onChange={e => setFormData({...formData, sourcing_type: e.target.value})}><option>Family / Relative</option><option>Colleague</option><option>Friend</option><option>Reference by Family</option><option>Reference by Colleague</option><option>Marketing</option><option>Others</option></select></div>
                 </div>
 
                 <div style={{ display: activeSubTab === 'other' ? 'contents' : 'none' }}>
-                <div><label style={labelStyle}>Monthly Income (₹)</label><input style={inputStyle} type="text" value={formatINR(formData.monthly_income)} readOnly={isViewing} onChange={e => setFormData({...formData, monthly_income: e.target.value.replace(/,/g, '')})} /></div>
-                <div><label style={labelStyle}>Risk Profile</label><select style={inputStyle} value={formData.risk_profile} disabled={isViewing} onChange={e => setFormData({...formData, risk_profile: e.target.value})}><option>Low</option><option>Moderate</option><option>High</option></select></div>
-                <div><label style={labelStyle}>Investment Experience</label><select style={inputStyle} value={formData.investment_experience} disabled={isViewing} onChange={e => setFormData({...formData, investment_experience: e.target.value})}><option>Beginner</option><option>Intermediate</option><option>Pro</option></select></div>
-                <div><label style={labelStyle}>PAN Card</label><input style={inputStyle} type="text" value={formData.pan} readOnly={isViewing} onChange={e => setFormData({...formData, pan: e.target.value})} /></div>
-                <div><label style={labelStyle}>Aadhaar No.</label><input style={inputStyle} type="text" value={formData.aadhaar} readOnly={isViewing} onChange={e => setFormData({...formData, aadhaar: e.target.value})} /></div>
-                <div><label style={labelStyle}>Mail ID</label><input style={inputStyle} type="email" value={formData.email} readOnly={isViewing} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
-                <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '80px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
+                  <div><label style={labelStyle}>Monthly Income (₹)</label><input style={inputStyle} type="text" value={formatINR(formData.monthly_income)} readOnly={isViewing} onChange={e => setFormData({...formData, monthly_income: e.target.value.replace(/,/g, '')})} /></div>
+                  <div><label style={labelStyle}>Risk Profile</label><select style={inputStyle} value={formData.risk_profile} disabled={isViewing} onChange={e => setFormData({...formData, risk_profile: e.target.value})}><option>Low</option><option>Moderate</option><option>High</option></select></div>
+                  <div><label style={labelStyle}>Investment Experience</label><select style={inputStyle} value={formData.investment_experience} disabled={isViewing} onChange={e => setFormData({...formData, investment_experience: e.target.value})}><option>Beginner</option><option>Intermediate</option><option>Pro</option></select></div>
+                  <div><label style={labelStyle}>PAN Card</label><input style={inputStyle} type="text" value={formData.pan} readOnly={isViewing} onChange={e => setFormData({...formData, pan: e.target.value})} /></div>
+                  <div><label style={labelStyle}>Aadhaar No.</label><input style={inputStyle} type="text" value={formData.aadhaar} readOnly={isViewing} onChange={e => setFormData({...formData, aadhaar: e.target.value})} /></div>
+                  <div><label style={labelStyle}>Mail ID</label><input style={inputStyle} type="email" value={formData.email} readOnly={isViewing} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
+                  <div><label style={labelStyle}>Nominee Name</label><input style={inputStyle} type="text" value={formData.nominee_name} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_name: e.target.value})} /></div>
+                  <div><label style={labelStyle}>Nominee Relation</label><input style={inputStyle} type="text" value={formData.nominee_relation} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_relation: e.target.value})} /></div>
+                  <div><label style={labelStyle}>Nominee Mobile</label><input style={inputStyle} type="text" inputMode="numeric" value={formData.nominee_mobile} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_mobile: e.target.value.replace(/\D/g, '')})} /></div>
+                  <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '80px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
                 </div>
             </div>
             <div style={{marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
-                <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'}}>
+                <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#38bdf8', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.4)'}}>
                     {isSaving ? (isEditing ? "Updating..." : "Adding Client...") : (isEditing ? "Update Client" : isViewing ? "Close View" : "Add Client")}
                 </button>
                 {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold'}}>Cancel</button>}
             </div>
-            </form>
+          </form>
         </div>
       </div>
 
