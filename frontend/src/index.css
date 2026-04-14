@@ -1,11 +1,11 @@
-/* VisionBridge Premium Executive Suite - Ultimate Polish */
+/* VisionBridge Premium Executive Suite - Bold High-Contrast Polish */
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  /* 🪄 Executive Border: Slate 400 for strong visibility in Light Mode */
-  --border: #94a3b8; 
+  /* 🪄 Bold Border: Slate 500 for heavy definition in Light Mode */
+  --border: #64748b; 
   --sidebar: #1e293b;
   --vb-blue: #38bdf8;
 }
@@ -16,8 +16,8 @@
   --bg-card: #0d0d0d;
   --text-main: #ffffff;
   --text-muted: #a1a1aa;
-  /* 🪄 High Contrast Slate 500 for Midnight Mode visibility */
-  --border: #64748b; 
+  /* 🪄 High Visibility Border for Dark Mode */
+  --border: #475569; 
   --sidebar: #000000;
 }
 
@@ -47,49 +47,62 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 💎 THE EXECUTIVE CARD */
+/* 💎 THE EXECUTIVE CARD - Thick Bordered */
 .card {
   background: var(--bg-card);
-  border: 1.5px solid var(--border) !important;
+  border: 2px solid var(--border) !important;
   border-radius: 16px; 
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* 💎 FIELD BORDERS: High-Visibility Enforcement */
+/* 💎 FIELD BORDERS: Bolded 2px Enforcement */
 input, select, textarea {
-  border: 1.5px solid var(--border) !important;
-  border-radius: 8px !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 10px !important;
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
   outline: none !important;
   padding: 12px !important;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--vb-blue) !important;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2) !important;
 }
 
-/* 💎 TABLE BORDER REFINEMENT */
+/* 💎 BOLD TABLE REFINEMENT */
 table {
-  border: 1px solid var(--border) !important;
-  border-radius: 8px;
+  border: 2px solid var(--border) !important;
+  border-radius: 10px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
 }
 
 th, td {
-  border-bottom: 1.5px solid var(--border) !important;
-  border-right: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-bottom: 2px solid var(--border) !important;
+  border-right: 2px solid var(--border) !important;
+}
+
+/* Remove right border on last column for clean look */
+th:last-child, td:last-child {
+  border-right: none !important;
 }
 
 th {
-  background: rgba(148, 163, 184, 0.05);
+  background: rgba(100, 116, 139, 0.1);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* 💎 GLOBAL BUTTON STANDARDIZATION */
 button {
   transition: all 0.2s ease !important;
+  border-width: 2px !important;
 }
 
 /* 📱 CLEAN TABLE SWIPING */
@@ -106,7 +119,7 @@ button {
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea {
   background-color: #121214 !important;
-  border: 1.5px solid var(--border) !important;
+  border: 2px solid var(--border) !important;
   color-scheme: dark !important; 
 }
 
@@ -127,29 +140,29 @@ button {
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
-    border-top: 1.5px solid var(--border) !important;
-    border-bottom: 1.5px solid var(--border) !important;
+    border-top: 2px solid var(--border) !important;
+    border-bottom: 2px solid var(--border) !important;
   }
   
-  table { min-width: 700px !important; }
+  table { min-width: 800px !important; }
 
   form button[type="submit"], form button[type="button"], .card > button {
-    height: 48px !important; 
-    font-size: 15px !important;
+    height: 52px !important; 
+    font-size: 16px !important;
     width: 100% !important; 
-    margin-bottom: 10px;
+    font-weight: 800 !important;
   }
   
   td button {
     width: auto !important;
     height: auto !important;
-    padding: 6px 12px !important;
+    padding: 8px 14px !important;
     font-size: 11px !important;
   }
 
   input, select, textarea {
     font-size: 16px !important;
-    height: 48px !important;
+    height: 52px !important;
   }
   
   .title { font-size: 28px !important; margin-bottom: 20px !important; }
