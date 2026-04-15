@@ -145,6 +145,7 @@ const Clients = () => {
 
       <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)', marginBottom: '40px', position: 'relative' }}>
         
+        {/* State Indicator */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}></div>
 
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', background: 'var(--bg-main)', padding: '8px', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
@@ -209,7 +210,7 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* SEARCH AND BULK DELETE */}
+      {/* Search Bar Fix: Increased padding to prevent overlap */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
           <input 
@@ -217,14 +218,14 @@ const Clients = () => {
             placeholder="Search clients..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            style={{ ...inputStyle, paddingLeft: '45px' }} 
+            style={{ ...inputStyle, paddingLeft: '48px' }} // Increased from 40px to 48px to clear icon
           />
-          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.6, fontSize: '16px' }}>🔍</span>
+          <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px' }}>🔍</span>
         </div>
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: '2.5px solid #000', padding: '12px 24px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>Delete selected ({selectedIds.length})</button>}
       </div>
 
-      {/* CLIENTS TABLE */}
+      {/* Table headers updated to sentence case and "Onboarded on" */}
       <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', overflow: 'hidden', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -232,7 +233,7 @@ const Clients = () => {
               <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
                 <th style={{ padding: '16px', width: '40px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></th>
                 <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>ID</th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Client Name</th>
+                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Client name</th>
                 <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Mobile</th>
                 <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Onboarded on</th>
                 <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Added by</th>
@@ -248,9 +249,9 @@ const Clients = () => {
                   <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
                   <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{c.added_by}</td>
                   <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-main)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>View</button>
-                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#38bdf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>Edit</button>
-                      <button onClick={async () => { if(window.confirm("Delete?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>Delete</button>
+                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-main)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px' }}>VIEW</button>
+                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#38bdf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px' }}>EDIT</button>
+                      <button onClick={async () => { if(window.confirm("Delete?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px' }}>DELETE</button>
                   </td>
                 </tr>
               ))}
