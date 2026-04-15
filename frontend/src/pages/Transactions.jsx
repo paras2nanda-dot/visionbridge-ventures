@@ -14,6 +14,7 @@ const Transactions = () => {
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false); 
   const [selectedIds, setSelectedIds] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ Fixed missing loading state
 
   const initialState = {
     transaction_id: '',
@@ -26,6 +27,7 @@ const Transactions = () => {
   useEffect(() => { fetchInitialData(); }, []);
 
   const fetchInitialData = async () => {
+    setLoading(true); // ✅ Set loading true on start
     try {
       const [cRes, sRes, tRes] = await Promise.all([
         api.get('/clients'), api.get('/mf-schemes'), api.get('/transactions')
@@ -39,7 +41,11 @@ const Transactions = () => {
         const highestTID = Math.max(...(tRes.data || []).map(t => parseInt(t.transaction_id?.replace(/\D/g, '') || 0)), 0);
         setFormData(prev => ({ ...prev, transaction_id: `TID${(highestTID + 1).toString().padStart(5, '0')}` }));
       }
-    } catch (err) { toast.error("Sync Error"); }
+    } catch (err) { 
+      toast.error("Sync Error"); 
+    } finally {
+      setLoading(false); // ✅ Set loading false on completion
+    }
   };
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(String(val || 0).replace(/,/g, ""));
@@ -94,18 +100,24 @@ const Transactions = () => {
     t.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)' };
+  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '800', fontSize: '13px', color: 'var(--text-main)', letterSpacing: '0.5px' };
+  const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '2.5px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: '600' };
 
   return (
-    <div className="container fade-in">
-      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '800' }}>Transactions</h1>
-      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8'}`, marginBottom: '32px' }}>
+    <div className="container fade-in" style={{ paddingBottom: '50px' }}>
+      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '32px', marginBottom: '30px' }}>Transactions</h1>
+      
+      {/* FORM CARD */}
+      <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)', marginBottom: '40px', position: 'relative' }}>
+        
+        {/* State Indicator */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}></div>
+
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
             <div><label style={labelStyle}>TID</label><input style={inputStyle} value={formData.transaction_id} readOnly /></div>
             <div><label style={labelStyle}>Date</label><input style={inputStyle} type="date" value={formData.transaction_date} readOnly={isViewing} onChange={e => setFormData({...formData, transaction_date: e.target.value})} required /></div>
-            <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code_input} readOnly={isViewing} onChange={e => {
+            <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code_input} readOnly={isViewing} placeholder="e.g. C001" onChange={e => {
                 const val = e.target.value.toUpperCase();
                 const found = clients.find(c => c.client_code === val);
                 setClientName(found ? found.full_name : '');
@@ -123,60 +135,76 @@ const Transactions = () => {
             <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
             <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
           </div>
-          <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-            <button type="submit" disabled={isSaving} style={{ padding: '12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.4)' }}>
-                {isSaving ? (isEditing ? "Updating..." : "Saving Transaction...") : (isEditing ? "Update" : isViewing ? "Close" : "Save")}
+          
+          <div style={{ marginTop: '30px', display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? 'var(--text-muted)' : '#38bdf8', color: 'white', border: '2.5px solid #000', borderRadius: '10px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900', letterSpacing: '0.5px' }}>
+                {isSaving ? (isEditing ? "UPDATING..." : "SAVING TRANSACTION...") : (isEditing ? "UPDATE TRANSACTION" : isViewing ? "CLOSE VIEW" : "SAVE")}
             </button>
-            {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 24px', background: 'transparent', color: 'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>}
+            {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{ padding: '12px 24px', borderRadius: '10px', border: '2.5px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: '900', letterSpacing: '0.5px' }}>CANCEL</button>}
           </div>
         </form>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      {/* SEARCH BAR & BULK DELETE */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
-          <input type="text" placeholder="Search transactions..." style={{ ...inputStyle, paddingLeft: '40px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+          <input 
+            type="text" 
+            placeholder="Search transactions..." 
+            style={{ ...inputStyle, paddingLeft: '52px' }} // Applied overlap fix
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+          />
+          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px', pointerEvents: 'none' }}>🔍</span>
         </div>
-        {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Delete Selected ({selectedIds.length})</button>}
+        {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: '2.5px solid #000', padding: '12px 24px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>Delete Selected ({selectedIds.length})</button>}
       </div>
 
-      <div className="card" style={{ padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+      {/* TRANSACTIONS TABLE */}
+      <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', overflow: 'hidden', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
-              <tr style={{background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid var(--border)'}}>
-                <th style={{padding:'16px'}}><input type="checkbox" checked={selectedIds.length === filteredTransactions.length && filteredTransactions.length > 0} onChange={toggleAll} /></th>
-                <th style={{textAlign:'left', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>TID</th>
-                <th style={{textAlign:'left', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>DATE</th>
-                <th style={{textAlign:'left', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>CLIENT</th>
-                <th style={{textAlign:'left', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>SCHEME</th>
-                <th style={{textAlign:'center', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>TYPE</th>
-                <th style={{textAlign:'right', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>AMOUNT</th>
-                <th style={{textAlign:'center', padding:'16px', color: 'var(--text-muted)', fontWeight: '700'}}>ACTION</th>
+              <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
+                <th style={{ padding: '16px', width: '40px' }}><input type="checkbox" checked={selectedIds.length === filteredTransactions.length && filteredTransactions.length > 0} onChange={toggleAll} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></th>
+                <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>TID</th>
+                <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>Date</th>
+                <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>Client</th>
+                <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>Scheme</th>
+                <th style={{ textAlign: 'center', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>Type</th>
+                <th style={{ textAlign: 'right', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>Amount</th>
+                <th style={{ textAlign: 'center', padding: '16px', color: 'var(--text-main)', fontWeight: '900' }}>Action</th>
               </tr>
             </thead>
-            <tbody>{filteredTransactions.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(t.id) ? 'rgba(56, 189, 248, 0.04)' : 'transparent', color: 'var(--text-main)', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '12px', textAlign:'center' }}><input type="checkbox" checked={selectedIds.includes(t.id)} onChange={() => toggleSelect(t.id)} /></td>
-                  <td style={{ padding: '12px', fontWeight: 'bold', color: '#38bdf8' }}>{t.transaction_id}</td>
-                  <td style={{ padding: '12px' }}>{t.transaction_date}</td>
-                  <td style={{ padding: '12px', fontWeight: '600' }}>{t.client_code} - {t.client_name}</td>
-                  <td style={{ padding: '12px' }}>{t.scheme_name}</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
+            <tbody>
+              {filteredTransactions.map(t => (
+                <tr key={t.id} style={{ borderBottom: '2px solid var(--border)', background: selectedIds.includes(t.id) ? 'rgba(56, 189, 248, 0.05)' : 'transparent', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(t.id)} onChange={() => toggleSelect(t.id)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></td>
+                  <td style={{ padding: '16px', fontWeight: '900', color: '#38bdf8' }}>{t.transaction_id}</td>
+                  <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{new Date(t.transaction_date).toLocaleDateString('en-GB').replace(/\//g, '-')}</td>
+                  <td style={{ padding: '16px', fontWeight: '800', color: 'var(--text-main)' }}>{t.client_code} - {t.client_name}</td>
+                  <td style={{ padding: '16px', fontWeight: '800', color: 'var(--text-main)' }}>{t.scheme_name}</td>
+                  <td style={{ padding: '16px', textAlign: 'center' }}>
                     <span style={{ 
-                      padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px',
-                      background: t.transaction_type.toLowerCase().includes('purchase') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                      color: t.transaction_type.toLowerCase().includes('purchase') ? '#10b981' : '#ef4444' 
+                      padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px',
+                      background: t.transaction_type.toLowerCase().includes('purchase') || t.transaction_type.toLowerCase().includes('in') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+                      color: t.transaction_type.toLowerCase().includes('purchase') || t.transaction_type.toLowerCase().includes('in') ? '#10b981' : '#ef4444',
+                      border: t.transaction_type.toLowerCase().includes('purchase') || t.transaction_type.toLowerCase().includes('in') ? '1.5px solid rgba(16, 185, 129, 0.3)' : '1.5px solid rgba(239, 68, 68, 0.3)'
                     }}>{t.transaction_type}</span>
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: '700' }}>₹{formatINR(t.amount)}</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                      <button onClick={() => { setIsViewing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0}); }} style={{color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>VIEW</button>
-                      <button onClick={() => { setIsEditing(true); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0}); }} style={{color:'#38bdf8', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>EDIT</button>
-                      <button onClick={() => handleDelete(t.id)} style={{color:'#ef4444', background:'none', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'11px'}}>DELETE</button>
-                    </div>
-                  </td></tr>))}
+                  <td style={{ padding: '16px', textAlign: 'right', fontWeight: '900', color: 'var(--text-main)' }}>₹{formatINR(t.amount)}</td>
+                  <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: 'var(--text-main)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>VIEW</button>
+                      <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: '#38bdf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>EDIT</button>
+                      <button onClick={() => handleDelete(t.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>DELETE</button>
+                  </td>
+                </tr>
+              ))}
+              {filteredTransactions.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="8" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '800' }}>No transactions found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
