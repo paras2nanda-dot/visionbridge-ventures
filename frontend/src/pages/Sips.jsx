@@ -14,6 +14,7 @@ const Sips = () => {
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false); 
   const [selectedIds, setSelectedIds] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ FIX: Added missing loading state
 
   const initialState = {
     sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
@@ -28,6 +29,7 @@ const Sips = () => {
   useEffect(() => { fetchInitialData(); }, []);
 
   const fetchInitialData = async () => {
+    setLoading(true); // ✅ FIX: Set loading to true when fetching starts
     try {
       const [c, s, sip] = await Promise.all([api.get('/clients'), api.get('/mf-schemes'), api.get('/sips')]);
       setClients(c.data || []); 
@@ -39,7 +41,11 @@ const Sips = () => {
         const high = Math.max(...(sip.data || []).map(i => parseInt(i.sip_id?.replace(/\D/g, '') || 0)), 0);
         setFormData(prev => ({ ...prev, sip_id: `SID${(high + 1).toString().padStart(5, '0')}` }));
       }
-    } catch (e) { toast.error("Sync Error"); }
+    } catch (e) { 
+      toast.error("Sync Error"); 
+    } finally {
+      setLoading(false); // ✅ FIX: Turn off loading when done
+    }
   };
 
   const handleSubmit = async (e) => {
