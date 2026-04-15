@@ -34,27 +34,27 @@ const PasskeyManager = () => {
   useEffect(() => { fetchPasskeys(); }, []);
 
   return (
-    <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
-      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800' }}>
+    <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
+      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '900', fontSize: '20px' }}>
         🛡️ Biometric Security
       </h3>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', fontWeight: '500' }}>
+      <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px', fontWeight: '600' }}>
         Manage the devices authorized to log in with your fingerprint or face recognition.
       </p>
 
-      {loading ? <p>Loading devices...</p> : passkeys.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No biometric devices registered.</p>
+      {loading ? <p style={{ fontWeight: '800', color: 'var(--text-muted)' }}>Loading devices...</p> : passkeys.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontWeight: '700', padding: '20px', background: 'var(--bg-main)', borderRadius: '8px', border: '2.5px solid var(--border)', textAlign: 'center' }}>No biometric devices registered.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {passkeys.map(key => (
-            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-main)', borderRadius: '8px', border: '2px solid var(--border)' }}>
+            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: 'var(--bg-main)', borderRadius: '10px', border: '2.5px solid var(--border)' }}>
               <div>
-                <div style={{ fontWeight: '800', fontSize: '14px', color: 'var(--text-main)' }}>Registered Device</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Added on: {new Date(key.created_at).toLocaleDateString()}</div>
+                <div style={{ fontWeight: '900', fontSize: '15px', color: 'var(--text-main)', marginBottom: '4px' }}>Registered Device</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>Added on: {new Date(key.created_at).toLocaleDateString()}</div>
               </div>
               <button 
                 onClick={() => handleDelete(key.id)}
-                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: '800' }}
+                style={{ background: '#ef4444', color: 'white', border: '2.5px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}
               >
                 Remove
               </button>
@@ -121,33 +121,38 @@ const Dashboard = () => {
   const tabStyle = (tabName) => ({
     padding: '14px 24px', 
     cursor: 'pointer',
-    border: 'none', // 🪄 Explicitly remove borders
-    background: 'none',
     fontSize: '15px', 
     letterSpacing: '0.3px',
-    textTransform: 'none', // 🪄 Forces sentence case (Business Analytics)
-    fontWeight: activeTab === tabName ? '900' : '600',
+    textTransform: 'none', 
+    fontWeight: activeTab === tabName ? '900' : '700',
     color: activeTab === tabName ? '#38bdf8' : 'var(--text-muted)',
     borderBottom: activeTab === tabName ? '4px solid #38bdf8' : '4px solid transparent',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    outline: 'none',
-    boxShadow: 'none', // 🪄 Ensure no global button shadows/borders appear
     whiteSpace: 'nowrap', 
     flexShrink: 0 
   });
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
+      
+      {/* Strict CSS override to prevent global button styles from ruining the tabs */}
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
-        .dashboard-tabs button:hover { color: #38bdf8; opacity: 0.8; }
-        .dashboard-tabs button { border: none !important; box-shadow: none !important; } 
+        .dashboard-tabs button { 
+          border-top: none !important; 
+          border-left: none !important; 
+          border-right: none !important; 
+          box-shadow: none !important; 
+          background: transparent !important; 
+          border-radius: 0 !important;
+        } 
+        .dashboard-tabs button:hover { color: #38bdf8; opacity: 0.8; transform: none !important; }
       `}</style>
       
-      <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '25px', fontSize: '32px' }}>
+      <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '30px', fontSize: '32px' }}>
         Dashboard
       </h1>
       
@@ -167,7 +172,7 @@ const Dashboard = () => {
             overflowX: 'auto', 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none', 
-            marginBottom: '30px',
+            marginBottom: '35px',
             scrollBehavior: 'smooth'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
