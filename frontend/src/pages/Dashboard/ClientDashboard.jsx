@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-// --- Premium Donut Chart with Precise Segments ---
+// --- Premium Donut Chart ---
 const AssetDonut = ({ data }) => {
-  if (!data || data.length === 0) return <div style={{color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px'}}>No allocation data.</div>;
+  if (!data || data.length === 0) return <div style={{color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', padding: '20px'}}>No allocation data found. Ensure your Mutual Fund Master data is complete.</div>;
   
   const total = data.reduce((acc, item) => acc + item.value, 0);
   let cumulativePercent = 0;
@@ -15,7 +15,7 @@ const AssetDonut = ({ data }) => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
-      <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '160px', height: '160px' }}>
+      <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '150px', height: '150px' }}>
         {data.map((item, i) => {
           if (item.value <= 0) return null;
           const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
@@ -28,10 +28,10 @@ const AssetDonut = ({ data }) => {
         <circle r="0.68" fill="var(--bg-card)" cx="0" cy="0" />
       </svg>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 40px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 30px' }}>
         {data.map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: item.color }}></div>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }}></div>
             <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
               {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '800'}}>{((item.value/total)*100).toFixed(1)}%</span>
             </span>
@@ -47,17 +47,25 @@ const ClientDashboard = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
   const [portfolio, setPortfolio] = useState([]);
+  const [schemes, setSchemes] = useState([]); // Master Schemes for Weight Sync
   const [summary, setSummary] = useState({ totalAUM: 0, totalSipBook: 0, sipCount: 0 });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
-    fetch('https://visionbridge-backend.onrender.com/api/clients', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    // Fetch Clients for Search
+    fetch('https://visionbridge-backend.onrender.com/api/clients', { headers })
       .then(res => res.json())
       .then(data => setClients(Array.isArray(data) ? data : []))
       .catch(err => console.error("Error fetching clients:", err));
+
+    // ✅ FETCH MASTER SCHEMES (Fixes Allocation Sync)
+    fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers })
+      .then(res => res.json())
+      .then(data => setSchemes(Array.isArray(data) ? data : []))
+      .catch(err => console.error("Error fetching master schemes:", err));
   }, []);
 
   const handleSelectClient = (client) => {
@@ -84,34 +92,23 @@ const ClientDashboard = () => {
   const safeNum = (val) => Number(val) || 0;
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
-  // 🧪 NEW: Precise Weighted Allocation Logic
+  // 🧪 SYNC LOGIC: Links Portfolio to Master Scheme Weights
   const getAssetAllocation = () => {
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
-      const value = safeNum(item.invested_amount);
-      // Multiplies the investment by the scheme's internal % breakdown
-      totals.large += value * (safeNum(item.large_percent) / 100);
-      totals.mid += value * (safeNum(item.mid_percent) / 100);
-      totals.small += value * (safeNum(item.small_percent) / 100);
-      totals.debt += value * (safeNum(item.debt_percent) / 100);
-      totals.gold += value * (safeNum(item.gold_percent) / 100);
+      const invested = safeNum(item.invested_amount);
+      // Find the "MF Master" record for this specific scheme
+      const master = schemes.find(s => s.scheme_name === item.scheme_name);
+      
+      if (master) {
+          totals.large += invested * (safeNum(master.large_percent) / 100);
+          totals.mid += invested * (safeNum(master.mid_percent) / 100);
+          totals.small += invested * (safeNum(master.small_percent) / 100);
+          totals.debt += invested * (safeNum(master.debt_percent) / 100);
+          totals.gold += invested * (safeNum(master.gold_percent) / 100);
+      }
     });
-
-    const totalCalculated = Object.values(totals).reduce((a, b) => a + b, 0);
-
-    // If scheme weights are missing, use a smart name-based fallback
-    if (totalCalculated === 0) {
-        portfolio.forEach(item => {
-            const val = safeNum(item.invested_amount);
-            const n = item.scheme_name.toLowerCase();
-            if (n.includes('large')) totals.large += val;
-            else if (n.includes('mid')) totals.mid += val;
-            else if (n.includes('small')) totals.small += val;
-            else if (n.includes('debt') || n.includes('liquid')) totals.debt += val;
-            else totals.gold += val;
-        });
-    }
 
     return [
       { label: 'Large', value: totals.large, color: '#3b82f6' },
@@ -130,7 +127,7 @@ const ClientDashboard = () => {
   return (
     <div className="fade-in" style={{ paddingBottom: '40px' }}>
       
-      {/* 🔍 Search Header */}
+      {/* 🔍 SEARCH HEADER */}
       <div style={{ position: 'relative', marginBottom: '30px' }}>
         <input 
           type="text" 
@@ -142,7 +139,7 @@ const ClientDashboard = () => {
         <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px' }}>🔍</span>
         
         {searchTerm && !selectedClient?.full_name && (
-          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '2.5px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '2.5px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto' }}>
             {clients.filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
                 <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '2px solid var(--border)', color: 'var(--text-main)', fontWeight: '700' }}>
                   <span style={{ color: '#0284c7', marginRight: '12px', fontWeight: '900' }}>{c.client_code}</span> {c.full_name}
@@ -156,7 +153,7 @@ const ClientDashboard = () => {
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-main)', fontWeight: '900', fontSize: '15px' }}>SYNCING CLIENT PROFILE...</div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          {/* Executive Header */}
+          {/* CLIENT PROFILE HEADER */}
           <div style={cardStyle}>
               <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '900', letterSpacing: '-0.5px' }}>
                 {selectedClient.full_name} 
@@ -169,15 +166,15 @@ const ClientDashboard = () => {
               </div>
           </div>
 
-          {/* Metrics Grid */}
+          {/* METRICS GRID */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIP Amount</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Monthly SIP</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIPs</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{summary.sipCount}</div></div>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
           </div>
 
-          {/* 📂 FULL PORTFOLIO TABLE (Includes % and TOTAL) */}
+          {/* PORTFOLIO TABLE */}
           <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '30px' }}>
              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead style={{ background: 'rgba(0,0,0,0.02)' }}>
@@ -198,7 +195,7 @@ const ClientDashboard = () => {
                     </tr>
                   ))}
                   <tr style={{ background: 'rgba(0,0,0,0.03)', fontWeight: '900' }}>
-                    <td style={{ padding: '16px', color: 'var(--text-main)', textTransform: 'uppercase' }}>Total</td>
+                    <td style={{ padding: '16px', color: 'var(--text-main)' }}>TOTAL</td>
                     <td style={{ padding: '16px', textAlign: 'center', color: 'var(--text-main)' }}>₹{formatINR(summary.totalSipBook)}</td>
                     <td style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)' }}>₹{formatINR(summary.totalAUM)}</td>
                     <td style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)' }}>100%</td>
@@ -207,7 +204,7 @@ const ClientDashboard = () => {
              </table>
           </div>
 
-          {/* Asset Allocation & Nominee Grid */}
+          {/* ASSET ALLOCATION & NOMINEE GRID */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
             <div style={cardStyle}>
                 <h3 style={{ margin: '0 0 24px 0', fontSize: '13px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation</h3>
