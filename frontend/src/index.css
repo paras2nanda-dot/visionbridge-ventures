@@ -1,107 +1,125 @@
-/* VisionBridge Premium Executive Suite - Ultra High-Contrast Black Edition */
+/* VisionBridge Premium Executive Suite - Ultra High-Contrast Edition */
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
-  --text-main: #000000;
-  --text-muted: #475569;
-  /* 🪄 Pure Black Border for absolute visibility */
-  --border: #000000; 
-  --sidebar: #1e293b;
-  --vb-blue: #38bdf8;
+  --text-main: #0f172a; /* Deep slate, softer and more premium than pure #000 */
+  --text-muted: #64748b; /* Professional slate grey for labels and headers */
+  --border: #000000; /* Pure black for structural borders */
+  --sidebar: #0f172a; /* Deep executive navy sidebar */
+  --vb-blue: #0284c7; /* A richer, more professional primary blue */
 }
 
 /* 🌑 MIDNIGHT THEME REFINEMENT */
 [data-theme='midnight'] {
   --bg-main: #000000;
-  --bg-card: #0d0d0d;
-  --text-main: #ffffff;
-  --text-muted: #cbd5e1;
-  /* 🪄 White/Silver Border for contrast against deep black */
-  --border: #ffffff; 
+  --bg-card: #0a0a0a;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #333333; /* Dark grey border for dark mode (pure white is too harsh) */
   --sidebar: #000000;
+  --vb-blue: #38bdf8;
 }
 
-/* 📊 TEXT RULES */
+/* 📊 TEXT RULES - Fixed to allow hierarchy */
 [data-theme='midnight'] body,
 [data-theme='midnight'] h1, [data-theme='midnight'] h2, [data-theme='midnight'] h3,
-[data-theme='midnight'] p, [data-theme='midnight'] label,
-[data-theme='midnight'] td, [data-theme='midnight'] th, [data-theme='midnight'] span {
-  color: #ffffff !important;
+[data-theme='midnight'] p, [data-theme='midnight'] td, [data-theme='midnight'] span {
+  color: var(--text-main) !important;
+}
+[data-theme='midnight'] label, [data-theme='midnight'] th {
+  color: var(--text-muted) !important;
 }
 
 [data-theme='light'] body,
 [data-theme='light'] h1, [data-theme='light'] h2, [data-theme='light'] h3,
-[data-theme='light'] p, [data-theme='light'] label,
-[data-theme='light'] td, [data-theme='light'] th, 
-[data-theme='light'] span {
-  color: #000000 !important;
+[data-theme='light'] p, [data-theme='light'] td, [data-theme='light'] span {
+  color: var(--text-main) !important;
+}
+[data-theme='light'] label, [data-theme='light'] th {
+  color: var(--text-muted) !important;
 }
 
 /* General Layout Fixes */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
   transition: background 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased; /* Makes text look sharper */
 }
 
-/* 💎 THE EXECUTIVE CARD - Ultra Bold */
+/* 💎 THE EXECUTIVE CARD */
 .card {
   background: var(--bg-card);
   border: 2.5px solid var(--border) !important;
   border-radius: 12px; 
   padding: 24px;
-  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.1); /* Sharp shadow for a defined look */
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.05); /* Softer, modern shadow */
 }
 
-/* 💎 FIELD BORDERS: Pure Black 2.5px */
+/* 💎 FIELD BORDERS & INPUTS */
 input, select, textarea {
   border: 2.5px solid var(--border) !important;
   border-radius: 8px !important;
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
   outline: none !important;
-  padding: 12px !important;
-  font-weight: 600;
+  padding: 12px; /* Removed !important so our search padding fix works! */
+  font-weight: 500; /* Normal text weight, not bold */
   transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--vb-blue) !important;
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+/* Target labels specifically to soften them */
+label {
+  font-weight: 600 !important; /* Semi-bold, not screaming */
+  letter-spacing: 0.3px;
 }
 
 /* 💎 BOLD GRID TABLE REFINEMENT */
 table {
   border: 2.5px solid var(--border) !important;
-  border-radius: 0px; /* Square edges look more professional for bold grids */
+  border-radius: 0px; 
   border-collapse: collapse;
   width: 100%;
 }
 
 th, td {
   border: 2.5px solid var(--border) !important;
-  padding: 12px !important;
+  padding: 14px 16px !important; /* Slightly airier padding */
 }
 
 th {
-  background: rgba(0, 0, 0, 0.05);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  background: rgba(0, 0, 0, 0.02);
+  font-weight: 700; /* Bold, but not Black (900) */
+  /* text-transform: uppercase; -> REMOVED to allow Title Case */
 }
 
 [data-theme='midnight'] th {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* 💎 GLOBAL BUTTON STANDARDIZATION */
 button {
-  transition: all 0.2s ease !important;
+  transition: all 0.2s ease;
   border: 2.5px solid var(--border) !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important; /* Bold but professional */
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 /* 📱 CLEAN TABLE SWIPING */
@@ -118,24 +136,28 @@ button {
 [data-theme='midnight'] input, 
 [data-theme='midnight'] select, 
 [data-theme='midnight'] textarea,
-[data-theme='midnight'] .card {
-  border-color: #ffffff !important;
+[data-theme='midnight'] .card,
+[data-theme='midnight'] button,
+[data-theme='midnight'] table,
+[data-theme='midnight'] th,
+[data-theme='midnight'] td {
+  border-color: var(--border) !important;
 }
 
 /* 📱 SURGICAL MOBILE UI ENGINE */
 @media (max-width: 768px) {
-  .container { padding: 15px !important; }
-  .card { padding: 20px !important; margin-bottom: 20px !important; }
+  .container { padding: 16px !important; }
+  .card { padding: 20px !important; margin-bottom: 24px !important; }
   
   [style*="grid-template-columns"] {
     grid-template-columns: 1fr !important;
-    gap: 20px !important;
+    gap: 16px !important;
   }
 
   .card[style*="overflow-x: auto"], 
   div[style*="overflow-x: auto"],
   .table-container {
-    margin: 0 -15px !important; 
+    margin: 0 -16px !important; 
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
@@ -146,13 +168,12 @@ button {
   table { min-width: 800px !important; }
 
   form button[type="submit"], form button[type="button"], .card > button {
-    height: 52px !important; 
-    font-size: 16px !important;
+    height: 48px !important; 
+    font-size: 15px !important;
     width: 100% !important; 
-    text-transform: uppercase;
   }
   
   input, select, textarea {
-    height: 52px !important;
+    height: 48px !important;
   }
 }
