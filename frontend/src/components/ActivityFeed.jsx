@@ -181,7 +181,7 @@ const ActivityFeed = () => {
       `}</style>
 
       {/* HEADER ROW */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '25px', padding: '0 5px', flexWrap: 'wrap', gap: '15px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', padding: '0 5px', flexWrap: 'wrap', gap: '15px' }}>
         <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '24px', fontWeight: '900' }}>
           Recent Activity Feed
         </h3>
@@ -234,7 +234,7 @@ const ActivityFeed = () => {
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
               className="filter-input"
-              style={{ minWidth: '160px' }}
+              style={{ minWidth: '180px' }}
             />
         </div>
 
