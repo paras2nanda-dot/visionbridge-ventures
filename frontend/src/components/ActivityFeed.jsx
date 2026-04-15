@@ -54,10 +54,10 @@ const ActivityFeed = () => {
 
   const getActionStyles = (type) => {
     switch (type?.toUpperCase()) {
-      case 'DELETE': return { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)', icon: '🗑️' };
-      case 'UPDATE': return { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)', icon: '📝' };
-      case 'CREATE': return { color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)', icon: '✨' };
-      default: return { color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)', icon: '🔔' };
+      case 'DELETE': return { color: '#ef4444', icon: '🗑️' };
+      case 'UPDATE': return { color: '#f59e0b', icon: '📝' };
+      case 'CREATE': return { color: '#10b981', icon: '✨' };
+      default: return { color: '#38bdf8', icon: '🔔' };
     }
   };
 
@@ -90,12 +90,12 @@ const ActivityFeed = () => {
       hasVisibleChanges = true;
 
       return (
-        <tr key={key} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-          <td style={{ padding: '10px 15px 10px 0', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', fontSize: '11px', whiteSpace: 'nowrap' }}>
+        <tr key={key} style={{ borderBottom: '2px solid var(--border)' }}>
+          <td style={{ padding: '12px 15px 12px 0', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', fontSize: '11px', whiteSpace: 'nowrap' }}>
             {key.replace(/_/g, ' ')}
           </td>
-          <td style={{ padding: '10px 15px', color: '#ef4444', opacity: 0.8, whiteSpace: 'nowrap' }}>{displayOld}</td>
-          <td style={{ padding: '10px 0 10px 15px', color: '#10b981', fontWeight: '700', whiteSpace: 'nowrap' }}>{displayNew}</td>
+          <td style={{ padding: '12px 15px', color: '#ef4444', fontWeight: '600', whiteSpace: 'nowrap' }}>{displayOld}</td>
+          <td style={{ padding: '12px 0 12px 15px', color: '#10b981', fontWeight: '800', whiteSpace: 'nowrap' }}>{displayNew}</td>
         </tr>
       );
     });
@@ -103,17 +103,17 @@ const ActivityFeed = () => {
     if (!hasVisibleChanges) return null;
 
     return (
-      <div className="fade-in" style={{ marginTop: '20px', padding: '20px 0 20px 20px', background: 'rgba(0,0,0,0.35)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ fontSize: '10px', fontWeight: '900', color: '#6366f1', marginBottom: '12px', letterSpacing: '1px', paddingRight: '20px' }}>
-          MODIFICATION ANALYSIS
+      <div className="fade-in" style={{ marginTop: '20px', padding: '20px 0 20px 20px', background: 'var(--bg-main)', borderRadius: '16px', border: '2.5px solid var(--border)' }}>
+        <div style={{ fontSize: '11px', fontWeight: '900', color: '#38bdf8', marginBottom: '15px', letterSpacing: '1px', paddingRight: '20px', textTransform: 'none' }}>
+          Modification analysis
         </div>
         <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <table className="mobile-table-wrapper" style={{ width: '100%', minWidth: '400px', borderCollapse: 'collapse', fontSize: '13px', paddingRight: '20px' }}>
             <thead>
-                <tr style={{ color: '#64748b', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                <th style={{ paddingBottom: '10px', fontWeight: '800', whiteSpace: 'nowrap' }}>DATA FIELD</th>
-                <th style={{ paddingBottom: '10px', paddingLeft: '15px', fontWeight: '800', whiteSpace: 'nowrap' }}>PREVIOUS STATE</th>
-                <th style={{ paddingBottom: '10px', paddingLeft: '15px', fontWeight: '800', whiteSpace: 'nowrap' }}>MODIFIED STATE</th>
+                <tr style={{ color: 'var(--text-main)', textAlign: 'left', borderBottom: '2.5px solid var(--border)' }}>
+                <th style={{ paddingBottom: '12px', fontWeight: '900', whiteSpace: 'nowrap' }}>Data field</th>
+                <th style={{ paddingBottom: '12px', paddingLeft: '15px', fontWeight: '900', whiteSpace: 'nowrap' }}>Previous state</th>
+                <th style={{ paddingBottom: '12px', paddingLeft: '15px', fontWeight: '900', whiteSpace: 'nowrap' }}>Modified state</th>
                 </tr>
             </thead>
             <tbody>{rows}</tbody>
@@ -125,19 +125,13 @@ const ActivityFeed = () => {
 
   // 🔍 Filter Logic
   const filteredActivities = activities.filter(act => {
-    // 1. Search Filter
     const searchString = `${act.details} ${act.entity_name} ${act.user_name}`.toLowerCase();
     if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return false;
-    
-    // 2. Action Type Filter
     if (filterAction !== 'ALL' && act.action_type?.toUpperCase() !== filterAction) return false;
-    
-    // 3. Date Filter
     if (filterDate) {
       const actDate = new Date(act.created_at).toISOString().split('T')[0];
       if (actDate !== filterDate) return false;
     }
-    
     return true;
   });
 
@@ -158,8 +152,8 @@ const ActivityFeed = () => {
   };
 
   if (loading && activities.length === 0) return (
-    <div style={{ padding: '60px', textAlign: 'center', background: '#0f172a', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
-       <p style={{ fontWeight: '800', color: '#94a3b8', fontSize: '12px', letterSpacing: '2px' }}>AUTHENTICATING AUDIT TRAIL...</p>
+    <div style={{ padding: '60px', textAlign: 'center', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
+       <p style={{ fontWeight: '900', color: 'var(--text-main)', fontSize: '14px', letterSpacing: '1px' }}>SYNCING AUDIT TRAIL...</p>
     </div>
   );
 
@@ -168,49 +162,37 @@ const ActivityFeed = () => {
       <style>{`
         .mobile-table-wrapper::-webkit-scrollbar { display: none; }
         .filter-input {
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: #1e293b; 
-            color: #f8fafc; 
-            font-size: 13px;
+            border: 2.5px solid var(--border);
+            background: var(--bg-card); 
+            color: var(--text-main); 
+            font-size: 14px;
+            font-weight: 600;
             outline: none;
-            color-scheme: dark; 
         }
-        .filter-input::placeholder { color: #94a3b8; }
         
-        /* 📱 MOBILE DATE INPUT FIX */
         .date-input-placeholder {
             position: relative;
         }
-        .date-input-placeholder input[type="date"] {
-            color: transparent; /* Hide text initially if empty */
-        }
-        /* Show the date text when it has a value, or when it's focused */
-        .date-input-placeholder input[type="date"]:focus,
-        .date-input-placeholder input[type="date"]:valid {
-            color: #f8fafc;
-        }
-        /* Inject the placeholder string */
         .date-input-placeholder input[type="date"]:invalid::before {
             content: 'Filter by Date';
-            color: #94a3b8;
+            color: var(--text-muted);
             position: absolute;
             left: 15px;
-            pointer-events: none; /* Let clicks pass through to the input */
+            pointer-events: none;
         }
 
         @media (max-width: 600px) {
             .filter-container { flex-direction: column; align-items: stretch !important; gap: 10px; }
             .filter-input-wrapper { width: 100%; display: flex; }
             .filter-input { width: 100%; }
-            .select-all-wrapper { margin-bottom: 5px; }
         }
       `}</style>
 
       {/* HEADER ROW */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 5px', flexWrap: 'wrap', gap: '10px' }}>
-        <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '22px', fontWeight: '900', letterSpacing: '-0.5px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', padding: '0 5px', flexWrap: 'wrap', gap: '15px' }}>
+        <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '24px', fontWeight: '900' }}>
           Recent Activity Feed
         </h3>
         <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
@@ -218,7 +200,7 @@ const ActivityFeed = () => {
                 <button 
                 onClick={handleDeleteSelected} 
                 disabled={isDeleting}
-                style={{ background: '#ef4444', border: 'none', color: 'white', padding: '10px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: '900', cursor: isDeleting ? 'not-allowed' : 'pointer', transition: 'all 0.2s', letterSpacing: '0.5px', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' }}
+                style={{ background: '#ef4444', border: '2.5px solid #000', color: 'white', padding: '10px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: '900', cursor: isDeleting ? 'not-allowed' : 'pointer', transition: 'all 0.2s', letterSpacing: '0.5px' }}
                 >
                 {isDeleting ? "DELETING..." : `DELETE SELECTED (${selectedIds.length})`}
                 </button>
@@ -226,24 +208,23 @@ const ActivityFeed = () => {
             <button 
             onClick={fetchActivities} 
             disabled={loading}
-            style={{ background: loading ? 'rgba(99, 102, 241, 0.2)' : '#6366f1', border: 'none', color: 'white', padding: '10px 22px', borderRadius: '12px', fontSize: '11px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', letterSpacing: '0.5px', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)' }}
+            style={{ background: '#38bdf8', border: '2.5px solid #000', color: 'white', padding: '10px 22px', borderRadius: '10px', fontSize: '11px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', letterSpacing: '0.5px' }}
             >
-            {loading ? "SYNCING..." : "REFRESH FEED"}
+            {loading ? "SYNCING..." : "Refresh feed"}
             </button>
         </div>
       </div>
 
       {/* 🎛️ CONTROL CENTER / FILTER BAR */}
-      <div className="filter-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', background: '#0f172a', padding: '15px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', alignItems: 'center' }}>
+      <div className="filter-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '2.5px solid var(--border)', marginBottom: '30px', alignItems: 'center', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
         
-        <div className="select-all-wrapper" style={{ display: 'flex', alignItems: 'center', marginRight: '5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
             <input 
                 type="checkbox" 
                 checked={selectedIds.length > 0 && selectedIds.length === filteredActivities.length}
                 onChange={handleSelectAll}
-                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#6366f1' }}
+                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
             />
-            <span style={{marginLeft: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: '700', display: window.innerWidth <= 600 ? 'inline' : 'none'}}>Select All</span>
         </div>
 
         <div className="filter-input-wrapper" style={{ flex: 1, minWidth: '200px' }}>
@@ -253,19 +234,17 @@ const ActivityFeed = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="filter-input"
-              style={{ width: '100%', boxSizing: 'border-box' }}
+              style={{ width: '100%' }}
             />
         </div>
 
-        {/* 💡 MOBILE DATE FIX APPLIED HERE */}
         <div className="filter-input-wrapper date-input-placeholder">
             <input 
               type="date" 
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              required // The 'required' attribute makes the :invalid pseudo-class trigger when empty
+              required 
               className="filter-input"
-              style={{ cursor: 'pointer', boxSizing: 'border-box' }}
             />
         </div>
 
@@ -274,18 +253,17 @@ const ActivityFeed = () => {
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
               className="filter-input"
-              style={{ cursor: 'pointer', boxSizing: 'border-box' }}
             >
-              <option value="ALL">All Actions</option>
-              <option value="CREATE">Creates (✨)</option>
-              <option value="UPDATE">Updates (📝)</option>
-              <option value="DELETE">Deletes (🗑️)</option>
+              <option value="ALL">All actions</option>
+              <option value="CREATE">Creates</option>
+              <option value="UPDATE">Updates</option>
+              <option value="DELETE">Deletes</option>
             </select>
         </div>
       </div>
       
       {/* ACTIVITY LIST */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {filteredActivities.length > 0 ? filteredActivities.map((act) => {
           const style = getActionStyles(act.action_type);
           const isExpanded = expandedId === act.id;
@@ -293,44 +271,44 @@ const ActivityFeed = () => {
           const isSelected = selectedIds.includes(act.id);
 
           return (
-            <div key={act.id} style={{ display: 'flex', flexDirection: 'column', padding: '22px', borderRadius: '24px', background: isSelected ? 'rgba(99, 102, 241, 0.05)' : '#0f172a', border: isSelected ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 15px 35px -12px rgba(0, 0, 0, 0.5)', transition: 'all 0.2s ease' }}>
+            <div key={act.id} style={{ display: 'flex', flexDirection: 'column', padding: '24px', borderRadius: '12px', background: isSelected ? 'rgba(56, 189, 248, 0.05)' : 'var(--bg-card)', border: '2.5px solid var(--border)', boxShadow: isSelected ? 'none' : '6px 6px 0px rgba(0,0,0,0.1)', transition: 'all 0.2s ease' }}>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                 
                 <input 
                     type="checkbox" 
                     checked={isSelected}
                     onChange={() => handleSelect(act.id)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#6366f1', flexShrink: 0 }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
 
-                <div style={{ background: style.glow, border: `1px solid ${style.color}50`, color: style.color, width: '48px', height: '48px', borderRadius: '14px', fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 15px ${style.glow}` }}>
+                <div style={{ background: 'rgba(0,0,0,0.05)', border: `2px solid var(--border)`, width: '48px', height: '48px', borderRadius: '10px', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {style.icon}
                 </div>
 
-                <div style={{ flex: 1, minWidth: 0, paddingLeft: '5px' }}>
-                  <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '16px', marginBottom: '8px', letterSpacing: '0.3px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '900', color: 'var(--text-main)', fontSize: '16px', marginBottom: '5px', letterSpacing: '0.3px' }}>
                     {act.details || "System Activity"}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '4px 12px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                      USER: {act.user_name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#38bdf8', textTransform: 'none' }}>
+                      User: {act.user_name}
                     </span>
-                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '700' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>
                       • {act.entity_name}
                     </span>
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '800', fontFamily: 'monospace', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '900', marginBottom: '5px' }}>
                     {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                   {hasDiffData && (
                     <button 
                       onClick={() => setExpandedId(isExpanded ? null : act.id)}
-                      style={{ background: 'none', border: 'none', color: isExpanded ? '#fff' : '#6366f1', fontSize: '10px', fontWeight: '900', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                      style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '11px', fontWeight: '900', cursor: 'pointer', textDecoration: 'underline', padding: 0, textTransform: 'none' }}
                     >
-                      {isExpanded ? "HIDE DETAILS" : "VIEW CHANGES"}
+                      {isExpanded ? "Hide changes" : "View changes"}
                     </button>
                   )}
                 </div>
@@ -340,8 +318,8 @@ const ActivityFeed = () => {
             </div>
           );
         }) : (
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '100px', background: '#0f172a', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <p style={{fontSize: '16px', fontWeight: '700', letterSpacing: '1px'}}>NO MATCHING LOGS FOUND</p>
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '100px', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
+            <p style={{fontSize: '16px', fontWeight: '900', letterSpacing: '1px'}}>NO MATCHING LOGS FOUND</p>
           </div>
         )}
       </div>
