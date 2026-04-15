@@ -186,19 +186,24 @@ export default function Login() {
             <input 
                 style={styles.input} 
                 className="login-field" 
-                placeholder="Username (e.g., paras)" 
+                placeholder="Enter username" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
                 autoCapitalize="none"
                 required 
             />
-            <label style={styles.label}>Password</label>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px', width: '100%' }}>
+              <label style={{...styles.label, marginBottom: '0'}}>Password</label>
+              <span style={styles.resetLink} onClick={() => { triggerPop(); setShowReset(true); }}>Recover Password</span>
+            </div>
+            
             <div style={styles.passwordContainer}>
               <input 
                 type={showPassword ? "text" : "password"} 
                 style={styles.passwordInput} 
                 className="login-field" 
-                placeholder="Password" 
+                placeholder="••••••••" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
@@ -207,12 +212,12 @@ export default function Login() {
             </div>
             
             <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>
-              {isLoggingIn ? "Authenticating..." : "Sign In with Password"}
+              {isLoggingIn ? "AUTHENTICATING..." : "SIGN IN WITH PASSWORD"}
             </button>
           </form>
 
           {/* 🛡️ BIOMETRIC LOGIN BUTTON */}
-          <div style={{ width: '100%', marginTop: '15px' }}>
+          <div style={{ width: '100%', marginTop: '16px' }}>
              <button 
                 type="button" 
                 onClick={handleBiometricLogin} 
@@ -220,24 +225,31 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
-                <span style={{ fontSize: '18px' }}>👆</span> Login with Fingerprint
+                <span style={{ fontSize: '18px' }}>👆</span> LOGIN WITH FINGERPRINT
              </button>
           </div>
-
-          <p style={styles.forgot} onClick={() => { triggerPop(); setShowReset(true); }}>Forgot password? <span style={styles.resetLink}>Recover</span></p>
         </div>
       </div>
 
+      {/* RESET PASSWORD MODAL */}
       {showReset && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
-            <h3 style={{color: 'var(--text-main)', marginBottom: '20px', fontWeight: '800'}}>Reset Password</h3>
+            <h3 style={{color: 'var(--text-main)', marginBottom: '24px', fontWeight: '900', fontSize: '24px'}}>Reset Password</h3>
             <form onSubmit={handleResetPassword}>
-              <input style={styles.input} placeholder="Username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required autoCapitalize="none" />
-              <input style={styles.input} placeholder="Security Answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
-              <input style={styles.input} type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-              <button type="submit" style={styles.loginBtn} disabled={isResetting}>{isResetting ? "UPDATING..." : "Reset"}</button>
-              <button type="button" style={styles.cancelBtn} onClick={() => { triggerPop(); setShowReset(false); }}>Back</button>
+              <label style={styles.label}>Username</label>
+              <input style={styles.input} placeholder="Enter username" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required autoCapitalize="none" />
+              
+              <label style={styles.label}>Security Answer</label>
+              <input style={styles.input} placeholder="Enter your answer" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
+              
+              <label style={styles.label}>New Password</label>
+              <input style={styles.input} type="password" placeholder="Enter new password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button type="submit" style={{...styles.loginBtn, flex: 2}} disabled={isResetting}>{isResetting ? "UPDATING..." : "RESET PASSWORD"}</button>
+                <button type="button" style={{...styles.biometricBtn, flex: 1, marginTop: 0}} onClick={() => { triggerPop(); setShowReset(false); }}>BACK</button>
+              </div>
             </form>
           </div>
         </div>
@@ -248,10 +260,9 @@ export default function Login() {
         .login-hero-tagline { color: #10b981 !important; font-weight: 900 !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         @media (max-width: 850px) {
           .login-left-panel { display: none !important; }
-          .login-right-panel { width: 100% !important; flex: none !important; padding: 40px 24px !important; background: var(--bg-card) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+          .login-right-panel { width: 100% !important; flex: none !important; padding: 40px 24px !important; background: var(--bg-main) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
           .login-page-container { background: var(--bg-main) !important; }
           .login-form-container { max-width: 100% !important; padding: 0 !important; }
-          .login-field { background: var(--bg-card) !important; color: var(--text-main) !important; border: 1.5px solid var(--border) !important; }
         }
       `}</style>
     </div>
@@ -261,27 +272,25 @@ export default function Login() {
 const styles = {
   pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif", background: "var(--bg-main)" },
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2071&auto=format&fit=crop')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 100%)' },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%)' },
   leftContent: { position: 'relative', zIndex: 2, maxWidth: '520px' },
-  tagline: { fontSize: '13px', fontWeight: '800', letterSpacing: '2px', marginBottom: '20px' },
-  mainHeading: { fontSize: '54px', fontWeight: '900', lineHeight: '1.1', marginBottom: '20px' },
+  tagline: { fontSize: '14px', fontWeight: '900', letterSpacing: '3px', marginBottom: '20px', color: '#10b981' },
+  mainHeading: { fontSize: '54px', fontWeight: '900', lineHeight: '1.1', marginBottom: '20px', color: '#fff' },
   rightPanel: { flex: 1, background: 'var(--bg-card)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
-  loginFormContainer: { width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  logoImage: { width: '220px', height: 'auto', borderRadius: '15px', objectFit: 'contain' },
-  formTitle: { fontSize: '28px', fontWeight: '900', color: 'var(--text-main)', margin: '15px 0 30px 0' },
-  label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' },
-  input: { width: "100%", padding: "14px 16px", marginBottom: "20px", borderRadius: "10px", border: "1.5px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '16px', outline: 'none' },
-  passwordContainer: { position: "relative", width: "100%", marginBottom: "30px" },
-  passwordInput: { width: "100%", padding: "14px 16px", borderRadius: "10px", border: "1.5px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '16px', outline: 'none' },
+  loginFormContainer: { width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+  logoImage: { width: '220px', height: 'auto', borderRadius: '15px', objectFit: 'contain', marginBottom: '10px' },
+  formTitle: { fontSize: '28px', fontWeight: '900', color: 'var(--text-main)', margin: '0 0 30px 0', letterSpacing: '-0.5px' },
+  label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  input: { width: "100%", padding: "14px 16px", marginBottom: "20px", borderRadius: "8px", border: "2.5px solid var(--border)", background: "var(--bg-main)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
+  passwordContainer: { position: "relative", width: "100%", marginBottom: "24px" },
+  passwordInput: { width: "100%", padding: "14px 16px", borderRadius: "8px", border: "2.5px solid var(--border)", background: "var(--bg-main)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
   eyeIcon: { position: "absolute", right: "15px", top: "50%", transform: 'translateY(-50%)', cursor: "pointer", fontSize: '18px', opacity: 0.6 },
-  loginBtn: { width: "100%", padding: "16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s', fontSize: '16px' },
   
-  // 🛡️ New Style for Biometric Button
-  biometricBtn: { width: "100%", padding: "14px", background: "transparent", color: "var(--text-main)", border: "2px solid #10b981", borderRadius: "10px", cursor: "pointer", fontWeight: "800", transition: 'all 0.2s', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
+  /* 💎 Executive Buttons */
+  loginBtn: { width: "100%", padding: "16px", background: "#0284c7", color: "#fff", border: "2.5px solid var(--border)", borderRadius: "8px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s', fontSize: '14px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)' },
+  biometricBtn: { width: "100%", padding: "16px", background: "var(--bg-card)", color: "var(--text-main)", border: "2.5px solid var(--border)", borderRadius: "8px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', marginTop: '0' },
   
-  cancelBtn: { width: "100%", padding: "14px", background: "none", color: "var(--text-muted)", border: "none", cursor: "pointer", marginTop: "10px", fontWeight: '700' },
-  forgot: { marginTop: "30px", fontSize: "14px", color: "var(--text-muted)", cursor: "pointer" },
-  resetLink: { color: "#2563eb", fontWeight: '900' },
+  resetLink: { color: "#0284c7", fontWeight: '900', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' },
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(5px)' },
-  modalCard: { background: "var(--bg-card)", padding: "40px", borderRadius: "24px", width: "400px", boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)', border: '1px solid var(--border)' }
+  modalCard: { background: "var(--bg-card)", padding: "40px", borderRadius: "16px", width: "100%", maxWidth: "420px", boxShadow: '8px 8px 0px rgba(0,0,0,0.15)', border: '2.5px solid var(--border)' }
 };
