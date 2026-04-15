@@ -14,7 +14,7 @@ const Transactions = () => {
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false); 
   const [selectedIds, setSelectedIds] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ Fixed missing loading state
+  const [loading, setLoading] = useState(true);
 
   const initialState = {
     transaction_id: '',
@@ -27,7 +27,7 @@ const Transactions = () => {
   useEffect(() => { fetchInitialData(); }, []);
 
   const fetchInitialData = async () => {
-    setLoading(true); // ✅ Set loading true on start
+    setLoading(true);
     try {
       const [cRes, sRes, tRes] = await Promise.all([
         api.get('/clients'), api.get('/mf-schemes'), api.get('/transactions')
@@ -44,7 +44,7 @@ const Transactions = () => {
     } catch (err) { 
       toast.error("Sync Error"); 
     } finally {
-      setLoading(false); // ✅ Set loading false on completion
+      setLoading(false);
     }
   };
 
@@ -145,17 +145,21 @@ const Transactions = () => {
         </form>
       </div>
 
-      {/* SEARCH BAR & BULK DELETE */}
+      {/* 🔍 SEARCH BAR & BULK DELETE */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
           <input 
             type="text" 
             placeholder="Search transactions..." 
-            style={{ ...inputStyle, paddingLeft: '52px' }} // Applied overlap fix
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
+            style={{ 
+                ...inputStyle, 
+                paddingLeft: '55px !important', 
+                textIndent: '40px' 
+            }} 
           />
-          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px', pointerEvents: 'none' }}>🔍</span>
+          <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '20px', pointerEvents: 'none' }}>🔍</span>
         </div>
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: '2.5px solid #000', padding: '12px 24px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>Delete Selected ({selectedIds.length})</button>}
       </div>
