@@ -16,67 +16,105 @@ const Layout = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main, #f8fafc)', transition: 'background 0.3s ease' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main)', transition: 'background 0.3s ease' }}>
       <AutoLogout timeoutMinutes={15} />
       <CommandPalette />
 
+      {/* 📱 Premium Mobile Hamburger Menu */}
       {!isSidebarOpen && (
         <button 
           onClick={toggleSidebar} 
           style={{ 
-            position: 'fixed', top: '15px', left: '15px', zIndex: 999996, 
-            padding: '10px', background: 'var(--sidebar, #1e293b)', 
-            color: 'white', border: '1px solid var(--border, #334155)', 
-            borderRadius: '8px', cursor: 'pointer', fontSize: '20px' 
+            position: 'fixed', top: '20px', left: '20px', zIndex: 999996, 
+            width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--bg-card)', color: 'var(--text-main)', 
+            border: '2.5px solid var(--border)', borderRadius: '12px', 
+            cursor: 'pointer', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)',
+            transition: 'all 0.2s ease', outline: 'none'
           }} 
           className="mobile-only-btn"
         >
-          ☰
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
         </button>
       )}
 
-      {isSidebarOpen && <div onClick={toggleSidebar} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999997, backdropFilter: 'blur(8px)' }} />}
+      {/* 🌁 Mobile Sidebar Backdrop */}
+      {isSidebarOpen && <div onClick={toggleSidebar} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 999997, backdropFilter: 'blur(8px)', transition: 'all 0.3s ease' }} />}
 
+      {/* 📂 Sidebar Wrapper */}
       <div style={{ 
         width: '280px', position: 'fixed', top: 0, left: 0, bottom: 0, 
-        zIndex: 999998, transition: 'transform 0.3s ease', 
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' 
+        zIndex: 999998, transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        boxShadow: isSidebarOpen ? '20px 0 25px -5px rgba(0,0,0,0.2)' : 'none'
       }} className="sidebar-wrapper">
         <Sidebar closeMobileMenu={() => setIsSidebarOpen(false)} isMobileOpen={isSidebarOpen} />
       </div>
 
+      {/* 🖥️ Main Content Area */}
       <main style={{ flex: 1, padding: '40px', minHeight: '100vh', width: '100%', transition: 'all 0.3s ease', position: 'relative', zIndex: 1 }} className="main-content-layout">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted, #94a3b8)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Link to="/dashboard" style={{ color: 'var(--text-muted, #64748b)', textDecoration: 'none' }}>🏠 Home</Link>
+        
+        {/* 🔝 Top Header Bar */}
+        <div className="top-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
+          
+          {/* Breadcrumbs */}
+          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.3px', flexWrap: 'wrap' }}>
+            <Link to="/dashboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>🏠 Home</Link>
             {pathnames.map((value, index) => {
               const to = `/${pathnames.slice(0, index + 1).join('/')}`;
               const isLast = index === pathnames.length - 1;
               return (
                 <React.Fragment key={to}>
-                  <span>/</span>
-                  {isLast ? <span style={{ color: '#0ea5e9', fontWeight: '800' }}>{formatBreadcrumb(value)}</span> : <Link to={to} style={{ color: 'var(--text-muted, #64748b)', textDecoration: 'none' }}>{formatBreadcrumb(value)}</Link>}
+                  <span style={{ opacity: 0.5 }}>/</span>
+                  {isLast ? <span style={{ color: '#0284c7', fontWeight: '900' }}>{formatBreadcrumb(value)}</span> : <Link to={to} style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>{formatBreadcrumb(value)}</Link>}
                 </React.Fragment>
               );
             })}
           </div>
 
-          <button onClick={() => window.dispatchEvent(new Event('open-cmd-k'))} style={{ display: 'flex', alignItems: 'center', gap: '40px', padding: '10px 16px', background: 'var(--bg-card, #fff)', border: '1px solid var(--border, #cbd5e1)', borderRadius: '10px', color: 'var(--text-muted, #64748b)', fontSize: '14px', cursor: 'pointer' }}>
-            <span>🔍 Search...</span>
-            <span style={{ background: 'var(--bg-main, #f8fafc)', padding: '4px 8px', borderRadius: '6px', fontSize: '11px' }}>Ctrl K</span>
+          {/* Search / Command Palette Trigger */}
+          <button 
+            className="search-cmd-btn"
+            onClick={() => window.dispatchEvent(new Event('open-cmd-k'))} 
+            style={{ 
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', 
+                padding: '12px 20px', background: 'var(--bg-card)', 
+                border: '2.5px solid var(--border)', borderRadius: '12px', 
+                color: 'var(--text-muted)', fontSize: '15px', fontWeight: '700', 
+                cursor: 'pointer', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', 
+                transition: 'all 0.2s ease', outline: 'none'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-main)' }}>
+                <span style={{ opacity: 0.7 }}>🔍</span> Search...
+            </span>
+            <span style={{ background: 'var(--bg-main)', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', border: '1.5px solid var(--border)', letterSpacing: '0.5px' }}>
+                Ctrl K
+            </span>
           </button>
         </div>
+
         <Outlet />
       </main>
 
       <style>{`
+        /* Desktop Layout */
         @media (min-width: 1024px) { 
-          .sidebar-wrapper { transform: translateX(0) !important; z-index: 100 !important; } 
+          .sidebar-wrapper { transform: translateX(0) !important; z-index: 100 !important; box-shadow: none !important; } 
           .main-content-layout { margin-left: 280px !important; width: calc(100% - 280px) !important; } 
           .mobile-only-btn { display: none !important; } 
+          .search-cmd-btn:hover { border-color: #0284c7 !important; transform: translateY(-2px); }
         }
+        
+        /* Mobile Layout Optimizations */
         @media (max-width: 1023px) { 
-          .main-content-layout { padding: 90px 20px 40px 20px !important; margin-left: 0 !important; width: 100% !important; } 
+          .main-content-layout { padding: 90px 16px 40px 16px !important; margin-left: 0 !important; width: 100% !important; } 
+          .top-header-bar { flex-direction: column; align-items: flex-start !important; gap: 16px !important; margin-bottom: 24px !important; }
+          .search-cmd-btn { width: 100% !important; padding: 14px 20px !important; }
         }
       `}</style>
     </div>
