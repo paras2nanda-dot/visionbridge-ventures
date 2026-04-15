@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
-// --- Premium Donut Chart ---
+// --- Premium Donut Chart with Dynamic Scaling ---
 const AssetDonut = ({ data }) => {
-  if (!data || data.length === 0) return <div style={{color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', padding: '20px'}}>No allocation data found. Ensure your Mutual Fund Master data is complete.</div>;
+  if (!data || data.length === 0) return (
+    <div style={{ padding: '30px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1.5px dashed var(--border)', textAlign: 'center' }}>
+        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '13px' }}>
+            No allocation data found. <br/> 
+            <span style={{ fontSize: '11px', fontWeight: '500' }}>Ensure scheme names in Master and Portfolio match exactly.</span>
+        </div>
+    </div>
+  );
   
   const total = data.reduce((acc, item) => acc + item.value, 0);
   let cumulativePercent = 0;
@@ -14,7 +22,7 @@ const AssetDonut = ({ data }) => {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', justifyContent: 'center' }}>
       <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '150px', height: '150px' }}>
         {data.map((item, i) => {
           if (item.value <= 0) return null;
@@ -23,7 +31,7 @@ const AssetDonut = ({ data }) => {
           const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
           const largeArcFlag = item.value / total > 0.5 ? 1 : 0;
           const pathData = [`M ${startX} ${startY}`, `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`, `L 0 0`].join(' ');
-          return <path key={i} d={pathData} fill={item.color} style={{ transition: 'all 0.3s' }} />;
+          return <path key={i} d={pathData} fill={item.color} style={{ transition: 'all 0.3s ease' }} />;
         })}
         <circle r="0.68" fill="var(--bg-card)" cx="0" cy="0" />
       </svg>
@@ -33,7 +41,7 @@ const AssetDonut = ({ data }) => {
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }}></div>
             <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
-              {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '800'}}>{((item.value/total)*100).toFixed(1)}%</span>
+              {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '700'}}>{((item.value/total)*100).toFixed(1)}%</span>
             </span>
           </div>
         ))}
@@ -47,7 +55,7 @@ const ClientDashboard = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
   const [portfolio, setPortfolio] = useState([]);
-  const [schemes, setSchemes] = useState([]); // Master Schemes for Weight Sync
+  const [schemes, setSchemes] = useState([]); 
   const [summary, setSummary] = useState({ totalAUM: 0, totalSipBook: 0, sipCount: 0 });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,13 +63,11 @@ const ClientDashboard = () => {
     const token = sessionStorage.getItem("token");
     const headers = { 'Authorization': `Bearer ${token}` };
 
-    // Fetch Clients for Search
     fetch('https://visionbridge-backend.onrender.com/api/clients', { headers })
       .then(res => res.json())
       .then(data => setClients(Array.isArray(data) ? data : []))
       .catch(err => console.error("Error fetching clients:", err));
 
-    // ✅ FETCH MASTER SCHEMES (Fixes Allocation Sync)
     fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers })
       .then(res => res.json())
       .then(data => setSchemes(Array.isArray(data) ? data : []))
@@ -84,22 +90,25 @@ const ClientDashboard = () => {
         setIsLoading(false);
       })
       .catch(err => {
-        console.error("Error:", err);
+        console.error("Error fetching dashboard data:", err);
         setIsLoading(false);
       });
   };
 
-  const safeNum = (val) => Number(val) || 0;
+  const safeNum = (val) => parseFloat(val) || 0;
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
-  // 🧪 SYNC LOGIC: Links Portfolio to Master Scheme Weights
+  // 🧪 ROBUST LOOKUP: Matches Portfolio Schemes to Master Scheme Percentages
   const getAssetAllocation = () => {
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
       const invested = safeNum(item.invested_amount);
-      // Find the "MF Master" record for this specific scheme
-      const master = schemes.find(s => s.scheme_name === item.scheme_name);
+      
+      // Find master scheme (Case-insensitive & trimmed)
+      const master = schemes.find(s => 
+        s.scheme_name.trim().toLowerCase() === item.scheme_name.trim().toLowerCase()
+      );
       
       if (master) {
           totals.large += invested * (safeNum(master.large_percent) / 100);
@@ -127,7 +136,7 @@ const ClientDashboard = () => {
   return (
     <div className="fade-in" style={{ paddingBottom: '40px' }}>
       
-      {/* 🔍 SEARCH HEADER */}
+      {/* 🔍 Search Header */}
       <div style={{ position: 'relative', marginBottom: '30px' }}>
         <input 
           type="text" 
@@ -139,7 +148,7 @@ const ClientDashboard = () => {
         <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px' }}>🔍</span>
         
         {searchTerm && !selectedClient?.full_name && (
-          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '2.5px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '2.5px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
             {clients.filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
                 <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '2px solid var(--border)', color: 'var(--text-main)', fontWeight: '700' }}>
                   <span style={{ color: '#0284c7', marginRight: '12px', fontWeight: '900' }}>{c.client_code}</span> {c.full_name}
@@ -153,7 +162,7 @@ const ClientDashboard = () => {
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-main)', fontWeight: '900', fontSize: '15px' }}>SYNCING CLIENT PROFILE...</div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          {/* CLIENT PROFILE HEADER */}
+          {/* Executive Header */}
           <div style={cardStyle}>
               <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '900', letterSpacing: '-0.5px' }}>
                 {selectedClient.full_name} 
@@ -166,15 +175,15 @@ const ClientDashboard = () => {
               </div>
           </div>
 
-          {/* METRICS GRID */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          {/* Metrics Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '25px' }}>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Monthly SIP</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIPs</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{summary.sipCount}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Relationship Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
           </div>
 
-          {/* PORTFOLIO TABLE */}
+          {/* 📂 FULL PORTFOLIO TABLE (Includes % and TOTAL) */}
           <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '30px' }}>
              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead style={{ background: 'rgba(0,0,0,0.02)' }}>
@@ -204,7 +213,7 @@ const ClientDashboard = () => {
              </table>
           </div>
 
-          {/* ASSET ALLOCATION & NOMINEE GRID */}
+          {/* Allocation & Nominee Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
             <div style={cardStyle}>
                 <h3 style={{ margin: '0 0 24px 0', fontSize: '13px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation</h3>
