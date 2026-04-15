@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 const SettingsModal = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('appearance');
   const [theme, setTheme] = useState(localStorage.getItem('vb-theme') || 'light');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // --- Theme Logic ---
   useEffect(() => {
@@ -31,101 +30,153 @@ const SettingsModal = ({ onClose }) => {
   }, [theme]);
 
   const themeOptions = [
-    { id: 'light', icon: '☀️', label: 'Light Theme' },
-    { id: 'slate', icon: '🌙', label: 'Slate Dark' },
-    { id: 'midnight', icon: '🌌', label: 'Obsidian Black' },
-    { id: 'forest', icon: '🌲', label: 'Forest Green' }
+    { id: 'light', icon: '☀️', label: 'Light' },
+    { id: 'slate', icon: '🌙', label: 'Slate' },
+    { id: 'midnight', icon: '🌌', label: 'Obsidian' },
+    { id: 'forest', icon: '🌲', label: 'Forest' }
   ];
 
-  const currentTheme = themeOptions.find(t => t.id === theme);
-
-  // --- Styles ---
-  const tabStyle = (tabId) => ({
-    padding: '12px 20px',
-    background: activeTab === tabId ? 'rgba(2, 132, 199, 0.1)' : 'transparent',
-    color: activeTab === tabId ? '#0284c7' : 'var(--text-muted)',
-    border: 'none',
-    borderBottom: activeTab === tabId ? '3px solid #0284c7' : '3px solid transparent',
-    fontWeight: activeTab === tabId ? '900' : '700',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all 0.2s',
-    outline: 'none',
-    whiteSpace: 'nowrap'
-  });
-
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999999, backdropFilter: 'blur(8px)', padding: '20px' }}>
-      <div style={{ background: "var(--bg-main)", borderRadius: "16px", width: "100%", maxWidth: "600px", boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '2.5px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+    <>
+      <style>{`
+        /* 🌑 Overlay with Blur */
+        .settings-overlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+          z-index: 9999999; display: flex; justify-content: center; align-items: center;
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        /* 🎛️ Settings Card (Desktop & Mobile Base) */
+        .settings-card {
+          background: var(--bg-main); width: 100%; max-width: 480px;
+          display: flex; flex-direction: column; overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+          animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 📱 Mobile Specific: Bottom Sheet */
+        @media (max-width: 768px) {
+          .settings-overlay { align-items: flex-end; padding: 0; }
+          .settings-card {
+            border-radius: 28px 28px 0 0;
+            max-height: 85vh; border: 1px solid var(--border); border-bottom: none;
+            padding-bottom: env(safe-area-inset-bottom);
+          }
+          .mobile-drag-handle {
+            width: 40px; height: 5px; background: var(--border); border-radius: 10px;
+            margin: 12px auto; opacity: 0.6; display: block !important;
+          }
+        }
+
+        /* 💻 Desktop Specific */
+        @media (min-width: 769px) {
+          .settings-overlay { padding: 20px; }
+          .settings-card { border-radius: 20px; border: 1.5px solid var(--border); max-height: 90vh; }
+          .mobile-drag-handle { display: none; }
+        }
+
+        /* 🗂️ Tabs */
+        .settings-tab {
+          flex: 1; padding: 16px 8px; background: transparent; border: none;
+          color: var(--text-muted); font-size: 14px; font-weight: 700; cursor: pointer;
+          border-bottom: 3px solid transparent; transition: all 0.2s;
+        }
+        .settings-tab.active {
+          color: #0284c7; border-bottom: 3px solid #0284c7; font-weight: 900;
+        }
+
+        /* 🔲 2x2 Grid Buttons */
+        .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .theme-btn {
+          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+          padding: 24px 12px; border-radius: 16px; border: 2px solid var(--border);
+          background: var(--bg-card); color: var(--text-muted);
+          font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s ease;
+          outline: none;
+        }
+        .theme-btn:hover { background: var(--bg-main); border-color: #94a3b8; }
+        .theme-btn.active {
+          border-color: #0284c7; background: rgba(2, 132, 199, 0.08); color: #0284c7;
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+        }
+        .theme-icon { font-size: 28px; transition: transform 0.2s; }
+        .theme-btn.active .theme-icon { transform: scale(1.1); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      `}</style>
+
+      {/* Overlay: Closes modal when clicking outside */}
+      <div className="settings-overlay" onClick={onClose}>
         
-        {/* Header */}
-        <div style={{ padding: '24px 32px', borderBottom: '2.5px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
-          <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>Settings</h2>
-          <button onClick={onClose} style={{ background: 'var(--bg-main)', border: '2.5px solid var(--border)', color: 'var(--text-main)', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>✕</button>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div style={{ display: 'flex', borderBottom: '2.5px solid var(--border)', background: 'var(--bg-card)', overflowX: 'auto', padding: '0 12px' }}>
-          <button style={tabStyle('appearance')} onClick={() => setActiveTab('appearance')}>✨ Appearance</button>
-          <button style={tabStyle('profile')} onClick={() => setActiveTab('profile')}>👤 Profile</button>
-          <button style={tabStyle('security')} onClick={() => setActiveTab('security')}>🛡️ Security</button>
-        </div>
-
-        {/* Content Area */}
-        <div style={{ padding: '32px', overflowY: 'auto' }}>
+        {/* Modal Card: Stops click from bubbling to overlay */}
+        <div className="settings-card" onClick={e => e.stopPropagation()}>
           
-          {activeTab === 'appearance' && (
-            <div className="fade-in">
-              <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '18px', fontWeight: '900' }}>Platform Theme</h3>
-              <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Customize the visual appearance of your dashboard.</p>
-              
-              {/* Premium Custom Dropdown */}
-              <div style={{ position: 'relative', maxWidth: '300px' }}>
-                <button 
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{ width: '100%', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', border: '2.5px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', fontSize: '15px', fontWeight: '800', cursor: 'pointer', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', outline: 'none' }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '18px' }}>{currentTheme?.icon}</span> {currentTheme?.label}
-                  </span>
-                  <span style={{ fontSize: '12px', opacity: 0.6, transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-                </button>
+          <div className="mobile-drag-handle"></div>
 
-                {isDropdownOpen && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'var(--bg-card)', border: '2.5px solid var(--border)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', zIndex: 10 }}>
-                    {themeOptions.map((opt) => (
-                      <div 
-                        key={opt.id}
-                        onClick={() => { setTheme(opt.id); setIsDropdownOpen(false); }}
-                        style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px', color: theme === opt.id ? '#0284c7' : 'var(--text-main)', background: theme === opt.id ? 'rgba(2, 132, 199, 0.05)' : 'transparent', fontWeight: theme === opt.id ? '900' : '700', fontSize: '15px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
-                      >
-                        <span style={{ fontSize: '18px' }}>{opt.icon}</span> {opt.label}
-                        {theme === opt.id && <span style={{ marginLeft: 'auto' }}>✓</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {/* Header */}
+          <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '22px', fontWeight: '900', letterSpacing: '-0.5px' }}>Settings</h2>
+            <button 
+              onClick={onClose} 
+              style={{ background: 'var(--bg-card)', border: 'none', color: 'var(--text-muted)', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold' }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+            <button className={`settings-tab ${activeTab === 'appearance' ? 'active' : ''}`} onClick={() => setActiveTab('appearance')}>✨ Appearance</button>
+            <button className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>👤 Profile</button>
+            <button className={`settings-tab ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>🛡️ Security</button>
+          </div>
+
+          {/* Content Area */}
+          <div style={{ padding: '24px', overflowY: 'auto', background: 'var(--bg-main)', flex: 1 }}>
+            
+            {activeTab === 'appearance' && (
+              <div>
+                <h3 style={{ margin: '0 0 6px 0', color: 'var(--text-main)', fontSize: '16px', fontWeight: '800' }}>Platform Theme</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600', lineHeight: 1.4 }}>Choose your preferred visual style. Changes apply instantly.</p>
+                
+                {/* 2x2 Segmented Grid */}
+                <div className="theme-grid">
+                  {themeOptions.map((opt) => (
+                    <button 
+                      key={opt.id} 
+                      onClick={() => setTheme(opt.id)}
+                      className={`theme-btn ${theme === opt.id ? 'active' : ''}`}
+                    >
+                      <span className="theme-icon">{opt.icon}</span>
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'profile' && (
-            <div className="fade-in">
-              <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '18px', fontWeight: '900' }}>Account Details</h3>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Future home for your profile and notification settings.</p>
-            </div>
-          )}
+            {activeTab === 'profile' && (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <span style={{ fontSize: '40px', display: 'block', marginBottom: '16px' }}>🚧</span>
+                <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '16px', fontWeight: '800' }}>Profile Settings Coming Soon</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600' }}>Account details and notifications will live here.</p>
+              </div>
+            )}
 
-          {activeTab === 'security' && (
-            <div className="fade-in">
-              <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '18px', fontWeight: '900' }}>Security Preferences</h3>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Future home for password resets and 2FA settings.</p>
-            </div>
-          )}
+            {activeTab === 'security' && (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <span style={{ fontSize: '40px', display: 'block', marginBottom: '16px' }}>🔒</span>
+                <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '16px', fontWeight: '800' }}>Security Settings Coming Soon</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600' }}>Biometrics and 2FA management will live here.</p>
+              </div>
+            )}
 
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
