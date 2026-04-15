@@ -70,153 +70,196 @@ const Reports = () => {
     }
   };
 
-  const cardLayout = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '20px',
-    padding: '24px',
-    background: 'var(--bg-card)',
-    borderRadius: '12px',
-    border: '2.5px solid var(--border)',
-    boxShadow: '4px 4px 0px rgba(0,0,0,0.05)'
-  };
-
-  const btnStyle = (color) => ({
-    background: color,
-    color: 'white',
-    border: '2.5px solid var(--border)',
-    padding: '14px 24px',
-    borderRadius: '10px',
-    fontWeight: '900',
-    fontSize: '13px',
-    cursor: 'pointer',
-    letterSpacing: '0.5px',
-    boxShadow: '4px 4px 0px rgba(0,0,0,0.08)',
-    transition: 'all 0.2s ease',
-    minWidth: '180px',
-    textAlign: 'center'
-  });
-
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px' }}>
       
+      {/* 🎨 Page Styles: Handling the Mobile Squeeze */}
+      <style>{`
+        .report-card {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 24px;
+          padding: 24px;
+          background: var(--bg-card);
+          border-radius: 16px;
+          border: 2.5px solid var(--border);
+          box-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+          transition: transform 0.2s ease;
+        }
+
+        .report-card:hover {
+          transform: translateY(-2px);
+        }
+
+        .report-btn {
+          color: white;
+          border: 2.5px solid var(--border);
+          padding: 14px 24px;
+          borderRadius: 12px;
+          font-weight: 900;
+          font-size: 13px;
+          cursor: pointer;
+          letter-spacing: 0.5px;
+          box-shadow: 4px 4px 0px rgba(0,0,0,0.08);
+          transition: all 0.2s ease;
+          min-width: 180px;
+          text-align: center;
+          outline: none;
+        }
+
+        .report-btn:active {
+          transform: translate(2px, 2px);
+          box-shadow: 2px 2px 0px rgba(0,0,0,0.08);
+        }
+
+        /* 📱 Mobile Overrides: Row to Column */
+        @media (max-width: 768px) {
+          .report-card {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+            gap: 20px;
+          }
+          
+          .report-info {
+            width: 100%;
+          }
+
+          .report-btn {
+            width: 100%;
+            min-width: unset;
+            padding: 16px;
+            font-size: 14px;
+          }
+
+          .report-title {
+            font-size: 20px !important;
+          }
+        }
+      `}</style>
+      
       {/* Page Title */}
-      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '32px', marginBottom: '30px' }}>
+      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '32px', marginBottom: '36px', letterSpacing: '-0.8px' }}>
         Report Export Center
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
         
         {/* CARD 1: CLIENT-WISE INVESTED AUM */}
-        <div style={cardLayout}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Client-wise Invested AUM</h3>
+        <div className="report-card">
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Client-wise Invested AUM</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', lineHeight: '1.5' }}>Detailed client metrics including SIP ratios and Risk Profiles.</p>
           </div>
           <button 
+            className="report-btn"
             onClick={() => handleDownload('client-aum', 'Client_AUM_Report.xlsx')}
             disabled={downloadingReport === 'client-aum'}
-            style={btnStyle('#1e293b')}
+            style={{ background: '#1e293b' }}
           >
             {downloadingReport === 'client-aum' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
           </button>
         </div>
 
         {/* CARD 2: SCHEME-WISE AUM */}
-        <div style={cardLayout}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Scheme-wise AUM</h3>
+        <div className="report-card">
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Scheme-wise AUM</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', lineHeight: '1.5' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
           </div>
           <button 
+            className="report-btn"
             onClick={() => handleDownload('scheme-aum', 'Scheme_AUM_Report.xlsx')}
             disabled={downloadingReport === 'scheme-aum'}
-            style={btnStyle('#10b981')}
+            style={{ background: '#10b981' }}
           >
             {downloadingReport === 'scheme-aum' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
           </button>
         </div>
 
         {/* CARD 3: MONTHLY SIP BOOK */}
-        <div style={cardLayout}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Monthly SIP Book</h3>
+        <div className="report-card">
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Monthly SIP Book</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', lineHeight: '1.5' }}>Active SIP counts and amounts aggregated by scheme.</p>
           </div>
           <button 
+            className="report-btn"
             onClick={() => handleDownload('sip-book', 'Monthly_SIP_Book_Report.xlsx')}
             disabled={downloadingReport === 'sip-book'}
-            style={btnStyle('#f59e0b')}
+            style={{ background: '#f59e0b' }}
           >
             {downloadingReport === 'sip-book' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
           </button>
         </div>
 
         {/* CARD 4: MONTHLY COMMISSION REPORT */}
-        <div style={cardLayout}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Monthly Commission Report</h3>
+        <div className="report-card">
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Monthly Commission Report</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', lineHeight: '1.5' }}>Revenue projections based on Invested and Market AUM.</p>
           </div>
           <button 
+            className="report-btn"
             onClick={() => handleDownload('commission-report', 'Monthly_Commission_Report.xlsx')}
             disabled={downloadingReport === 'commission-report'}
-            style={btnStyle('#6366f1')}
+            style={{ background: '#6366f1' }}
           >
             {downloadingReport === 'commission-report' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
           </button>
         </div>
 
         {/* CARD 5: CLIENTS DATABASE (FULL) */}
-        <div style={cardLayout}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Clients Database (Full)</h3>
+        <div className="report-card">
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>Clients Database (Full)</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', lineHeight: '1.5' }}>Export all client records with complete KYC and contact details.</p>
           </div>
           <button 
+            className="report-btn"
             onClick={() => handleDownload('clients-database', 'Full_Clients_Database.xlsx')}
             disabled={downloadingReport === 'clients-database'}
-            style={btnStyle('#0284c7')} // Updated to new Primary Blue
+            style={{ background: '#0284c7' }}
           >
             {downloadingReport === 'clients-database' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
           </button>
         </div>
 
         {/* CARD 6: MF SCHEMES DATABASE (FULL) */}
-        <div style={cardLayout}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>MF Schemes Database (Full)</h3>
+        <div className="report-card">
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.5px' }}>MF Schemes Database (Full)</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', lineHeight: '1.5' }}>Master export of all mutual fund schemes and their allocations.</p>
           </div>
           <button 
+            className="report-btn"
             onClick={() => handleDownload('schemes-database', 'Full_MF_Schemes_Database.xlsx')}
             disabled={downloadingReport === 'schemes-database'}
-            style={btnStyle('#8b5cf6')}
+            style={{ background: '#8b5cf6' }}
           >
             {downloadingReport === 'schemes-database' ? 'GENERATING...' : '📥 EXPORT EXCEL'}
           </button>
         </div>
 
         {/* 🛡️ SYSTEM MAINTENANCE: DISASTER RECOVERY */}
-        <div style={{ 
-          ...cardLayout, 
+        <div className="report-card" style={{ 
           background: 'rgba(239, 68, 68, 0.05)', 
           marginTop: '32px',
           borderColor: 'rgba(239, 68, 68, 0.3)'
         }}>
-          <div style={{ flex: '1' }}>
-            <h3 style={{ margin: 0, fontWeight: '900', color: '#ef4444', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Disaster Recovery</h3>
+          <div className="report-info">
+            <h3 className="report-title" style={{ margin: 0, fontWeight: '900', color: '#ef4444', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Disaster Recovery</h3>
             <p style={{ margin: '8px 0 0 0', color: 'var(--text-main)', fontSize: '14px', fontWeight: '600', opacity: 0.8 }}>
               Internal database JSON backup for off-site system restoration.
             </p>
           </div>
           <button 
+            className="report-btn"
             onClick={handleBackup}
             disabled={downloadingReport === 'system-backup'}
             style={{
-              ...btnStyle('#ef4444'),
+              background: '#ef4444',
               boxShadow: '4px 4px 0px rgba(239, 68, 68, 0.2)'
             }}
           >
