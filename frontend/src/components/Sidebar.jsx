@@ -95,7 +95,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             cursor: pointer;
             transition: all 0.2s ease !important;
             border-radius: 0 !important; 
-            text-transform: uppercase !important;
+            /* ✅ text-transform removed to allow manual casing */
             letter-spacing: 0.5px;
           }
 
@@ -150,7 +150,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           </button>
 
           <button onClick={handleLogout} disabled={isLoggingOut} className="sidebar-action-btn btn-logout">
-            <span style={{ fontSize: '18px' }}>🚪</span> {isLoggingOut ? "LOGGING OUT..." : "LOGOUT"}
+            <span style={{ fontSize: '18px' }}>🚪</span> {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
 
         </div>
