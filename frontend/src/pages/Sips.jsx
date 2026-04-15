@@ -93,26 +93,37 @@ const Sips = () => {
     s.sip_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)' };
+  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '800', fontSize: '13px', color: 'var(--text-main)', letterSpacing: '0.5px' };
+  const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '2.5px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: '600' };
 
   return (
-    <div className="container fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
-        <h1 className="title" style={{ color: 'var(--text-main)', margin: 0, fontWeight: '800' }}>SIP Tracker</h1>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ padding: '12px 20px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.05)', borderLeft: '4px solid #38bdf8', flex: '1 1 auto', minWidth: '160px' }}>
-            <div style={{ fontSize: '11px', color: '#38bdf8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly SIP Book</div>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', marginTop: '4px' }}>₹{formatINR(sips.filter(s => s.status === 'Active').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}</div>
+    <div className="container fade-in" style={{ paddingBottom: '50px' }}>
+      
+      {/* HEADER & METRIC CARDS */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
+        <h1 className="title" style={{ color: 'var(--text-main)', margin: 0, fontWeight: '900', fontSize: '32px' }}>SIP Tracker</h1>
+        
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+          <div style={{ padding: '16px 20px', borderRadius: '12px', background: 'var(--bg-card)', border: '2.5px solid var(--border)', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', flex: '1 1 auto', minWidth: '180px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '6px', background: '#38bdf8' }}></div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', paddingLeft: '8px' }}>Monthly SIP Book</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--text-main)', marginTop: '4px', paddingLeft: '8px' }}>₹{formatINR(sips.filter(s => s.status === 'Active').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}</div>
           </div>
-          <div style={{ padding: '12px 20px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.05)', borderLeft: '4px solid #6366f1', flex: '1 1 auto', minWidth: '160px' }}>
-            <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL SIP AUM</div>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', marginTop: '4px' }}>₹{formatINR(sips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}</div>
+          
+          <div style={{ padding: '16px 20px', borderRadius: '12px', background: 'var(--bg-card)', border: '2.5px solid var(--border)', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', flex: '1 1 auto', minWidth: '180px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '6px', background: '#6366f1' }}></div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', paddingLeft: '8px' }}>Total SIP AUM</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--text-main)', marginTop: '4px', paddingLeft: '8px' }}>₹{formatINR(sips.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0))}</div>
           </div>
         </div>
       </div>
       
-      <div className="card" style={{ marginBottom: '32px', borderTop: `4px solid ${isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8'}` }}>
+      {/* ADD/EDIT SIP FORM CARD */}
+      <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)', marginBottom: '40px', position: 'relative' }}>
+        
+        {/* State Indicator */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}></div>
+
         <form onSubmit={handleSubmit}>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
               <div><label style={labelStyle}>SID</label><input style={inputStyle} value={formData.sip_id} readOnly /></div>
@@ -146,68 +157,81 @@ const Sips = () => {
               <div><label style={labelStyle}>Platform</label><select style={inputStyle} value={formData.platform} disabled={isViewing} onChange={e=>setFormData({...formData, platform:e.target.value})}><option>NSE</option><option>BSE</option></select></div>
               <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '60px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
            </div>
-           <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-             <button type="submit" disabled={isSaving} style={{padding:'12px 40px', background: isEditing ? '#f59e0b' : isViewing ? '#64748b' : '#38bdf8', color:'#fff', border:'none', borderRadius:'8px', fontWeight:'bold', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.4)'}}>
-                {isSaving ? (isEditing ? "Updating..." : "Syncing SIP...") : (isEditing ? "Update" : isViewing ? "Close View" : "Add SIP")}
+           
+           <div style={{ marginTop: '30px', display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+             <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? 'var(--text-muted)' : '#38bdf8', color: 'white', border: '2.5px solid #000', borderRadius: '10px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900', letterSpacing: '0.5px'}}>
+                {isSaving ? (isEditing ? "UPDATING..." : "SYNCING SIP...") : (isEditing ? "UPDATE SIP" : isViewing ? "CLOSE VIEW" : "ADD SIP")}
              </button>
-             {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{padding:'12px 24px', background:'transparent', color:'var(--text-main)', border:'1px solid var(--border)', borderRadius:'8px', fontWeight: 'bold'}}>Cancel</button>}
+             {(isEditing || isViewing) && <button type="button" onClick={() => { setIsEditing(false); setIsViewing(false); setFormData(initialState); setClientName(''); fetchInitialData(); }} style={{padding: '12px 24px', borderRadius: '10px', border: '2.5px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: '900', letterSpacing: '0.5px'}}>CANCEL</button>}
            </div>
         </form>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ position: 'relative', maxWidth: '350px', width: '100%' }}>
-          <input type="text" placeholder="Search SIP mandates..." style={{ ...inputStyle, paddingLeft: '40px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+      {/* SEARCH BAR & BULK DELETE */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+        <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
+          <input 
+            type="text" 
+            placeholder="Search SIP mandates..." 
+            style={{ ...inputStyle, paddingLeft: '52px' }} 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
+          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px', pointerEvents: 'none' }}>🔍</span>
         </div>
         {selectedIds.length > 0 && (
-          <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+          <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: '2.5px solid #000', padding: '12px 24px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>
             Delete Selected ({selectedIds.length})
           </button>
         )}
       </div>
 
-      <div className="card" style={{ padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+      {/* SIP TRACKER TABLE */}
+      <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', overflow: 'hidden', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
-              <tr style={{background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid var(--border)'}}>
-                  <th style={{padding:'16px', textAlign:'left'}}><input type="checkbox" checked={selectedIds.length === filteredSips.length && filteredSips.length > 0} onChange={toggleAll} /></th>
-                  <th style={{padding:'16px', textAlign:'left', color: 'var(--text-muted)', fontWeight: '700'}}>SID</th>
-                  <th style={{padding:'16px', textAlign:'left', color: 'var(--text-muted)', fontWeight: '700'}}>CLIENT</th>
-                  <th style={{padding:'16px', textAlign:'left', color: 'var(--text-muted)', fontWeight: '700'}}>SCHEME</th>
-                  <th style={{padding:'16px', textAlign:'center', color: 'var(--text-muted)', fontWeight: '700'}}>STATUS</th>
-                  <th style={{padding:'16px', textAlign:'right', color: 'var(--text-muted)', fontWeight: '700'}}>AMOUNT</th>
-                  <th style={{padding:'16px', textAlign:'center', color: 'var(--text-muted)', fontWeight: '700'}}>ACTION</th>
+              <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
+                  <th style={{ padding: '16px', width: '40px' }}><input type="checkbox" checked={selectedIds.length === filteredSips.length && filteredSips.length > 0} onChange={toggleAll} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></th>
+                  <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>SID</th>
+                  <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>Client name</th>
+                  <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>Scheme</th>
+                  <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '900' }}>Status</th>
+                  <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '900' }}>Amount</th>
+                  <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '900' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredSips.map(s => (
-                <tr key={s.id} style={{borderBottom:'1px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(56, 189, 248, 0.04)' : 'transparent', transition: 'background 0.2s'}}>
-                  <td style={{ padding: '12px' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} /></td>
-                  <td style={{ padding: '12px', color: '#38bdf8', fontWeight: 'bold' }}>{s.sip_id}</td>
-                  <td style={{ padding: '12px', color: 'var(--text-main)', fontWeight: '600' }}>{s.client_code} - {s.client_name}</td>
-                  <td style={{ padding: '12px', color: 'var(--text-main)' }}>
-                    <div style={{fontWeight:'bold'}}>{s.scheme_name}</div>
-                    <div style={{fontSize:'10px', color:'var(--text-muted)', marginTop: '2px'}}>{s.platform} • {s.frequency}</div>
+                <tr key={s.id} style={{ borderBottom: '2px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(56, 189, 248, 0.05)' : 'transparent', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></td>
+                  <td style={{ padding: '16px', color: '#38bdf8', fontWeight: '900' }}>{s.sip_id}</td>
+                  <td style={{ padding: '16px', color: 'var(--text-main)', fontWeight: '800' }}>{s.client_code} - {s.client_name}</td>
+                  <td style={{ padding: '16px', color: 'var(--text-main)' }}>
+                    <div style={{fontWeight: '800'}}>{s.scheme_name}</div>
+                    <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: '700'}}>{s.platform} • {s.frequency}</div>
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <td style={{ padding: '16px', textAlign: 'center' }}>
                     <span style={{ 
-                      padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px',
+                      padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px',
                       background: s.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                      color: s.status === 'Active' ? '#10b981' : '#ef4444' 
+                      color: s.status === 'Active' ? '#10b981' : '#ef4444',
+                      border: s.status === 'Active' ? '1.5px solid rgba(16, 185, 129, 0.3)' : '1.5px solid rgba(239, 68, 68, 0.3)'
                     }}>{s.status}</span>
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: '700', color: 'var(--text-main)' }}>₹{formatINR(s.amount)}</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'var(--text-muted)', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>VIEW</button>
-                          <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{color:'#38bdf8', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>EDIT</button>
-                          <button onClick={() => handleDelete(s.id)} style={{color:'#ef4444', border:'none', background:'none', cursor:'pointer', fontWeight:'bold', fontSize: '11px'}}>DELETE</button>
-                      </div>
+                  <td style={{ padding: '16px', textAlign: 'right', fontWeight: '900', color: 'var(--text-main)' }}>₹{formatINR(s.amount)}</td>
+                  <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: 'var(--text-main)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>VIEW</button>
+                      <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: '#38bdf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>EDIT</button>
+                      <button onClick={() => handleDelete(s.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>DELETE</button>
                   </td>
                 </tr>
               ))}
+              {filteredSips.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="7" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '800' }}>No SIP records found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
