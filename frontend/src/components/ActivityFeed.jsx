@@ -170,17 +170,7 @@ const ActivityFeed = () => {
             font-size: 14px;
             font-weight: 600;
             outline: none;
-        }
-        
-        .date-input-placeholder {
-            position: relative;
-        }
-        .date-input-placeholder input[type="date"]:invalid::before {
-            content: 'Filter by Date';
-            color: var(--text-muted);
-            position: absolute;
-            left: 15px;
-            pointer-events: none;
+            height: 48px;
         }
 
         @media (max-width: 600px) {
@@ -191,7 +181,7 @@ const ActivityFeed = () => {
       `}</style>
 
       {/* HEADER ROW */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', padding: '0 5px', flexWrap: 'wrap', gap: '15px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '25px', padding: '0 5px', flexWrap: 'wrap', gap: '15px' }}>
         <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '24px', fontWeight: '900' }}>
           Recent Activity Feed
         </h3>
@@ -238,13 +228,13 @@ const ActivityFeed = () => {
             />
         </div>
 
-        <div className="filter-input-wrapper date-input-placeholder">
+        <div className="filter-input-wrapper">
             <input 
               type="date" 
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              required 
               className="filter-input"
+              style={{ minWidth: '160px' }}
             />
         </div>
 
