@@ -130,14 +130,18 @@ const MFSchemes = () => {
     s.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const labelStyle = { display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
-  const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)' };
+  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '800', fontSize: '13px', color: 'var(--text-main)', letterSpacing: '0.5px' };
+  const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', transition: 'all 0.2s ease', border: '2.5px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: '600' };
 
   return (
-    <div className="container fade-in">
-      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '800' }}>Mutual Fund Master</h1>
+    <div className="container fade-in" style={{ paddingBottom: '50px' }}>
+      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '32px', marginBottom: '30px' }}>Mutual Fund Master</h1>
 
-      <div className="card" style={{ borderTop: `4px solid ${isEditing ? '#f59e0b' : '#38bdf8'}`, marginBottom: '32px' }}>
+      <div className="card" style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)', marginBottom: '40px', position: 'relative' }}>
+        
+        {/* State Indicator */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : '#38bdf8', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}></div>
+
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '24px' }}>
             <div><label style={labelStyle}>AMC Name *</label><input style={inputStyle} value={formData.amc_name} onChange={e => setFormData({...formData, amc_name: e.target.value})} required /></div>
@@ -161,15 +165,15 @@ const MFSchemes = () => {
 
             <div>
                 <label style={{...labelStyle, color: '#38bdf8'}}>Commission Rate (%)</label>
-                <input style={{...inputStyle, border: '1px solid rgba(56, 189, 248, 0.4)'}} type="number" step="any" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
+                <input style={{...inputStyle, border: '2.5px solid rgba(56, 189, 248, 0.4)'}} type="number" step="any" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-              <div style={{ padding: '20px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
+              <div style={{ padding: '20px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '12px', border: '2.5px solid rgba(56, 189, 248, 0.3)' }}>
                 <label style={{...labelStyle, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1px'}}>Total Market Value (₹)</label>
                 <input 
-                    style={{...inputStyle, fontSize: '22px', fontWeight: '900', background: 'transparent', border: 'none', padding: '0', marginTop: '8px'}} 
+                    style={{...inputStyle, fontSize: '24px', fontWeight: '900', background: 'transparent', border: 'none', padding: '0', marginTop: '8px'}} 
                     type="number" 
                     step="any"
                     value={formData.total_current_value} 
@@ -177,25 +181,25 @@ const MFSchemes = () => {
                     placeholder="0.00"
                 />
                 <div style={{marginTop: '12px', padding: '8px 12px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', display: 'inline-block'}}>
-                  <span style={{color: '#38bdf8', fontSize: '10px', fontWeight: '800'}}>AGGREGATE PORTFOLIO VALUE</span>
+                  <span style={{color: '#38bdf8', fontSize: '11px', fontWeight: '900', letterSpacing: '0.5px'}}>AGGREGATE PORTFOLIO VALUE</span>
                 </div>
               </div>
 
-              <div style={{ padding: '20px', background: 'var(--bg-main)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ padding: '20px', background: 'var(--bg-main)', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '12px' }}>
-                    <div><label style={labelStyle}>Large %</label><input style={{...inputStyle, padding: '8px'}} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
-                    <div><label style={labelStyle}>Mid %</label><input style={{...inputStyle, padding: '8px'}} type="number" step="any" value={formData.mid_cap} onChange={e => setFormData({...formData, mid_cap: e.target.value})} /></div>
-                    <div><label style={labelStyle}>Small %</label><input style={{...inputStyle, padding: '8px'}} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
-                    <div><label style={labelStyle}>Debt %</label><input style={{...inputStyle, padding: '8px'}} type="number" step="any" value={formData.debt_allocation} onChange={e => setFormData({...formData, debt_allocation: e.target.value})} /></div>
-                    <div><label style={labelStyle}>Gold %</label><input style={{...inputStyle, padding: '8px'}} type="number" step="any" value={formData.gold_allocation} onChange={e => setFormData({...formData, gold_allocation: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Large %</label><input style={{...inputStyle, padding: '10px'}} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Mid %</label><input style={{...inputStyle, padding: '10px'}} type="number" step="any" value={formData.mid_cap} onChange={e => setFormData({...formData, mid_cap: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Small %</label><input style={{...inputStyle, padding: '10px'}} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Debt %</label><input style={{...inputStyle, padding: '10px'}} type="number" step="any" value={formData.debt_allocation} onChange={e => setFormData({...formData, debt_allocation: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Gold %</label><input style={{...inputStyle, padding: '10px'}} type="number" step="any" value={formData.gold_allocation} onChange={e => setFormData({...formData, gold_allocation: e.target.value})} /></div>
                 </div>
-                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUITY CONCENTRATION: <strong style={{color: 'var(--text-main)'}}>{totalEquity}%</strong></span>
+                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '800' }}>EQUITY CONCENTRATION: <strong style={{color: 'var(--text-main)'}}>{totalEquity}%</strong></span>
                     <div style={{ 
-                      padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '900', 
+                      padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '900', 
                       background: grandTotal === 100 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
                       color: grandTotal === 100 ? '#10b981' : '#ef4444',
-                      border: `1px solid ${grandTotal === 100 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                      border: `1.5px solid ${grandTotal === 100 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
                     }}>
                       TOTAL: {grandTotal}%
                     </div>
@@ -203,45 +207,64 @@ const MFSchemes = () => {
               </div>
           </div>
 
-          <div style={{ marginTop: '32px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-            <button type="submit" disabled={isSaving} style={{ padding: '12px 48px', background: isEditing ? '#f59e0b' : '#38bdf8', color: 'white', border: 'none', borderRadius: '8px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)' }}>
-              {isSaving ? (isEditing ? "Updating..." : "Adding Scheme...") : (isEditing ? "Update Master Scheme" : "Register New Scheme")}
+          <div style={{ marginTop: '32px', display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+            <button type="submit" disabled={isSaving} style={{ padding: '12px 32px', background: isEditing ? '#f59e0b' : '#38bdf8', color: 'white', border: '2.5px solid #000', borderRadius: '10px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900', letterSpacing: '0.5px' }}>
+              {isSaving ? (isEditing ? "UPDATING..." : "ADDING SCHEME...") : (isEditing ? "UPDATE MASTER SCHEME" : "REGISTER NEW SCHEME")}
             </button>
-            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ padding: '12px 24px', color: 'var(--text-muted)', cursor:'pointer', border:'1px solid var(--border)', background:'transparent', borderRadius: '8px', fontWeight: '800' }}>Cancel</button>}
+            {isEditing && <button type="button" onClick={() => { setIsEditing(false); setFormData(initialState); }} style={{ padding: '12px 24px', borderRadius: '10px', border: '2.5px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: '900', letterSpacing: '0.5px' }}>CANCEL</button>}
           </div>
         </form>
       </div>
 
-      <div style={{ marginBottom: '20px', position: 'relative', maxWidth: '500px', width: '100%' }}>
-        <input type="text" placeholder="Search mutual fund master..." style={{ ...inputStyle, paddingLeft: '40px', borderRadius: '12px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+      {/* 🔍 SEARCH BAR */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+        <div style={{ position: 'relative', maxWidth: '500px', width: '100%' }}>
+          <input 
+            type="text" 
+            placeholder="Search mutual fund master..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            style={{ 
+                ...inputStyle, 
+                paddingLeft: '55px', 
+                textIndent: '10px' 
+            }} 
+          />
+          <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '20px', pointerEvents: 'none' }}>🔍</span>
+        </div>
       </div>
 
-      <div className="card" style={{ padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+      {/* SCHEMES TABLE */}
+      <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', overflow: 'hidden', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
-              <tr style={{ background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: '700' }}>AMC / SCHEME</th>
-                <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: '700' }}>CATEGORY</th>
-                <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '700' }}>COMM %</th>
-                <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '700' }}>TOTAL MARKET VALUE</th>
-                <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '700' }}>ACTION</th>
+              <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
+                <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>AMC / Scheme</th>
+                <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>Category</th>
+                <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '900' }}>Comm %</th>
+                <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '900' }}>Total Market Value</th>
+                <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '900' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredSchemes.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '14px 16px' }}><strong style={{color: 'var(--text-main)', fontSize: '14px'}}>{s.amc_name}</strong><br/><span style={{color: 'var(--text-muted)', fontSize: '11px'}}>{s.scheme_name}</span></td>
-                  <td style={{ padding: '14px 16px', color: 'var(--text-main)' }}>{s.category}<br/><small style={{color: 'var(--text-muted)', fontWeight: '600'}}>{s.sub_category}</small></td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight:'800', color: '#38bdf8' }}>{s.commission_rate || '0.8'}%</td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#38bdf8', background: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px', marginRight: '12px' }}>EDIT</button>
-                    <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px' }}>DELETE</button>
+                <tr key={s.id} style={{ borderBottom: '2px solid var(--border)', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '16px' }}><strong style={{color: 'var(--text-main)', fontSize: '15px', fontWeight: '900'}}>{s.amc_name}</strong><br/><span style={{color: 'var(--text-muted)', fontSize: '12px', fontWeight: '700'}}>{s.scheme_name}</span></td>
+                  <td style={{ padding: '16px', color: 'var(--text-main)' }}><span style={{fontWeight: '800'}}>{s.category}</span><br/><span style={{color: 'var(--text-muted)', fontSize: '12px', fontWeight: '700'}}>{s.sub_category}</span></td>
+                  <td style={{ padding: '16px', textAlign: 'right', fontWeight:'900', color: '#38bdf8' }}>{s.commission_rate || '0.8'}%</td>
+                  <td style={{ padding: '16px', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>₹{formatINR(s.total_current_value)}</td>
+                  <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <button onClick={() => handleEdit(s)} style={{ border: 'none', color: '#38bdf8', background: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px', textTransform: 'uppercase' }}>EDIT</button>
+                    <button onClick={() => handleDelete(s.id)} style={{ border: 'none', color: '#ef4444', background: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>DELETE</button>
                   </td>
                 </tr>
               ))}
+              {filteredSchemes.length === 0 && (
+                <tr>
+                  <td colSpan="5" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '800' }}>No schemes found in master database.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
