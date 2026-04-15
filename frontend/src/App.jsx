@@ -91,20 +91,21 @@ function App() {
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease', overflowX: 'hidden' }}>
       
-      {/* 🚀 EXECUTIVE TOAST CONTAINER */}
+      {/* 🚀 EXECUTIVE TOAST CONTAINER - Moved to Bottom on Mobile to prevent Overlap */}
       <ToastContainer 
-        position="top-right" 
+        position={window.innerWidth < 768 ? "bottom-center" : "top-right"}
         autoClose={3000} 
         theme="colored" 
         pauseOnHover={false}
         toastStyle={{ 
-          borderRadius: '12px', 
-          border: '2px solid rgba(255,255,255,0.2)',
-          fontWeight: '800',
+          borderRadius: '16px', 
+          border: '2px solid rgba(255,255,255,0.3)',
+          fontWeight: '900',
           fontSize: '14px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+          margin: '10px'
         }}
-        style={{ zIndex: 9999999, top: '10px' }} 
+        style={{ zIndex: 10000001 }} 
       />
 
       <Routes>
