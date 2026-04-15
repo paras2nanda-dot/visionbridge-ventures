@@ -89,9 +89,24 @@ function App() {
   }, [location.pathname]);
 
   return (
-    /* 📱 MOBILE FIX: Added overflow-x: hidden to prevent sideways wobble on phones */
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease', overflowX: 'hidden' }}>
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" style={{ zIndex: 99999 }} />
+      
+      {/* 🚀 EXECUTIVE TOAST CONTAINER */}
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000} 
+        theme="colored" 
+        pauseOnHover={false}
+        toastStyle={{ 
+          borderRadius: '12px', 
+          border: '2px solid rgba(255,255,255,0.2)',
+          fontWeight: '800',
+          fontSize: '14px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+        }}
+        style={{ zIndex: 9999999, top: '10px' }} 
+      />
+
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

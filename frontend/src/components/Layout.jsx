@@ -20,12 +20,12 @@ const Layout = () => {
       <AutoLogout timeoutMinutes={15} />
       <CommandPalette />
 
-      {/* 📱 Premium Mobile Hamburger Menu */}
+      {/* 📱 Premium Mobile Hamburger Menu - Forced to the Very Top Layer */}
       {!isSidebarOpen && (
         <button 
           onClick={toggleSidebar} 
           style={{ 
-            position: 'fixed', top: '20px', left: '20px', zIndex: 999996, 
+            position: 'fixed', top: '15px', left: '15px', zIndex: 10000000, 
             width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'var(--bg-card)', color: 'var(--text-main)', 
             border: '2.5px solid var(--border)', borderRadius: '12px', 
@@ -112,7 +112,7 @@ const Layout = () => {
         
         /* Mobile Layout Optimizations */
         @media (max-width: 1023px) { 
-          .main-content-layout { padding: 90px 16px 40px 16px !important; margin-left: 0 !important; width: 100% !important; } 
+          .main-content-layout { padding: 80px 16px 40px 16px !important; margin-left: 0 !important; width: 100% !important; } 
           .top-header-bar { flex-direction: column; align-items: flex-start !important; gap: 16px !important; margin-bottom: 24px !important; }
           .search-cmd-btn { width: 100% !important; padding: 14px 20px !important; }
         }
