@@ -19,8 +19,8 @@ const BusinessDashboard = () => {
       });
   }, []);
 
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center', color: 'var(--text-main)', fontSize: '18px', fontWeight: '800' }}>Polishing Analytics...</div>;
-  if (!data) return <div style={{ padding: '100px', textAlign: 'center', color: '#ef4444' }}>❌ Connection Error.</div>;
+  if (loading) return <div style={{ padding: '100px', textAlign: 'center', color: 'var(--text-main)', fontSize: '15px', fontWeight: '800', letterSpacing: '0.5px' }}>SYNCING METRICS...</div>;
+  if (!data) return <div style={{ padding: '100px', textAlign: 'center', color: '#ef4444', fontWeight: '800' }}>❌ Connection Error.</div>;
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(Number(val) || 0));
 
@@ -40,34 +40,36 @@ const BusinessDashboard = () => {
       borderRadius: '12px', 
       position: 'relative', 
       border: '2.5px solid var(--border)',
-      boxShadow: '6px 6px 0px rgba(0,0,0,0.1)',
-      transition: 'transform 0.2s ease'
+      boxShadow: '4px 4px 0px rgba(0,0,0,0.05)',
+      transition: 'transform 0.2s ease',
+      overflow: 'hidden'
     }}>
       <div style={{ 
         position: 'absolute', top: '20px', right: '20px', 
-        color: '#38bdf8',
-        background: 'rgba(56, 189, 248, 0.1)',
+        color: '#0284c7', // Updated to new primary blue
+        background: 'rgba(2, 132, 199, 0.1)',
         width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px',
-        border: '1.5px solid #38bdf8'
+        border: '1.5px solid rgba(2, 132, 199, 0.3)'
       }}>
         {icon}
       </div>
 
-      <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', alignItems: 'center', letterSpacing: '0.02em' }}>
+      <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', alignItems: 'center', letterSpacing: '0.3px' }}>
         {pulse && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', marginRight: '8px', boxShadow: '0 0 8px #10b981' }}></span>}
         {label}
       </div>
       
-      <h2 style={{ fontSize: '28px', fontWeight: '900', color: figureColor || 'var(--text-main)', margin: '0', letterSpacing: '-0.02em' }}>
+      <h2 style={{ fontSize: '28px', fontWeight: '900', color: figureColor || 'var(--text-main)', margin: '0', letterSpacing: '-0.5px' }}>
         {value}
       </h2>
       
-      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sub}</div>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '14px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{sub}</div>
     </div>
   );
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
+      
       {/* Upper Grid: 5 Boxes */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '20px' }}>
         <MetricCard label="Total Clients" value={data.total_clients} sub="Master Database" icon={Icons.Users} />
@@ -81,26 +83,27 @@ const BusinessDashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '40px' }}>
         <MetricCard label="Expected AUM (12M)" value={`₹${formatINR(data.expected_aum_12m)}`} sub="Projected Growth" icon={Icons.Growth} figureColor="#f59e0b" />
         <MetricCard label="Avg. Assets / Client" value={`₹${formatINR(data.avg_assets_per_client)}`} sub="Portfolio Quality" icon={Icons.Users} />
-        <MetricCard label="Comm. (Invested)" value={`₹${formatINR(data.comm_inv_monthly)}/mo`} sub={`Annual: ₹${formatINR(data.comm_inv_annual)}`} icon={Icons.Revenue} figureColor="#38bdf8" />
-        <MetricCard label="Comm. (Market)" value={`₹${formatINR(data.comm_mkt_monthly)}/mo`} sub={`Annual: ₹${formatINR(data.comm_mkt_annual)}`} icon={Icons.Revenue} figureColor="#38bdf8" pulse />
+        <MetricCard label="Comm. (Invested)" value={`₹${formatINR(data.comm_inv_monthly)}/mo`} sub={`Annual: ₹${formatINR(data.comm_inv_annual)}`} icon={Icons.Revenue} figureColor="#0284c7" />
+        <MetricCard label="Comm. (Market)" value={`₹${formatINR(data.comm_mkt_monthly)}/mo`} sub={`Annual: ₹${formatINR(data.comm_mkt_annual)}`} icon={Icons.Revenue} figureColor="#0284c7" pulse />
         <MetricCard label="Clients Onboarded" value={data.new_clients_30d} sub="Last 30 Days" icon={Icons.Users} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
+        
         {/* Top Funds Section */}
-        <div style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginBottom: '25px', fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ marginBottom: '25px', fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.5px' }}>
             🏆 Top Funds by Exposure
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {data.topFunds?.map((fund, idx) => {
               const percentage = data.total_invested_aum > 0 ? ((Number(fund.invested_value) / Number(data.total_invested_aum)) * 100).toFixed(1) : 0;
               return (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--bg-main)', border: '2px solid var(--border)', borderRadius: '8px' }}>
-                  <span style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '14px' }}>{fund.scheme_name}</span>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '900', color: '#10b981', fontSize: '16px' }}>₹{formatINR(fund.invested_value)}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', marginTop: '2px' }}>{percentage}% OF TOTAL</div>
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: 'var(--bg-main)', border: '2.5px solid var(--border)', borderRadius: '10px' }}>
+                  <span style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '14px', maxWidth: '60%', lineHeight: '1.4' }}>{fund.scheme_name}</span>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontWeight: '900', color: '#10b981', fontSize: '18px' }}>₹{formatINR(fund.invested_value)}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{percentage}% of Total</div>
                   </div>
                 </div>
               );
@@ -109,27 +112,36 @@ const BusinessDashboard = () => {
         </div>
 
         {/* Birthdays Section */}
-        <div style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginBottom: '25px', fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ marginBottom: '25px', fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.5px' }}>
             🎂 Upcoming Birthdays
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {data.upcomingBirthdays?.map((client, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '2px solid var(--border)' }}>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '2.5px solid var(--border)' }}>
                 <div>
-                  <div style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '15px' }}>{client.full_name}</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>{new Date(client.dob).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</div>
+                  <div style={{ fontWeight: '900', color: 'var(--text-main)', fontSize: '16px' }}>{client.full_name}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '4px' }}>{new Date(client.dob).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</div>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: '900', background: client.days_left === 0 ? '#ef4444' : 'var(--bg-main)', border: '1.5px solid var(--border)', color: client.days_left === 0 ? '#fff' : 'var(--text-main)', padding: '6px 14px', borderRadius: '20px' }}>
-                  {client.days_left === 0 ? 'TODAY' : `${client.days_left}D LEFT`}
+                <span style={{ 
+                    fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px',
+                    background: client.days_left === 0 ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-main)', 
+                    border: `1.5px solid ${client.days_left === 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border)'}`, 
+                    color: client.days_left === 0 ? '#ef4444' : 'var(--text-main)', 
+                    padding: '8px 14px', borderRadius: '8px' 
+                }}>
+                  {client.days_left === 0 ? 'Today' : `${client.days_left} Days Left`}
                 </span>
               </div>
             ))}
             {(!data.upcomingBirthdays || data.upcomingBirthdays.length === 0) && (
-              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px', fontStyle: 'italic' }}>No birthdays in the next 7 days.</p>
+              <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '30px', background: 'var(--bg-main)', borderRadius: '10px', border: '2.5px solid var(--border)', fontWeight: '800' }}>
+                No birthdays in the next 7 days.
+              </div>
             )}
           </div>
         </div>
+        
       </div>
     </div>
   );
