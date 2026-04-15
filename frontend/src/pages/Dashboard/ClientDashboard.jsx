@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-// --- Premium Donut Chart with Dynamic Scaling ---
+// --- Premium Donut Chart with Dynamic Legends ---
 const AssetDonut = ({ data }) => {
   if (!data || data.length === 0) return (
-    <div style={{ padding: '30px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1.5px dashed var(--border)', textAlign: 'center' }}>
-        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '13px' }}>
-            No allocation data found. <br/> 
-            <span style={{ fontSize: '11px', fontWeight: '500' }}>Ensure scheme names in Master and Portfolio match exactly.</span>
-        </div>
+    <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '2.5px dashed var(--border)', textAlign: 'center', width: '100%' }}>
+        <div style={{ fontSize: '28px', marginBottom: '10px' }}>📊</div>
+        <div style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '14px' }}>Allocation Data Unavailable</div>
+        <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '12px', marginTop: '4px' }}>Ensure scheme names in Master and Portfolio match exactly.</div>
     </div>
   );
   
@@ -66,12 +64,12 @@ const ClientDashboard = () => {
     fetch('https://visionbridge-backend.onrender.com/api/clients', { headers })
       .then(res => res.json())
       .then(data => setClients(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error fetching clients:", err));
+      .catch(err => console.error("Error:", err));
 
     fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers })
       .then(res => res.json())
       .then(data => setSchemes(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error fetching master schemes:", err));
+      .catch(err => console.error("Error:", err));
   }, []);
 
   const handleSelectClient = (client) => {
@@ -90,7 +88,7 @@ const ClientDashboard = () => {
         setIsLoading(false);
       })
       .catch(err => {
-        console.error("Error fetching dashboard data:", err);
+        console.error("Error:", err);
         setIsLoading(false);
       });
   };
@@ -98,24 +96,25 @@ const ClientDashboard = () => {
   const safeNum = (val) => parseFloat(val) || 0;
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
-  // 🧪 ROBUST LOOKUP: Matches Portfolio Schemes to Master Scheme Percentages
+  // 🧪 FUZZY SYNC LOGIC: Matches Portfolio to Master Weights
   const getAssetAllocation = () => {
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
-      const invested = safeNum(item.invested_amount);
+      // Use Invested AUM if available, otherwise fallback to SIP amount for projected allocation
+      const value = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
       
-      // Find master scheme (Case-insensitive & trimmed)
       const master = schemes.find(s => 
         s.scheme_name.trim().toLowerCase() === item.scheme_name.trim().toLowerCase()
       );
       
-      if (master) {
-          totals.large += invested * (safeNum(master.large_percent) / 100);
-          totals.mid += invested * (safeNum(master.mid_percent) / 100);
-          totals.small += invested * (safeNum(master.small_percent) / 100);
-          totals.debt += invested * (safeNum(master.debt_percent) / 100);
-          totals.gold += invested * (safeNum(master.gold_percent) / 100);
+      if (master && value > 0) {
+          // Check for multiple possible database key names (large vs large_percent vs large_cap)
+          totals.large += value * (safeNum(master.large_percent || master.large_cap || master.large) / 100);
+          totals.mid += value * (safeNum(master.mid_percent || master.mid_cap || master.mid) / 100);
+          totals.small += value * (safeNum(master.small_percent || master.small_cap || master.small) / 100);
+          totals.debt += value * (safeNum(master.debt_percent || master.debt || master.debt_cap) / 100);
+          totals.gold += value * (safeNum(master.gold_percent || master.gold || master.gold_cap) / 100);
       }
     });
 
@@ -149,7 +148,7 @@ const ClientDashboard = () => {
         
         {searchTerm && !selectedClient?.full_name && (
           <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '2.5px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-            {clients.filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
+            {clients.filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.client_code || '').toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
                 <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '2px solid var(--border)', color: 'var(--text-main)', fontWeight: '700' }}>
                   <span style={{ color: '#0284c7', marginRight: '12px', fontWeight: '900' }}>{c.client_code}</span> {c.full_name}
                 </div>
@@ -162,7 +161,7 @@ const ClientDashboard = () => {
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-main)', fontWeight: '900', fontSize: '15px' }}>SYNCING CLIENT PROFILE...</div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          {/* Executive Header */}
+          {/* Header Card */}
           <div style={cardStyle}>
               <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '900', letterSpacing: '-0.5px' }}>
                 {selectedClient.full_name} 
@@ -176,14 +175,14 @@ const ClientDashboard = () => {
           </div>
 
           {/* Metrics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '25px' }}>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Monthly SIP</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIP Amount</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIPs</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{summary.sipCount}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Relationship Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
           </div>
 
-          {/* 📂 FULL PORTFOLIO TABLE (Includes % and TOTAL) */}
+          {/* 📂 FULL PORTFOLIO TABLE (Restored TOTAL & %) */}
           <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '30px' }}>
              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead style={{ background: 'rgba(0,0,0,0.02)' }}>
@@ -230,7 +229,7 @@ const ClientDashboard = () => {
                 ) : (
                     <div style={{ padding: '12px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px' }}>
                         <div style={{ color: '#f59e0b', fontWeight: '900', fontSize: '18px', marginBottom: '6px' }}>⚠️ Nominee Not Registered</div>
-                        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', lineHeight: 1.4 }}>Ensure regulatory compliance by updating nominee details for this client profile.</div>
+                        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', lineHeight: 1.4 }}>Update nominee details in the Clients Database to ensure regulatory compliance.</div>
                     </div>
                 )}
             </div>
