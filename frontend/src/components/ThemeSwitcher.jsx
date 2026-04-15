@@ -57,40 +57,46 @@ const ThemeSwitcher = () => {
 
   }, [theme]);
 
+  const themeOptions = [
+    { id: 'light', icon: '☀️', label: 'Light' },
+    { id: 'slate', icon: '🌙', label: 'Slate' },
+    { id: 'midnight', icon: '🌌', label: 'Obsidian' },
+    { id: 'forest', icon: '🌲', label: 'Forest' }
+  ];
+
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <select
-        value={theme}
-        onChange={(e) => setTheme(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '10px 12px',
-          borderRadius: '8px',
-          background: 'var(--bg-card)',
-          color: 'var(--text-main)',
-          border: '2px solid var(--border)', // Thicker border for dropdown
-          cursor: 'pointer',
-          fontWeight: '700',
-          fontSize: '12px',
-          outline: 'none',
-          appearance: 'none',
-          transition: 'all 0.2s'
-        }}
-      >
-        <option value="light">☀️ Light</option>
-        <option value="slate">🌙 Slate</option>
-        <option value="midnight">🌌 Obsidian</option>
-        <option value="forest">🌲 Forest</option>
-      </select>
-      <div style={{ 
-        position: 'absolute', 
-        right: '12px', 
-        top: '50%', 
-        transform: 'translateY(-50%)', 
-        pointerEvents: 'none', 
-        fontSize: '10px', 
-        color: 'var(--text-muted)' 
-      }}>▼</div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
+      {themeOptions.map((opt) => {
+        const isActive = theme === opt.id;
+        return (
+          <button
+            key={opt.id}
+            onClick={() => setTheme(opt.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '12px 8px',
+              background: isActive ? 'rgba(2, 132, 199, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+              color: isActive ? '#38bdf8' : '#94a3b8',
+              border: `2px solid ${isActive ? '#0284c7' : 'rgba(255, 255, 255, 0.05)'}`,
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontWeight: isActive ? '900' : '700',
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              transition: 'all 0.2s ease',
+              boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
+              outline: 'none'
+            }}
+            title={`Switch to ${opt.label} theme`}
+          >
+            <span style={{ fontSize: '14px' }}>{opt.icon}</span> {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 };
