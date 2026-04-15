@@ -111,7 +111,7 @@ const Clients = () => {
   };
 
   const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  const toggleAll = () => setSelectedIds(selectedIds.length === filteredClients.length ? [] : filteredClients.map(c => c.id));
+  const toggleAll = () => setSelectedIds(selectedIds.length === filteredClients.length && filteredClients.length > 0 ? [] : filteredClients.map(c => c.id));
 
   const handleBulkDelete = async () => {
     if (window.confirm(`Permanently delete ${selectedIds.length} selected clients?`)) {
@@ -138,6 +138,17 @@ const Clients = () => {
 
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '800', fontSize: '13px', color: 'var(--text-main)', letterSpacing: '0.5px' };
   const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '2.5px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: '600' };
+  
+  // 🏛️ RECTIFIED TABLE HEADER STYLE
+  const thStyle = { 
+    color: 'var(--text-main)', 
+    textAlign: 'left', 
+    padding: '16px', 
+    fontWeight: '900', 
+    fontSize: '13px', 
+    letterSpacing: '0.2px'
+    // Uppercase removed as per your request
+  };
 
   return (
     <div className="container fade-in" style={{ paddingBottom: '50px' }}>
@@ -210,7 +221,7 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* 🔍 SEARCH BAR - Overlap fix applied here */}
+      {/* 🔍 SEARCH BAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
           <input 
@@ -220,7 +231,7 @@ const Clients = () => {
             onChange={(e) => setSearchTerm(e.target.value)} 
             style={{ 
                 ...inputStyle, 
-                paddingLeft: '52px' // Absolute space for the icon
+                paddingLeft: '52px' 
             }} 
           />
           <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px', pointerEvents: 'none' }}>🔍</span>
@@ -235,12 +246,12 @@ const Clients = () => {
             <thead>
               <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
                 <th style={{ padding: '16px', width: '40px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>ID</th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Client name</th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Mobile</th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Onboarded on</th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'left', padding: '16px', fontWeight: '900' }}>Added by</th>
-                <th style={{ color: 'var(--text-main)', textAlign: 'center', padding: '16px', fontWeight: '900' }}>Action</th>
+                <th style={thStyle}>ID</th>
+                <th style={thStyle}>Client Name</th>
+                <th style={thStyle}>Mobile</th>
+                <th style={thStyle}>Onboarded On</th>
+                <th style={thStyle}>Added By</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>{filteredClients.map(c => (
