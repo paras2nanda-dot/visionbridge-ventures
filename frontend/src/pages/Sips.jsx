@@ -14,7 +14,7 @@ const Sips = () => {
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false); 
   const [selectedIds, setSelectedIds] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ FIX: Added missing loading state
+  const [loading, setLoading] = useState(true); 
 
   const initialState = {
     sip_id: '', client_code_input: '', client_id: '', scheme_id: '', amount: '',
@@ -29,7 +29,7 @@ const Sips = () => {
   useEffect(() => { fetchInitialData(); }, []);
 
   const fetchInitialData = async () => {
-    setLoading(true); // ✅ FIX: Set loading to true when fetching starts
+    setLoading(true); 
     try {
       const [c, s, sip] = await Promise.all([api.get('/clients'), api.get('/mf-schemes'), api.get('/sips')]);
       setClients(c.data || []); 
@@ -44,7 +44,7 @@ const Sips = () => {
     } catch (e) { 
       toast.error("Sync Error"); 
     } finally {
-      setLoading(false); // ✅ FIX: Turn off loading when done
+      setLoading(false); 
     }
   };
 
@@ -72,7 +72,7 @@ const Sips = () => {
   };
 
   const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  const toggleAll = () => setSelectedIds(selectedIds.length === filteredSips.length ? [] : filteredSips.map(s => s.id));
+  const toggleAll = () => setSelectedIds(selectedIds.length === filteredSips.length && filteredSips.length > 0 ? [] : filteredSips.map(s => s.id));
 
   const handleBulkDelete = async () => {
     if (window.confirm(`Delete ${selectedIds.length} selected SIPs permanently?`)) {
@@ -127,7 +127,6 @@ const Sips = () => {
       {/* ADD/EDIT SIP FORM CARD */}
       <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)', marginBottom: '40px', position: 'relative' }}>
         
-        {/* State Indicator */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}></div>
 
         <form onSubmit={handleSubmit}>
@@ -140,7 +139,10 @@ const Sips = () => {
                 setClientName(found ? found.full_name : '');
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
               }} required /></div>
+              
+              {/* ✅ FORM FIELD LABEL UNCHANGED AS PER REQUEST */}
               <div><label style={labelStyle}>Client Name</label><input style={inputStyle} value={clientName} readOnly /></div>
+              
               <div><label style={labelStyle}>MF Scheme Name *</label>
               <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e=>setFormData({...formData, scheme_id:e.target.value})} required>
                 <option value="">Select Scheme...</option>{schemes.map(s=><option key={s.id} value={s.id}>{s.scheme_name}</option>)}
@@ -200,7 +202,10 @@ const Sips = () => {
               <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
                   <th style={{ padding: '16px', width: '40px' }}><input type="checkbox" checked={selectedIds.length === filteredSips.length && filteredSips.length > 0} onChange={toggleAll} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></th>
                   <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>SID</th>
-                  <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>Client name</th>
+                  
+                  {/* ✅ ONLY THIS HEADING CHANGED TO "CLIENT" */}
+                  <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>Client</th>
+                  
                   <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-main)', fontWeight: '900' }}>Scheme</th>
                   <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '900' }}>Status</th>
                   <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '900' }}>Amount</th>
@@ -210,7 +215,7 @@ const Sips = () => {
             <tbody>
               {filteredSips.map(s => (
                 <tr key={s.id} style={{ borderBottom: '2px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(56, 189, 248, 0.05)' : 'transparent', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></td>
+                  <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(c.id)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></td>
                   <td style={{ padding: '16px', color: '#38bdf8', fontWeight: '900' }}>{s.sip_id}</td>
                   <td style={{ padding: '16px', color: 'var(--text-main)', fontWeight: '800' }}>{s.client_code} - {s.client_name}</td>
                   <td style={{ padding: '16px', color: 'var(--text-main)' }}>
