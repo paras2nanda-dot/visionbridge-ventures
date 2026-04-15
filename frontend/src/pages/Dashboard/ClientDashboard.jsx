@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// --- Premium Donut Chart with Dynamic Legends ---
+// --- Premium Donut Chart with Precise Segments ---
 const AssetDonut = ({ data }) => {
   if (!data || data.length === 0) return (
     <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '2.5px dashed var(--border)', textAlign: 'center', width: '100%' }}>
@@ -64,12 +64,12 @@ const ClientDashboard = () => {
     fetch('https://visionbridge-backend.onrender.com/api/clients', { headers })
       .then(res => res.json())
       .then(data => setClients(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Error fetching clients:", err));
 
     fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers })
       .then(res => res.json())
       .then(data => setSchemes(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Error fetching master schemes:", err));
   }, []);
 
   const handleSelectClient = (client) => {
@@ -96,25 +96,30 @@ const ClientDashboard = () => {
   const safeNum = (val) => parseFloat(val) || 0;
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
-  // 🧪 FUZZY SYNC LOGIC: Matches Portfolio to Master Weights
+  // 🧪 RECTIFIED CALCULATION: Exhaustive field check for Debt and Gold
   const getAssetAllocation = () => {
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
-      // Use Invested AUM if available, otherwise fallback to SIP amount for projected allocation
-      const value = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
+      const investedValue = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
       
       const master = schemes.find(s => 
         s.scheme_name.trim().toLowerCase() === item.scheme_name.trim().toLowerCase()
       );
       
-      if (master && value > 0) {
-          // Check for multiple possible database key names (large vs large_percent vs large_cap)
-          totals.large += value * (safeNum(master.large_percent || master.large_cap || master.large) / 100);
-          totals.mid += value * (safeNum(master.mid_percent || master.mid_cap || master.mid) / 100);
-          totals.small += value * (safeNum(master.small_percent || master.small_cap || master.small) / 100);
-          totals.debt += value * (safeNum(master.debt_percent || master.debt || master.debt_cap) / 100);
-          totals.gold += value * (safeNum(master.gold_percent || master.gold || master.gold_cap) / 100);
+      if (master && investedValue > 0) {
+          // Robust check for field names in the database
+          const l = safeNum(master.large_percent || master.large_cap || master.large);
+          const m = safeNum(master.mid_percent || master.mid_cap || master.mid);
+          const s = safeNum(master.small_percent || master.small_cap || master.small);
+          const d = safeNum(master.debt_percent || master.debt_cap || master.debt);
+          const g = safeNum(master.gold_percent || master.gold_cap || master.gold);
+
+          totals.large += investedValue * (l / 100);
+          totals.mid += investedValue * (m / 100);
+          totals.small += investedValue * (s / 100);
+          totals.debt += investedValue * (d / 100);
+          totals.gold += investedValue * (g / 100);
       }
     });
 
@@ -177,12 +182,12 @@ const ClientDashboard = () => {
           {/* Metrics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '30px' }}>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIP Amount</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Monthly SIP</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
             <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIPs</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{summary.sipCount}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
+            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Relationship Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
           </div>
 
-          {/* 📂 FULL PORTFOLIO TABLE (Restored TOTAL & %) */}
+          {/* Portfolio Table */}
           <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '30px' }}>
              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead style={{ background: 'rgba(0,0,0,0.02)' }}>
@@ -229,7 +234,7 @@ const ClientDashboard = () => {
                 ) : (
                     <div style={{ padding: '12px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px' }}>
                         <div style={{ color: '#f59e0b', fontWeight: '900', fontSize: '18px', marginBottom: '6px' }}>⚠️ Nominee Not Registered</div>
-                        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', lineHeight: 1.4 }}>Update nominee details in the Clients Database to ensure regulatory compliance.</div>
+                        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', lineHeight: 1.4 }}>Ensure regulatory compliance by updating nominee details for this client.</div>
                     </div>
                 )}
             </div>
