@@ -210,7 +210,7 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* Search Bar Fix: Increased padding to prevent overlap */}
+      {/* 🔍 SEARCH BAR - Overlap fix applied here */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
           <input 
@@ -218,14 +218,17 @@ const Clients = () => {
             placeholder="Search clients..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            style={{ ...inputStyle, paddingLeft: '48px' }} // Increased from 40px to 48px to clear icon
+            style={{ 
+                ...inputStyle, 
+                paddingLeft: '52px' // Absolute space for the icon
+            }} 
           />
-          <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px' }}>🔍</span>
+          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px', pointerEvents: 'none' }}>🔍</span>
         </div>
         {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: '2.5px solid #000', padding: '12px 24px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>Delete selected ({selectedIds.length})</button>}
       </div>
 
-      {/* Table headers updated to sentence case and "Onboarded on" */}
+      {/* CLIENTS TABLE */}
       <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', overflow: 'hidden', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
