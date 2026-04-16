@@ -9,9 +9,20 @@ import {
 } from "@simplewebauthn/server";
 
 const rpName = 'VisionBridge Ventures';
-// 🔴 PRODUCTION SETTINGS: Change this to your actual Vercel domain
-const rpID = 'visionbridge-ventures.vercel.app';
-const origin = `https://${rpID}`;
+
+// 💡 DYNAMIC ENVIRONMENT HANDLER:
+// This extracts the correct domain (localhost vs vercel) from the incoming request.
+// This prevents the browser from blocking WebAuthn due to domain mismatches.
+const getWebAuthnConfig = (req) => {
+  const origin = req.headers.origin || 'https://visionbridge-ventures.vercel.app';
+  let rpID;
+  try {
+    rpID = new URL(origin).hostname; // Extracts 'localhost' or your vercel domain
+  } catch (e) {
+    rpID = 'visionbridge-ventures.vercel.app';
+  }
+  return { rpID, origin };
+};
 
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
@@ -64,6 +75,7 @@ export const logout = (req, res) => {
 // 1. Ask the device to generate a new Fingerprint/FaceID lock
 export const generateRegOptions = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
+  const { rpID } = getWebAuthnConfig(req);
   
   if (!username || !['paras', 'himanshu'].includes(username)) {
     return res.status(403).json({ error: "Only authorized administrators can register biometrics." });
@@ -99,6 +111,7 @@ export const generateRegOptions = async (req, res) => {
 export const verifyReg = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
+  const { rpID, origin } = getWebAuthnConfig(req);
   const expectedChallenge = challengeStore.get(`reg_${username}`);
 
   if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Try again." });
@@ -136,6 +149,8 @@ export const verifyReg = async (req, res) => {
 // 3. Login: Create a crypto puzzle for the device to solve
 export const generateAuthOptions = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
+  const { rpID } = getWebAuthnConfig(req);
+
   if (!username) return res.status(400).json({ error: "Username required" });
 
   try {
@@ -162,6 +177,7 @@ export const generateAuthOptions = async (req, res) => {
 export const verifyAuth = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
+  const { rpID, origin } = getWebAuthnConfig(req);
   const expectedChallenge = challengeStore.get(`auth_${username}`);
 
   if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Try again." });
