@@ -12,7 +12,6 @@ const rpName = 'VisionBridge Ventures';
 
 // 💡 DYNAMIC ENVIRONMENT HANDLER:
 // This extracts the correct domain (localhost vs vercel) from the incoming request.
-// This prevents the browser from blocking WebAuthn due to domain mismatches.
 const getWebAuthnConfig = (req) => {
   const origin = req.headers.origin || 'https://visionbridge-ventures.vercel.app';
   let rpID;
@@ -96,13 +95,16 @@ export const generateRegOptions = async (req, res) => {
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'preferred',
-        authenticatorAttachment: 'platform', 
+        // ❌ REMOVED: authenticatorAttachment: 'platform'
+        // By removing this, we allow phones, hardware keys, and cross-device authenticators
+        // to register, preventing instant browser cancellations on desktops.
       },
     });
 
     challengeStore.set(`reg_${username}`, options.challenge);
     res.json(options);
   } catch (err) {
+    console.error("Error generating reg options:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -232,7 +234,7 @@ export const verifyAuth = async (req, res) => {
 // Fetch all registered passkeys for the logged-in user
 export const getPasskeys = async (req, res) => {
   try {
-    const username = req.user.username; // Taken from authMiddleware token
+    const username = req.user.username; 
     const result = await pool.query(
       'SELECT id, username, created_at FROM user_passkeys WHERE username = $1 ORDER BY created_at DESC',
       [username]
