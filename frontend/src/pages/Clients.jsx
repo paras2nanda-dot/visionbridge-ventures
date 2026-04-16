@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api'; 
 import { toast } from 'react-toastify'; 
+import { Search, Trash2, Edit, Eye, ClipboardList, FileText, UserPlus, Check, X } from 'lucide-react';
 
 const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
@@ -136,53 +137,63 @@ const Clients = () => {
     return c.full_name?.toLowerCase().includes(s) || c.client_code?.toLowerCase().includes(s) || c.mobile_number?.includes(s);
   });
 
-  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '800', fontSize: '13px', color: 'var(--text-main)', letterSpacing: '0.5px' };
-  const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '2.5px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: '600' };
+  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
+  const inputStyle = { width: '100%', padding: '14px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' };
   
   // 🏛️ RECTIFIED TABLE HEADER STYLE
   const thStyle = { 
-    color: 'var(--text-main)', 
+    color: 'var(--text-muted)', 
     textAlign: 'left', 
     padding: '16px', 
-    fontWeight: '900', 
-    fontSize: '13px', 
-    letterSpacing: '0.2px'
-    // Uppercase removed as per your request
+    fontWeight: '700', 
+    fontSize: '12px', 
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    borderBottom: '1px solid var(--border)'
   };
 
   return (
-    <div className="container fade-in" style={{ paddingBottom: '50px' }}>
-      <h1 className="title" style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '32px', marginBottom: '25px' }}>Clients Database</h1>
+    <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
+      
+      {/* 🚀 Giant "Clients Database" title removed to rely on clean breadcrumbs */}
 
-      <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)', marginBottom: '40px', position: 'relative' }}>
+      {/* FORM MODULE */}
+      <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '40px', position: 'relative', overflow: 'hidden' }}>
         
         {/* State Indicator */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#38bdf8', borderTopLeftRadius: '10px', borderTopRightRadius: '10px' }}></div>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#0284c7' }}></div>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', background: 'var(--bg-main)', padding: '8px', borderRadius: '12px', border: '2.5px solid var(--border)' }}>
+        {/* Sleek Segmented Control */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'var(--bg-main)', padding: '6px', borderRadius: '12px', border: '1px solid var(--border)', maxWidth: '400px' }}>
           <button 
             type="button" 
             onClick={() => setActiveSubTab('basic')} 
             style={{ 
-              flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '900', transition: 'all 0.2s', border: 'none',
-              background: activeSubTab === 'basic' ? '#38bdf8' : 'transparent',
-              color: activeSubTab === 'basic' ? 'white' : 'var(--text-muted)'
-            }}>📋 1. Basic Details</button>
+              flex: 1, padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', transition: 'all 0.2s', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              background: activeSubTab === 'basic' ? 'var(--bg-card)' : 'transparent',
+              color: activeSubTab === 'basic' ? '#0284c7' : 'var(--text-muted)',
+              boxShadow: activeSubTab === 'basic' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}>
+              <ClipboardList size={16} /> Basic Details
+          </button>
           <button 
             type="button" 
             onClick={() => setActiveSubTab('other')} 
             style={{ 
-              flex: 1, padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '900', transition: 'all 0.2s', border: 'none',
-              background: activeSubTab === 'other' ? '#38bdf8' : 'transparent',
-              color: activeSubTab === 'other' ? 'white' : 'var(--text-muted)'
-            }}>📝 2. Other Details</button>
+              flex: 1, padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', transition: 'all 0.2s', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              background: activeSubTab === 'other' ? 'var(--bg-card)' : 'transparent',
+              color: activeSubTab === 'other' ? '#0284c7' : 'var(--text-muted)',
+              boxShadow: activeSubTab === 'other' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}>
+              <FileText size={16} /> Other Details
+          </button>
         </div>
 
         <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
                 <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
-                  <div><label style={labelStyle}>Client ID</label><input style={inputStyle} value={formData.client_code} readOnly /></div>
+                  <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, opacity: 0.7}} value={formData.client_code} readOnly /></div>
                   <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
                   <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
                   <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
@@ -208,67 +219,111 @@ const Clients = () => {
                   <div><label style={labelStyle}>Nominee Name</label><input style={inputStyle} type="text" value={formData.nominee_name} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_name: e.target.value})} /></div>
                   <div><label style={labelStyle}>Nominee Relation</label><input style={inputStyle} type="text" value={formData.nominee_relation} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_relation: e.target.value})} /></div>
                   <div><label style={labelStyle}>Nominee Mobile</label><input style={inputStyle} type="text" inputMode="numeric" value={formData.nominee_mobile} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_mobile: e.target.value.replace(/\D/g, '')})} /></div>
-                  <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '80px'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
+                  <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '100px', resize: 'vertical'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
                 </div>
             </div>
-            <div style={{marginTop: '30px', display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
-                <button type="submit" disabled={isSaving} style={{padding: '12px 32px', background: isEditing ? '#f59e0b' : isViewing ? 'var(--text-muted)' : '#38bdf8', color: 'white', border: '2.5px solid #000', borderRadius: '10px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: '900', letterSpacing: '0.5px'}}>
-                    {isSaving ? (isEditing ? "UPDATING..." : "ADDING CLIENT...") : (isEditing ? "UPDATE CLIENT" : isViewing ? "CLOSE VIEW" : "ADD CLIENT")}
+            
+            {/* Action Buttons */}
+            <div style={{marginTop: '40px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
+                <button 
+                  type="submit" 
+                  disabled={isSaving} 
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 28px', 
+                    background: isEditing ? '#f59e0b' : isViewing ? 'var(--bg-main)' : '#0284c7', 
+                    color: isViewing ? 'var(--text-main)' : 'white', 
+                    border: isViewing ? '1px solid var(--border)' : '1px solid transparent', 
+                    borderRadius: '10px', cursor: isSaving ? 'not-allowed' : 'pointer', 
+                    fontWeight: '800', letterSpacing: '0.5px', transition: 'all 0.2s',
+                    boxShadow: isViewing ? 'none' : '0 4px 6px -1px rgba(0,0,0,0.1)'
+                  }}>
+                    {isSaving ? (isEditing ? "UPDATING..." : "ADDING CLIENT...") : (isEditing ? <><Check size={18}/> UPDATE CLIENT</> : isViewing ? "CLOSE VIEW" : <><UserPlus size={18}/> ADD CLIENT</>)}
                 </button>
-                {(isEditing || isViewing) && <button type="button" onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} style={{padding: '12px 24px', borderRadius: '10px', border: '2.5px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: '900', letterSpacing: '0.5px'}}>CANCEL</button>}
+                {(isEditing || isViewing) && (
+                  <button 
+                    type="button" 
+                    onClick={() => {setIsEditing(false); setIsViewing(false); setFormData(initialState); fetchClients();}} 
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '10px', 
+                      border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', 
+                      cursor: 'pointer', fontWeight: '800', letterSpacing: '0.5px', transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'var(--bg-main)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <X size={18} /> CANCEL
+                  </button>
+                )}
             </div>
           </form>
         </div>
       </div>
 
-      {/* 🔍 SEARCH BAR */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+      {/* 🔍 SEARCH BAR & ACTIONS */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
+          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Search clients..." 
+            placeholder="Search clients by name, code, or mobile..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            style={{ 
-                ...inputStyle, 
-                paddingLeft: '52px' 
-            }} 
+            style={{ ...inputStyle, paddingLeft: '44px', borderRadius: '12px' }} 
           />
-          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px', pointerEvents: 'none' }}>🔍</span>
         </div>
-        {selectedIds.length > 0 && <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', border: '2.5px solid #000', padding: '12px 24px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>Delete selected ({selectedIds.length})</button>}
+        {selectedIds.length > 0 && (
+          <button 
+            onClick={handleBulkDelete} 
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#ef4444', color: 'white', border: '1px solid #dc2626', padding: '12px 24px', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(239,68,68,0.2)' }}
+          >
+            <Trash2 size={18} /> Delete ({selectedIds.length})
+          </button>
+        )}
       </div>
 
       {/* CLIENTS TABLE */}
-      <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', overflow: 'hidden', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
-              <tr style={{ background: 'rgba(0, 0, 0, 0.03)', borderBottom: '2.5px solid var(--border)' }}>
-                <th style={{ padding: '16px', width: '40px' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></th>
+              <tr style={{ background: 'var(--bg-main)' }}>
+                <th style={{ padding: '16px', width: '40px', borderBottom: '1px solid var(--border)' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></th>
                 <th style={thStyle}>ID</th>
                 <th style={thStyle}>Client Name</th>
                 <th style={thStyle}>Mobile</th>
                 <th style={thStyle}>Onboarded On</th>
                 <th style={thStyle}>Added By</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Action</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>{filteredClients.map(c => (
-                <tr key={c.id} style={{ borderBottom: '2px solid var(--border)', background: selectedIds.includes(c.id) ? 'rgba(56, 189, 248, 0.05)' : 'transparent', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} /></td>
-                  <td style={{ padding: '16px', fontWeight: '900', color: '#38bdf8' }}>{c.client_code}</td>
-                  <td style={{ padding: '16px', fontWeight: '800', color: 'var(--text-main)' }}>{c.full_name}</td>
-                  <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-main)' }}>{c.mobile_number}</td>
-                  <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
-                  <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{c.added_by}</td>
+                <tr key={c.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(c.id) ? 'rgba(2, 132, 199, 0.04)' : 'transparent', transition: 'background 0.2s' }} onMouseOver={(e) => { if(!selectedIds.includes(c.id)) e.currentTarget.style.background = 'var(--bg-main)'; }} onMouseOut={(e) => { if(!selectedIds.includes(c.id)) e.currentTarget.style.background = 'transparent'; }}>
+                  <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></td>
+                  <td style={{ padding: '16px', fontWeight: '800', color: '#0284c7' }}>{c.client_code}</td>
+                  <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{c.full_name}</td>
+                  <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{c.mobile_number}</td>
+                  <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
+                  <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{c.added_by}</td>
                   <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-main)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px' }}>VIEW</button>
-                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#38bdf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px', marginRight: '16px' }}>EDIT</button>
-                      <button onClick={async () => { if(window.confirm("Delete?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '11px' }}>DELETE</button>
+                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View Details" onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-main)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
+                        <Eye size={18} />
+                      </button>
+                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit Client" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                        <Edit size={18} />
+                      </button>
+                      <button onClick={async () => { if(window.confirm("Permanently delete this client?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete Client" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                        <Trash2 size={18} />
+                      </button>
                   </td>
                 </tr>
               ))}
+              {filteredClients.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    No clients found matching your search.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
