@@ -200,7 +200,6 @@ export default function Login() {
               </span>
             </div>
 
-            {/* 🔥 Fixed placement of Recover Password */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px', marginBottom: '24px' }}>
               <span style={styles.resetLink} onClick={() => { triggerPop(); setShowReset(true); }}>
                 Forgot password?
@@ -227,7 +226,14 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
-                <span style={{ fontSize: '18px' }}>👆</span> LOGIN WITH BIOMETRICS
+                {/* ✅ Sleek Fingerprint SVG */}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#0284c7' }}>
+                  <path d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12"/>
+                  <path d="M5 12C5 8.13401 8.13401 5 12 5C15.866 5 19 8.13401 19 12"/>
+                  <path d="M8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12"/>
+                  <path d="M12 12V22"/>
+                </svg>
+                Login with Biometrics
              </button>
           </div>
         </div>
@@ -298,13 +304,11 @@ const styles = {
   
   label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' },
   
-  /* Sleek 2px inputs with 12px radius */
   input: { width: "100%", padding: "16px", marginBottom: "24px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
   passwordContainer: { position: "relative", width: "100%", marginBottom: "16px" },
   passwordInput: { width: "100%", padding: "16px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
   eyeIcon: { position: "absolute", right: "16px", top: "50%", transform: 'translateY(-50%)', cursor: "pointer", fontSize: '18px', opacity: 0.6 },
   
-  /* 💎 Executive Buttons - 2.5px border, Drop shadow */
   loginBtn: { width: "100%", padding: "16px", background: "#0284c7", color: "#fff", border: "2.5px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s ease', fontSize: '14px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.08)' },
   biometricBtn: { width: "100%", padding: "16px", background: "var(--bg-card)", color: "var(--text-main)", border: "2.5px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s ease', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', marginTop: '0' },
   
