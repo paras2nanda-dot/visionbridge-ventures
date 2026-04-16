@@ -2,6 +2,18 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import SettingsModal from './SettingsModal';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Repeat, 
+  ArrowLeftRight, 
+  FolderOpen, 
+  LineChart, 
+  Download, 
+  Settings, 
+  LogOut,
+  TrendingUp
+} from 'lucide-react';
 
 const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
   const navigate = useNavigate();
@@ -10,13 +22,13 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const menuItems = [
-    { name: '📊 Dashboard', path: '/dashboard' },
-    { name: '👥 Clients Database', path: '/clients' },
-    { name: '🔄 SIP Tracker', path: '/sips' },
-    { name: '💸 Transactions', path: '/transactions' },
-    { name: '📂 MF Schemes', path: '/schemes' },
-    { name: '📈 Charts & Analytics', path: '/charts' }, 
-    { name: '📥 Download Reports', path: '/reports' },
+    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: 'Clients Database', path: '/clients', icon: <Users size={20} /> },
+    { name: 'SIP Tracker', path: '/sips', icon: <Repeat size={20} /> },
+    { name: 'Transactions', path: '/transactions', icon: <ArrowLeftRight size={20} /> },
+    { name: 'MF Schemes', path: '/schemes', icon: <FolderOpen size={20} /> },
+    { name: 'Charts & Analytics', path: '/charts', icon: <LineChart size={20} /> }, 
+    { name: 'Download Reports', path: '/reports', icon: <Download size={20} /> },
   ];
 
   const handleLogout = async () => {
@@ -55,7 +67,9 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           .sidebar-nav::-webkit-scrollbar { display: none; }
           
           .sidebar-link {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 12px;
             padding: 16px 24px;
             color: #94a3b8; 
             text-decoration: none;
@@ -95,7 +109,6 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             cursor: pointer;
             transition: all 0.2s ease !important;
             border-radius: 0 !important; 
-            /* ✅ text-transform removed to allow manual casing */
             letter-spacing: 0.5px;
           }
 
@@ -124,9 +137,11 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           borderBottom: '1px solid rgba(255,255,255,0.05)', 
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0
         }}>
-          <div style={{ minWidth: 0 }}>
-            <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '24px', color: '#ffffff', letterSpacing: '-0.5px' }}>VisionBridge <span style={{fontSize: '20px'}}>📈</span></div>
-            <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: '900', textTransform: 'uppercase', marginTop: '6px', letterSpacing: '1.5px' }}>
+          <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div className="sidebar-logo-text" style={{ fontWeight: '900', fontSize: '24px', color: '#ffffff', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              VisionBridge <TrendingUp size={24} color="#0284c7" />
+            </div>
+            <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
               Welcome, {userName}
             </div>
           </div>
@@ -137,6 +152,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         <nav className="sidebar-nav">
           {menuItems.map((item) => (
             <NavLink key={item.name} to={item.path} onClick={closeMobileMenu} className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}>
+              {item.icon}
               {item.name}
             </NavLink>
           ))}
@@ -146,11 +162,11 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         <div style={{ background: 'transparent' }}>
           
           <button onClick={() => { setIsSettingsOpen(true); closeMobileMenu(); }} className="sidebar-action-btn btn-settings">
-            <span style={{ fontSize: '18px' }}>⚙️</span> Settings
+            <Settings size={20} /> Settings
           </button>
 
           <button onClick={handleLogout} disabled={isLoggingOut} className="sidebar-action-btn btn-logout">
-            <span style={{ fontSize: '18px' }}>🚪</span> {isLoggingOut ? "Logging out..." : "Logout"}
+            <LogOut size={20} /> {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
 
         </div>
