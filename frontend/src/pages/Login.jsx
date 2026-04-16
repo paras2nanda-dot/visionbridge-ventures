@@ -226,12 +226,18 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
-                {/* ✅ Sleek Fingerprint SVG */}
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#0284c7' }}>
-                  <path d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12"/>
-                  <path d="M5 12C5 8.13401 8.13401 5 12 5C15.866 5 19 8.13401 19 12"/>
-                  <path d="M8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12"/>
-                  <path d="M12 12V22"/>
+                {/* ✅ Professional Concentric Fingerprint SVG */}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#0284c7' }}>
+                    <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.02-.3 3"/>
+                    <path d="M14 22a10 10 0 0 0 8-8"/>
+                    <path d="M2 14a10 10 0 0 0 8 8"/>
+                    <path d="M12 20a4 4 0 0 0 4-4c0-1.55 0-3.11-.27-4.66"/>
+                    <path d="M12 2a10 10 0 0 1 10 10 9.43 9.43 0 0 1-1.39 4.84"/>
+                    <path d="M8 12a4 4 0 0 1 8 0c0 .52.02 1.01.08 1.5"/>
+                    <path d="M15 22a1 1 0 0 0 1-1c0-1.05-.17-2.05-.44-3"/>
+                    <path d="M8 22a1 1 0 0 1-1-1c0-1.1 0-2.26.26-3.39"/>
+                    <path d="M12 6c3.11 0 6.11 2 6.11 6 0 1.05-.03 2.1-.11 3.15"/>
+                    <path d="M12 2a10 10 0 0 0-10 10c0 .22.01.43.02.65"/>
                 </svg>
                 Login with Biometrics
              </button>
@@ -266,7 +272,6 @@ export default function Login() {
       )}
 
       <style>{`
-        /* Smooth, modern styling overrides */
         .login-field:focus {
           border-color: #0284c7 !important;
           box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15) !important;
@@ -284,36 +289,26 @@ export default function Login() {
 
 const styles = {
   pageWrapper: { height: "100vh", display: "flex", overflow: "hidden", fontFamily: "'Inter', sans-serif", background: "var(--bg-main)" },
-  
-  /* 🖼️ Left Panel - Cinematic Vibe */
   leftPanel: { flex: 1.2, position: 'relative', backgroundImage: `url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2071&auto=format&fit=crop')`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', padding: '60px' },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 100%)' },
   leftContent: { position: 'relative', zIndex: 2, maxWidth: '520px' },
   tagline: { color: '#38bdf8', fontSize: '12px', fontWeight: '800', letterSpacing: '4px', marginBottom: '20px', textTransform: 'uppercase' },
   mainHeading: { color: '#ffffff', fontSize: '48px', fontWeight: '900', lineHeight: '1.15', marginBottom: '20px', letterSpacing: '-1px' },
-  
-  /* 📝 Right Panel - Clean & Structured */
   rightPanel: { flex: 1, background: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
   loginFormContainer: { width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
   logoContainer: { marginBottom: '30px' },
   logoImage: { width: '180px', height: 'auto', borderRadius: '12px', objectFit: 'contain' },
-  
   headerText: { width: '100%', textAlign: 'left', marginBottom: '32px' },
   formTitle: { fontSize: '32px', fontWeight: '900', color: 'var(--text-main)', margin: '0 0 8px 0', letterSpacing: '-0.5px' },
   formSubtitle: { fontSize: '15px', color: 'var(--text-muted)', margin: 0, fontWeight: '500' },
-  
   label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  
   input: { width: "100%", padding: "16px", marginBottom: "24px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
   passwordContainer: { position: "relative", width: "100%", marginBottom: "16px" },
   passwordInput: { width: "100%", padding: "16px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
   eyeIcon: { position: "absolute", right: "16px", top: "50%", transform: 'translateY(-50%)', cursor: "pointer", fontSize: '18px', opacity: 0.6 },
-  
   loginBtn: { width: "100%", padding: "16px", background: "#0284c7", color: "#fff", border: "2.5px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s ease', fontSize: '14px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.08)' },
   biometricBtn: { width: "100%", padding: "16px", background: "var(--bg-card)", color: "var(--text-main)", border: "2.5px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s ease', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', marginTop: '0' },
-  
   resetLink: { color: "#0284c7", fontWeight: '800', fontSize: '13px', cursor: 'pointer', transition: 'opacity 0.2s' },
-  
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(8px)' },
   modalCard: { background: "var(--bg-main)", padding: "40px", borderRadius: "20px", width: "100%", maxWidth: "420px", boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '2.5px solid var(--border)' }
 };
