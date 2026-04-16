@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { toast } from "react-toastify";
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import { Eye, EyeOff, Fingerprint, Loader2 } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function Login() {
         data: registrationResponse,
       });
 
-      toast.success("✅ Device registered! You can now use Fingerprint login.");
+      toast.success("Device registered! You can now use Fingerprint login.");
     } catch (err) {
       console.error(err);
       if (err.name !== 'NotAllowedError') {
@@ -139,10 +140,10 @@ export default function Login() {
         securityAnswer: securityAnswer.trim(), 
         newPassword: newPassword.trim() 
       });
-      toast.success("✅ Password updated successfully!");
+      toast.success("Password updated successfully!");
       setTimeout(() => setShowReset(false), 2000);
     } catch (err) {
-      toast.error(`❌ ${err.response?.data?.error || "Reset failed"}`);
+      toast.error(`${err.response?.data?.error || "Reset failed"}`);
     } finally {
       setIsResetting(false);
     }
@@ -177,7 +178,7 @@ export default function Login() {
             <input 
                 style={styles.input} 
                 className="login-field" 
-                placeholder="" 
+                placeholder="e.g. paras" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
                 autoCapitalize="none"
@@ -190,13 +191,13 @@ export default function Login() {
                 type={showPassword ? "text" : "password"} 
                 style={styles.passwordInput} 
                 className="login-field" 
-                placeholder="" 
+                placeholder="••••••••" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
               />
               <span style={styles.eyeIcon} onClick={() => { triggerPop(); setShowPassword(!showPassword); }}>
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </span>
             </div>
 
@@ -207,17 +208,17 @@ export default function Login() {
             </div>
             
             <button type="submit" style={styles.loginBtn} disabled={isLoggingIn}>
-              {isLoggingIn ? "AUTHENTICATING..." : "SIGN IN"}
+              {isLoggingIn ? <><Loader2 size={18} className="spin" style={{marginRight: '8px'}} /> AUTHENTICATING...</> : "SIGN IN"}
             </button>
           </form>
 
           {/* ➖ Sleek Divider */}
           <div style={{ position: 'relative', textAlign: 'center', width: '100%', margin: '24px 0' }}>
-            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, borderTop: '2px solid var(--border)', zIndex: 1 }}></div>
+            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, borderTop: '1px solid var(--border)', zIndex: 1 }}></div>
             <span style={{ position: 'relative', zIndex: 2, background: 'var(--bg-main)', padding: '0 16px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: '800', letterSpacing: '1px' }}>OR</span>
           </div>
 
-          {/* 🛡️ BIOMETRIC LOGIN BUTTON (ICON COMPLETELY REMOVED) */}
+          {/* 🛡️ BIOMETRIC LOGIN BUTTON */}
           <div style={{ width: '100%' }}>
              <button 
                 type="button" 
@@ -226,7 +227,7 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
-                Login with Biometrics
+                <Fingerprint size={18} /> Login with Biometrics
              </button>
           </div>
         </div>
@@ -236,21 +237,21 @@ export default function Login() {
       {showReset && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
-            <h3 style={{color: 'var(--text-main)', marginBottom: '8px', fontWeight: '900', fontSize: '26px', letterSpacing: '-0.5px'}}>Reset Password</h3>
-            <p style={{color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px', fontWeight: '500'}}>Enter your details to recover your account.</p>
+            <h3 style={{color: 'var(--text-main)', marginBottom: '8px', fontWeight: '800', fontSize: '24px', letterSpacing: '-0.3px'}}>Reset Password</h3>
+            <p style={{color: 'var(--text-muted)', marginBottom: '32px', fontSize: '14px', fontWeight: '500'}}>Enter your details to recover your account.</p>
             
             <form onSubmit={handleResetPassword}>
               <label style={styles.label}>Username</label>
-              <input style={styles.input} value={resetUser} onChange={(e) => setResetUser(e.target.value)} required autoCapitalize="none" />
+              <input style={styles.input} className="login-field" value={resetUser} onChange={(e) => setResetUser(e.target.value)} required autoCapitalize="none" />
               
               <label style={styles.label}>Security Answer</label>
-              <input style={styles.input} value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
+              <input style={styles.input} className="login-field" value={securityAnswer} onChange={(e) => setSecurityAnswer(e.target.value)} required />
               
               <label style={styles.label}>New Password</label>
-              <input style={styles.input} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              <input style={styles.input} className="login-field" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
               
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                <button type="submit" style={{...styles.loginBtn, flex: 2}} disabled={isResetting}>{isResetting ? "UPDATING..." : "RESET PASSWORD"}</button>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+                <button type="submit" style={{...styles.loginBtn, flex: 2, marginBottom: 0}} disabled={isResetting}>{isResetting ? "UPDATING..." : "RESET PASSWORD"}</button>
                 <button type="button" style={{...styles.biometricBtn, flex: 1, marginTop: 0}} onClick={() => { triggerPop(); setShowReset(false); }}>BACK</button>
               </div>
             </form>
@@ -261,8 +262,14 @@ export default function Login() {
       <style>{`
         .login-field:focus {
           border-color: #0284c7 !important;
-          box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15) !important;
+          box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1) !important;
         }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spin { animation: spin 1s linear infinite; }
+        
         @media (max-width: 850px) {
           .login-left-panel { display: none !important; }
           .login-right-panel { width: 100% !important; flex: none !important; padding: 40px 24px !important; background: var(--bg-main) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
@@ -283,19 +290,19 @@ const styles = {
   mainHeading: { color: '#ffffff', fontSize: '48px', fontWeight: '900', lineHeight: '1.15', marginBottom: '20px', letterSpacing: '-1px' },
   rightPanel: { flex: 1, background: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' },
   loginFormContainer: { width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  logoContainer: { marginBottom: '30px' },
-  logoImage: { width: '180px', height: 'auto', borderRadius: '12px', objectFit: 'contain' },
+  logoContainer: { marginBottom: '32px' },
+  logoImage: { width: '180px', height: 'auto', borderRadius: '16px', objectFit: 'contain', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
   headerText: { width: '100%', textAlign: 'left', marginBottom: '32px' },
-  formTitle: { fontSize: '32px', fontWeight: '900', color: 'var(--text-main)', margin: '0 0 8px 0', letterSpacing: '-0.5px' },
+  formTitle: { fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 8px 0', letterSpacing: '-0.5px' },
   formSubtitle: { fontSize: '15px', color: 'var(--text-muted)', margin: 0, fontWeight: '500' },
-  label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  input: { width: "100%", padding: "16px", marginBottom: "24px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
+  label: { width: '100%', textAlign: 'left', display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  input: { width: "100%", padding: "14px 16px", marginBottom: "24px", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease', boxShadow: '0 2px 4px -1px rgba(0,0,0,0.02)' },
   passwordContainer: { position: "relative", width: "100%", marginBottom: "16px" },
-  passwordInput: { width: "100%", padding: "16px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease' },
-  eyeIcon: { position: "absolute", right: "16px", top: "50%", transform: 'translateY(-50%)', cursor: "pointer", fontSize: '18px', opacity: 0.6 },
-  loginBtn: { width: "100%", padding: "16px", background: "#0284c7", color: "#fff", border: "2.5px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s ease', fontSize: '14px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.08)' },
-  biometricBtn: { width: "100%", padding: "16px", background: "var(--bg-card)", color: "var(--text-main)", border: "2.5px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "900", transition: 'all 0.2s ease', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', letterSpacing: '0.5px', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', marginTop: '0' },
-  resetLink: { color: "#0284c7", fontWeight: '800', fontSize: '13px', cursor: 'pointer', transition: 'opacity 0.2s' },
-  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(8px)' },
-  modalCard: { background: "var(--bg-main)", padding: "40px", borderRadius: "20px", width: "100%", maxWidth: "420px", boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '2.5px solid var(--border)' }
+  passwordInput: { width: "100%", padding: "14px 16px", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text-main)", fontSize: '15px', fontWeight: '600', outline: 'none', transition: 'all 0.2s ease', boxShadow: '0 2px 4px -1px rgba(0,0,0,0.02)' },
+  eyeIcon: { position: "absolute", right: "16px", top: "50%", transform: 'translateY(-50%)', cursor: "pointer", color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' },
+  loginBtn: { width: "100%", padding: "14px", background: "#0284c7", color: "#fff", border: "1px solid transparent", borderRadius: "12px", cursor: "pointer", fontWeight: "800", transition: 'all 0.2s ease', fontSize: '14px', letterSpacing: '0.5px', boxShadow: '0 4px 6px -1px rgba(2,132,199,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  biometricBtn: { width: "100%", padding: "14px", background: "var(--bg-card)", color: "var(--text-main)", border: "1px solid var(--border)", borderRadius: "12px", cursor: "pointer", fontWeight: "800", transition: 'all 0.2s ease', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', letterSpacing: '0.5px', boxShadow: '0 2px 4px -1px rgba(0,0,0,0.02)', marginTop: '0' },
+  resetLink: { color: "#0284c7", fontWeight: '700', fontSize: '13px', cursor: 'pointer', transition: 'opacity 0.2s' },
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, backdropFilter: 'blur(4px)' },
+  modalCard: { background: "var(--bg-main)", padding: "32px", borderRadius: "24px", width: "100%", maxWidth: "420px", boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid var(--border)' }
 };
