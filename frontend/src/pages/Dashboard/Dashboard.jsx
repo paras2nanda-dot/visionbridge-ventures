@@ -4,7 +4,6 @@ import ClientDashboard from './ClientDashboard';
 import ActivityFeed from '../../components/ActivityFeed';
 import api from '../../services/api';
 
-// ✅ Imported professional Lucide icons
 import { Briefcase, Users, Clock, Shield, ShieldCheck, Trash2 } from 'lucide-react';
 
 // --- Internal Security Component ---
@@ -124,7 +123,7 @@ const Dashboard = () => {
   };
 
   const tabStyle = (tabName) => ({
-    padding: '16px 24px', 
+    padding: '12px 24px', 
     cursor: 'pointer',
     fontSize: '14px', 
     letterSpacing: '0.5px',
@@ -140,9 +139,8 @@ const Dashboard = () => {
   });
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', padding: '24px 32px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
+    <div style={{ width: '100%', minHeight: '100vh', padding: '12px 32px 32px 32px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
       
-      {/* Strict CSS override for clean tab styling */}
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
         .dashboard-tabs button { 
@@ -156,8 +154,6 @@ const Dashboard = () => {
         .dashboard-tabs button:hover { color: #0284c7; }
       `}</style>
       
-      {/* 🚀 Giant "Dashboard" title removed to rely on clean breadcrumbs */}
-      
       <div 
         className="dashboard-tabs" 
         ref={tabContainerRef}
@@ -168,13 +164,13 @@ const Dashboard = () => {
             background: 'var(--bg-main)',
             position: 'sticky',
             top: '0', 
-            paddingTop: '8px',
+            paddingTop: '4px',
             paddingBottom: '0',
             zIndex: 100,
             overflowX: 'auto', 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none', 
-            marginBottom: '32px',
+            marginBottom: '24px',
             scrollBehavior: 'smooth'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
