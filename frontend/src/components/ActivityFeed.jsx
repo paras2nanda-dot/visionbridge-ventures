@@ -193,11 +193,8 @@ const ActivityFeed = () => {
         }
       `}</style>
 
-      {/* HEADER ROW */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '0 8px', flexWrap: 'wrap', gap: '16px' }}>
-        <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.3px' }}>
-          Recent Activity Feed
-        </h3>
+      {/* HEADER ACTION BUTTONS (Title removed to prevent duplication with tabs) */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '24px', padding: '0 8px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
             {selectedIds.length > 0 && (
                 <button 
