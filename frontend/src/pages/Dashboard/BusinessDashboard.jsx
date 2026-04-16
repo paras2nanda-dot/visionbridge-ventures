@@ -46,8 +46,9 @@ const BusinessDashboard = () => {
       </div>
 
       <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', letterSpacing: '0.3px' }}>
-        {pulse && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', marginRight: '8px', boxShadow: '0 0 8px #10b981' }}></span>}
-        {label}
+        {/* ✅ Fixed alignment of pulse dot */}
+        {pulse && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', marginRight: '8px', boxShadow: '0 0 8px #10b981', flexShrink: 0 }}></span>}
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}>{label}</span>
       </div>
       
       <h2 style={{ fontSize: '28px', fontWeight: '800', color: figureColor || 'var(--text-main)', margin: '0', letterSpacing: '-0.5px' }}>
