@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { Search, PieChart as PieChartIcon, CheckCircle2, AlertTriangle, UserSearch, Wallet, TrendingUp, Clock, Activity } from 'lucide-react';
 
 // --- Premium Donut Chart with Precise Segments ---
 const AssetDonut = ({ data }) => {
   if (!data || data.length === 0) return (
-    <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '2.5px dashed var(--border)', textAlign: 'center', width: '100%' }}>
-        <div style={{ fontSize: '28px', marginBottom: '10px' }}>📊</div>
-        <div style={{ color: 'var(--text-main)', fontWeight: '900', fontSize: '14px' }}>Allocation Data Unavailable</div>
-        <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '12px', marginTop: '4px' }}>Ensure scheme names in Master and Portfolio match exactly.</div>
+    <div style={{ padding: '40px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', textAlign: 'center', width: '100%' }}>
+        <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><PieChartIcon size={32} color="var(--text-muted)" style={{ opacity: 0.5 }} /></div>
+        <div style={{ color: 'var(--text-main)', fontWeight: '800', fontSize: '14px' }}>Allocation Data Unavailable</div>
+        <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '12px', marginTop: '6px' }}>Ensure scheme names in Master and Portfolio match exactly.</div>
     </div>
   );
   
@@ -21,7 +22,7 @@ const AssetDonut = ({ data }) => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', justifyContent: 'center' }}>
-      <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '150px', height: '150px' }}>
+      <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '150px', height: '150px', filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.05))' }}>
         {data.map((item, i) => {
           if (item.value <= 0) return null;
           const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
@@ -37,9 +38,9 @@ const AssetDonut = ({ data }) => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 30px' }}>
         {data.map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }}></div>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
-              {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '700'}}>{((item.value/total)*100).toFixed(1)}%</span>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}></div>
+            <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+              {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '600'}}>{((item.value/total)*100).toFixed(1)}%</span>
             </span>
           </div>
         ))}
@@ -124,8 +125,8 @@ const ClientDashboard = () => {
     });
 
     return [
-      { label: 'Large', value: totals.large, color: '#3b82f6' },
-      { label: 'Mid', value: totals.mid, color: '#a855f7' },
+      { label: 'Large', value: totals.large, color: '#0284c7' },
+      { label: 'Mid', value: totals.mid, color: '#8b5cf6' },
       { label: 'Small', value: totals.small, color: '#f59e0b' },
       { label: 'Debt', value: totals.debt, color: '#10b981' },
       { label: 'Gold', value: totals.gold, color: '#fbbf24' }
@@ -133,29 +134,29 @@ const ClientDashboard = () => {
   };
 
   const cardStyle = { 
-    background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', border: '2.5px solid var(--border)',
-    boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', marginBottom: '20px'
+    background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)',
+    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '24px'
   };
 
   return (
     <div className="fade-in" style={{ paddingBottom: '40px' }}>
       
       {/* 🔍 Search Header */}
-      <div style={{ position: 'relative', marginBottom: '30px' }}>
+      <div style={{ position: 'relative', marginBottom: '32px' }}>
         <input 
           type="text" 
           placeholder="Search by Client ID or Name..." 
-          style={{ width: '100%', padding: '16px 20px', paddingLeft: '50px', fontSize: '15px', fontWeight: '600', borderRadius: '12px', border: '2.5px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none' }}
+          style={{ width: '100%', padding: '16px 20px', paddingLeft: '48px', fontSize: '15px', fontWeight: '600', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'border-color 0.2s ease, box-shadow 0.2s ease', boxShadow: '0 2px 4px -1px rgba(0,0,0,0.02)' }}
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setSelectedClient(null); }}
         />
-        <span style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', opacity: 0.7, fontSize: '18px' }}>🔍</span>
+        <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         
         {searchTerm && !selectedClient?.full_name && (
-          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '2.5px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+          <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '1px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
             {clients.filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.client_code || '').toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
-                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '2px solid var(--border)', color: 'var(--text-main)', fontWeight: '700' }}>
-                  <span style={{ color: '#0284c7', marginRight: '12px', fontWeight: '900' }}>{c.client_code}</span> {c.full_name}
+                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: '700', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-main)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <span style={{ color: '#0284c7', marginRight: '12px', fontWeight: '800' }}>{c.client_code}</span> {c.full_name}
                 </div>
               ))}
           </div>
@@ -163,89 +164,137 @@ const ClientDashboard = () => {
       </div>
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-main)', fontWeight: '900', fontSize: '15px' }}>SYNCING CLIENT PROFILE...</div>
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <Activity size={28} className="spin" color="#0284c7" />
+            SYNCING CLIENT PROFILE...
+        </div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
           {/* Header Card */}
-          <div style={cardStyle}>
-              <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '900', letterSpacing: '-0.5px' }}>
-                {selectedClient.full_name} 
-                <span style={{fontSize: '18px', color: '#0284c7', marginLeft: '12px'}}>({selectedClient.client_code})</span>
-              </h2>
-              <div style={{ display: 'flex', gap: '15px', fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', alignItems: 'center' }}>
-                <span>Age: <strong style={{color: 'var(--text-main)'}}>{selectedClient.age || 'N/A'} yrs</strong></span>
-                <span style={{width: '1px', height: '12px', background: 'var(--border)'}}></span>
-                <span>Risk Profile: <strong style={{color: '#f59e0b'}}>{selectedClient.risk_profile || 'Medium'}</strong></span>
+          <div style={{...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px'}}>
+              <div>
+                <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {selectedClient.full_name} 
+                  <span style={{fontSize: '16px', color: '#0284c7', background: 'rgba(2, 132, 199, 0.1)', padding: '4px 12px', borderRadius: '8px', fontWeight: '700'}}>{selectedClient.client_code}</span>
+                </h2>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', alignItems: 'center' }}>
+                  <span>Age: <strong style={{color: 'var(--text-main)', fontWeight: '700'}}>{selectedClient.age || 'N/A'} yrs</strong></span>
+                  <span style={{width: '1px', height: '12px', background: 'var(--border)'}}></span>
+                  <span>Risk Profile: <strong style={{color: '#f59e0b', fontWeight: '700'}}>{selectedClient.risk_profile || 'Medium'}</strong></span>
+                </div>
               </div>
           </div>
 
           {/* Metrics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Client Invested AUM</div><div style={{fontSize: '24px', fontWeight: '900', color: '#0284c7'}}>₹{formatINR(summary.totalAUM)}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Monthly SIP</div><div style={{fontSize: '24px', fontWeight: '900', color: '#a855f7'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '12px', opacity: 0.6}}>/ mo</span></div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Active SIPs</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{summary.sipCount}</div></div>
-            <div style={cardStyle}><div style={{fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px'}}>Relationship Since</div><div style={{fontSize: '24px', fontWeight: '900', color: 'var(--text-main)'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+            <div style={cardStyle}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
+                    <Wallet size={16} color="#0284c7" /> Client Invested AUM
+                </div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary.totalAUM)}</div>
+            </div>
+            <div style={cardStyle}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
+                    <TrendingUp size={16} color="#8b5cf6" /> Monthly SIP
+                </div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600'}}>/ mo</span></div>
+            </div>
+            <div style={cardStyle}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
+                    <Activity size={16} color="#10b981" /> Active SIPs
+                </div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>{summary.sipCount}</div>
+            </div>
+            <div style={cardStyle}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
+                    <Clock size={16} color="#f59e0b" /> Relationship Since
+                </div>
+                <div style={{fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px', marginTop: '4px'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div>
+            </div>
           </div>
 
           {/* Portfolio Table */}
-          <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '30px' }}>
-             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead style={{ background: 'rgba(0,0,0,0.02)' }}>
-                  <tr style={{ borderBottom: '2.5px solid var(--border)' }}>
-                    <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>Scheme Name</th>
-                    <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>SIP p.m.</th>
-                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>Invested AUM</th>
-                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '900', fontSize: '11px', textTransform: 'uppercase' }}>% of Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {portfolio.map((item, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '16px', color: 'var(--text-main)', fontWeight: '700' }}>{item.scheme_name}</td>
-                      <td style={{ padding: '16px', textAlign: 'center', color: '#10b981', fontWeight: '800' }}>{safeNum(item.sip_amount) > 0 ? `₹${formatINR(item.sip_amount)}` : '-'}</td>
-                      <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(item.invested_amount)}</td>
-                      <td style={{ padding: '16px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>{summary.totalAUM > 0 ? ((safeNum(item.invested_amount) / summary.totalAUM) * 100).toFixed(1) : '0'}%</td>
-                    </tr>
-                  ))}
-                  <tr style={{ background: 'rgba(0,0,0,0.03)', fontWeight: '900' }}>
-                    <td style={{ padding: '16px', color: 'var(--text-main)' }}>TOTAL</td>
-                    <td style={{ padding: '16px', textAlign: 'center', color: 'var(--text-main)' }}>₹{formatINR(summary.totalSipBook)}</td>
-                    <td style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)' }}>₹{formatINR(summary.totalAUM)}</td>
-                    <td style={{ padding: '16px', textAlign: 'right', color: 'var(--text-main)' }}>100%</td>
-                  </tr>
-                </tbody>
-             </table>
+          <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '32px' }}>
+             <div className="table-container" style={{ overflowX: 'auto' }}>
+                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <thead style={{ background: 'var(--bg-main)' }}>
+                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ padding: '16px 24px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Scheme Name</th>
+                        <th style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SIP p.m.</th>
+                        <th style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invested AUM</th>
+                        <th style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>% of Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {portfolio.map((item, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-main)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                          <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '700' }}>{item.scheme_name}</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'center', color: '#10b981', fontWeight: '700' }}>{safeNum(item.sip_amount) > 0 ? `₹${formatINR(item.sip_amount)}` : '-'}</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(item.invested_amount)}</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>{summary.totalAUM > 0 ? ((safeNum(item.invested_amount) / summary.totalAUM) * 100).toFixed(1) : '0'}%</td>
+                        </tr>
+                      ))}
+                      <tr style={{ background: 'rgba(2, 132, 199, 0.04)' }}>
+                        <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '800' }}>TOTAL PORTFOLIO</td>
+                        <td style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '800' }}>₹{formatINR(summary.totalSipBook)}</td>
+                        <td style={{ padding: '16px 24px', textAlign: 'right', color: '#0284c7', fontWeight: '900', fontSize: '15px' }}>₹{formatINR(summary.totalAUM)}</td>
+                        <td style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '800' }}>100%</td>
+                      </tr>
+                    </tbody>
+                 </table>
+             </div>
           </div>
 
           {/* Allocation & Nominee Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
             <div style={cardStyle}>
-                <h3 style={{ margin: '0 0 24px 0', fontSize: '13px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation</h3>
+                <h3 style={{ margin: '0 0 24px 0', fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <PieChartIcon size={18} /> Asset Allocation
+                </h3>
                 <AssetDonut data={getAssetAllocation()} />
             </div>
 
-            <div style={{ ...cardStyle, borderLeft: selectedClient.nominee_name ? '6px solid #10b981' : '6px solid #f59e0b' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Nominee Status</h3>
+            <div style={{ ...cardStyle, borderLeft: selectedClient.nominee_name ? '4px solid #10b981' : '4px solid #f59e0b' }}>
+                <h3 style={{ margin: '0 0 20px 0', fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nominee Status</h3>
                 {selectedClient.nominee_name ? (
                     <div>
-                        <div style={{ color: '#10b981', fontWeight: '900', fontSize: '18px', marginBottom: '4px' }}>✅ Registered</div>
-                        <div style={{ color: 'var(--text-main)', fontWeight: '800', fontSize: '14px' }}>{selectedClient.nominee_name} <span style={{opacity: 0.6, fontSize: '12px'}}>({selectedClient.nominee_relation})</span></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontWeight: '800', fontSize: '16px', marginBottom: '8px' }}>
+                          <CheckCircle2 size={20} /> Registered
+                        </div>
+                        <div style={{ color: 'var(--text-main)', fontWeight: '700', fontSize: '15px', paddingLeft: '28px' }}>
+                          {selectedClient.nominee_name} <span style={{color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px'}}>({selectedClient.nominee_relation})</span>
+                        </div>
                     </div>
                 ) : (
-                    <div style={{ padding: '12px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px' }}>
-                        <div style={{ color: '#f59e0b', fontWeight: '900', fontSize: '18px', marginBottom: '6px' }}>⚠️ Nominee Not Registered</div>
-                        <div style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', lineHeight: 1.4 }}>Ensure regulatory compliance by updating nominee details for this client.</div>
+                    <div style={{ padding: '16px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontWeight: '800', fontSize: '15px', marginBottom: '8px' }}>
+                          <AlertTriangle size={18} /> Nominee Not Registered
+                        </div>
+                        <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px', lineHeight: 1.5, paddingLeft: '26px' }}>
+                          Ensure regulatory compliance by updating nominee details for this client in the Master Database.
+                        </div>
                     </div>
                 )}
             </div>
           </div>
         </>
       ) : (
-        <div style={{ textAlign: 'center', padding: '100px 20px', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px dashed var(--border)', color: 'var(--text-muted)' }}>
-          <h2 style={{ fontWeight: '900', fontSize: '24px', color: 'var(--text-main)', marginBottom: '10px' }}>Client Insights Hub</h2>
-          <p style={{ fontWeight: '600' }}>Search a Client to view detailed portfolio analytics.</p>
+        <div style={{ textAlign: 'center', padding: '100px 20px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px dashed var(--border)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <UserSearch size={48} style={{ opacity: 0.3, marginBottom: '20px' }} />
+          <h2 style={{ fontWeight: '800', fontSize: '20px', color: 'var(--text-main)', marginBottom: '8px', letterSpacing: '-0.3px' }}>Client Insights Hub</h2>
+          <p style={{ fontWeight: '500', fontSize: '14px' }}>Search a Client ID or Name above to view detailed portfolio analytics.</p>
         </div>
       )}
+      
+      <style>{`
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };
