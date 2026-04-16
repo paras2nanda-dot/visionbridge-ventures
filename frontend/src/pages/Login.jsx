@@ -226,18 +226,16 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
-                {/* ✅ Professional Concentric Fingerprint SVG */}
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#0284c7' }}>
-                    <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.02-.3 3"/>
-                    <path d="M14 22a10 10 0 0 0 8-8"/>
-                    <path d="M2 14a10 10 0 0 0 8 8"/>
-                    <path d="M12 20a4 4 0 0 0 4-4c0-1.55 0-3.11-.27-4.66"/>
-                    <path d="M12 2a10 10 0 0 1 10 10 9.43 9.43 0 0 1-1.39 4.84"/>
-                    <path d="M8 12a4 4 0 0 1 8 0c0 .52.02 1.01.08 1.5"/>
-                    <path d="M15 22a1 1 0 0 0 1-1c0-1.05-.17-2.05-.44-3"/>
-                    <path d="M8 22a1 1 0 0 1-1-1c0-1.1 0-2.26.26-3.39"/>
-                    <path d="M12 6c3.11 0 6.11 2 6.11 6 0 1.05-.03 2.1-.11 3.15"/>
-                    <path d="M12 2a10 10 0 0 0-10 10c0 .22.01.43.02.65"/>
+                {/* ✅ Professional Fingerprint SVG */}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12a10 10 0 0 1 18-6" />
+                    <path d="M5 8a7 7 0 0 1 12-2" />
+                    <path d="M7 10a5 5 0 0 1 8-2" />
+                    <path d="M12 12a2 2 0 0 1 2-2" />
+                    <path d="M12 12v10" />
+                    <path d="M12 12a2 2 0 0 0-2 2c0 .8.1 1.6.3 2.4" />
+                    <path d="M12 12c-4 0-7 3-7 7" />
+                    <path d="M12 12c4 0 7 3 7 7" />
                 </svg>
                 Login with Biometrics
              </button>
@@ -272,6 +270,7 @@ export default function Login() {
       )}
 
       <style>{`
+        /* Smooth, modern styling overrides */
         .login-field:focus {
           border-color: #0284c7 !important;
           box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15) !important;
