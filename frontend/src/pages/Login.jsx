@@ -217,7 +217,7 @@ export default function Login() {
             <span style={{ position: 'relative', zIndex: 2, background: 'var(--bg-main)', padding: '0 16px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: '800', letterSpacing: '1px' }}>OR</span>
           </div>
 
-          {/* 🛡️ BIOMETRIC LOGIN BUTTON (ICON REMOVED) */}
+          {/* 🛡️ BIOMETRIC LOGIN BUTTON (OPTION A: BANKING SHIELD) */}
           <div style={{ width: '100%' }}>
              <button 
                 type="button" 
@@ -226,6 +226,13 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
+                {/* ✅ Banking Shield SVG */}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12a3 3 0 0 1 6 0" />
+                    <path d="M12 10v4" />
+                    <path d="M10 15a3 3 0 0 0 4 0" />
+                </svg>
                 Login with Biometrics
              </button>
           </div>
