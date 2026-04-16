@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, LineChart, Line 
 } from 'recharts';
+import { AlertTriangle, PieChart as PieChartIcon, TrendingUp, Activity, CheckCircle2 } from 'lucide-react';
 
 const Charts = () => {
   const [charts, setCharts] = useState(null);
@@ -59,16 +60,19 @@ const Charts = () => {
     });
   }, []);
 
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '900', color: 'var(--text-muted)' }}>📊 SYNCING EXECUTIVE ANALYTICS...</div>;
-  if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '900', color: '#ef4444' }}>❌ Session Expired. Please log in again.</div>;
+  if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)' }}>SYNCING EXECUTIVE ANALYTICS...</div>;
+  if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: '#ef4444' }}>Session Expired. Please log in again.</div>;
 
-  const sectionHeader = (title, color) => (
-    <h2 style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '24px', borderLeft: `6px solid ${color}`, paddingLeft: '16px', fontSize: '20px', letterSpacing: '0.5px' }}>
+  const sectionHeader = (title, color, Icon) => (
+    <h2 style={{ fontWeight: '800', color: 'var(--text-main)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', letterSpacing: '0.5px' }}>
+      {Icon && <Icon size={22} color={color} />}
       {title}
     </h2>
   );
 
-  const chartLabel = { textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px', letterSpacing: '0.5px' };
+  const chartCardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
+  const chartLabel = { textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px', letterSpacing: '0.3px' };
+  const tooltipStyle = { borderRadius: '12px', fontWeight: '700', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' };
 
   const renderDonut = (data = []) => {
     const total = data.reduce((sum, entry) => sum + (entry.value || 0), 0);
@@ -90,55 +94,55 @@ const Charts = () => {
           >
             {data.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
           </Pie>
-          <Tooltip 
-            contentStyle={{ borderRadius: '12px', fontWeight: '800', background: 'var(--bg-card)', border: '2.5px solid var(--border)', color: 'var(--text-main)', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)' }} 
-            itemStyle={{ color: 'var(--text-main)', fontWeight: '800' }}
-          />
-          <Legend iconType="circle" wrapperStyle={{ fontWeight: '800', fontSize: '12px', paddingTop: '20px', color: 'var(--text-muted)' }} />
+          <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: 'var(--text-main)', fontWeight: '700' }} />
+          <Legend iconType="circle" wrapperStyle={{ fontWeight: '700', fontSize: '12px', paddingTop: '20px', color: 'var(--text-muted)' }} />
         </PieChart>
       </ResponsiveContainer>
     );
   };
 
   return (
-    <div className="container fade-in" style={{ paddingBottom: '60px' }}>
+    <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
       
       {/* 🔴 ALERT: UPCOMING SIP CLOSURES */}
       <div style={{ marginBottom: '48px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-          {sectionHeader("Attention: Upcoming SIP Closures (Next 60 Days)", "#ef4444")}
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '8px 16px', borderRadius: '8px', fontWeight: '900', fontSize: '12px', border: '1.5px solid rgba(239, 68, 68, 0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {sectionHeader("Upcoming SIP Closures (Next 60 Days)", "#ef4444", AlertTriangle)}
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '8px 16px', borderRadius: '8px', fontWeight: '800', fontSize: '12px', border: '1px solid rgba(239, 68, 68, 0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {upcomingClosures.length} Maturities Tracked
           </div>
         </div>
 
-        <div className="card" style={{ padding: '0', overflow: 'hidden', borderColor: 'rgba(239, 68, 68, 0.4) !important' }}>
-          <div className="table-container" style={{ overflowX: 'auto', border: 'none' }}>
+        <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.3)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.05)' }}>
+          <div className="table-container" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
-                <tr style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '900' }}>Client name</th>
-                  <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '900' }}>Fund name</th>
-                  <th style={{ padding: '16px', textAlign: 'center', color: '#ef4444', fontWeight: '900' }}>Closure date</th>
-                  <th style={{ padding: '16px', textAlign: 'right', color: '#ef4444', fontWeight: '900' }}>Amount</th>
+                <tr style={{ background: 'rgba(239, 68, 68, 0.05)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                  <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Client name</th>
+                  <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fund name</th>
+                  <th style={{ padding: '16px', textAlign: 'center', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Closure date</th>
+                  <th style={{ padding: '16px', textAlign: 'right', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {upcomingClosures.length > 0 ? upcomingClosures.map((sip) => (
-                  <tr key={sip.id} style={{ borderBottom: '2px solid var(--border)' }}>
-                    <td style={{ padding: '16px', fontWeight: '800', color: 'var(--text-main)' }}>{sip.client_name}</td>
-                    <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{sip.scheme_name}</td>
+                  <tr key={sip.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{sip.client_name}</td>
+                    <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{sip.scheme_name}</td>
                     <td style={{ padding: '16px', textAlign: 'center' }}>
-                      <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '6px 12px', borderRadius: '8px', fontWeight: '900', fontSize: '12px' }}>
+                      <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '6px 12px', borderRadius: '8px', fontWeight: '800', fontSize: '12px' }}>
                         {new Date(sip.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                     </td>
-                    <td style={{ padding: '16px', textAlign: 'right', fontWeight: '900', color: 'var(--text-main)' }}>₹{formatINR(sip.amount)}</td>
+                    <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(sip.amount)}</td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="4" style={{ padding: '60px', textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)' }}>
-                      ✅ No SIPs are set to close in the next 60 days.
+                    <td colSpan="4" style={{ padding: '60px', textAlign: 'center', fontWeight: '600', color: 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                        <CheckCircle2 size={32} color="#10b981" />
+                        No SIPs are set to close in the next 60 days.
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -149,27 +153,27 @@ const Charts = () => {
       </div>
 
       {/* 🟦 CATEGORY 1: DEMOGRAPHICS */}
-      {sectionHeader("Client Demographics (Count %)", "#0284c7")}
+      {sectionHeader("Client Demographics", "#0284c7", PieChartIcon)}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '48px' }}>
-        <div className="card"><p style={chartLabel}>Added By</p>{renderDonut(charts.category1?.addedBy)}</div>
-        <div className="card"><p style={chartLabel}>Client Sourcing</p>{renderDonut(charts.category1?.sourcing)}</div>
-        <div className="card"><p style={chartLabel}>Sourcing Type</p>{renderDonut(charts.category1?.sourcingType)}</div>
-        <div className="card"><p style={chartLabel}>Risk Profile</p>{renderDonut(charts.category1?.riskProfile)}</div>
-        <div className="card"><p style={chartLabel}>Experience</p>{renderDonut(charts.category1?.investmentExp)}</div>
-        <div className="card"><p style={chartLabel}>Age Buckets</p>{renderDonut(charts.category1?.ageBucketsCount)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Added By</p>{renderDonut(charts.category1?.addedBy)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Client Sourcing</p>{renderDonut(charts.category1?.sourcing)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Sourcing Type</p>{renderDonut(charts.category1?.sourcingType)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Risk Profile</p>{renderDonut(charts.category1?.riskProfile)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Experience</p>{renderDonut(charts.category1?.investmentExp)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Age Buckets</p>{renderDonut(charts.category1?.ageBucketsCount)}</div>
       </div>
 
       {/* 🟩 CATEGORY 2: AUM SPLITS */}
-      {sectionHeader("AUM-Based Analytics (Value)", "#10b981")}
+      {sectionHeader("AUM-Based Analytics", "#10b981", Activity)}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', marginBottom: '48px' }}>
-        <div className="card"><p style={chartLabel}>SIP AUM vs Transaction AUM</p>{renderDonut(charts.category2?.sipVsTrans)}</div>
-        <div className="card"><p style={chartLabel}>Age Buckets (AUM %)</p>{renderDonut(charts.category2?.ageBucketsAum)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>SIP AUM vs Transaction AUM</p>{renderDonut(charts.category2?.sipVsTrans)}</div>
+        <div style={chartCardStyle}><p style={chartLabel}>Age Buckets (AUM %)</p>{renderDonut(charts.category2?.ageBucketsAum)}</div>
       </div>
 
       {/* 📈 GROWTH PERFORMANCE TRENDS */}
-      {sectionHeader("Growth Performance Trends", "#8b5cf6")}
+      {sectionHeader("Growth Performance Trends", "#8b5cf6", TrendingUp)}
       
-      <div className="card" style={{ marginBottom: '24px' }}>
+      <div style={{ ...chartCardStyle, marginBottom: '24px' }}>
         <p style={chartLabel}>Invested AUM vs Market Value AUM</p>
         <ResponsiveContainer width="100%" height={400}>
           <AreaChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -180,45 +184,45 @@ const Charts = () => {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
-            <XAxis dataKey="month" tick={{fontWeight: 800, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
-            <YAxis tick={{fontWeight: 800, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
-            <Tooltip contentStyle={{borderRadius: '12px', fontWeight: '800', background: 'var(--bg-card)', border: '2.5px solid var(--border)', color: 'var(--text-main)', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)'}} itemStyle={{fontWeight: '900'}} />
-            <Legend verticalAlign="top" height={40} iconType="circle" wrapperStyle={{fontWeight: '800', fontSize: '13px', color: 'var(--text-muted)'}} />
-            <Area name="Market Value" type="monotone" dataKey="market_value_aum" stroke="#8b5cf6" strokeWidth={4} fillOpacity={1} fill="url(#colorMarket)" />
-            <Line name="Invested Value" type="monotone" dataKey="invested_aum" stroke="#10b981" strokeWidth={4} dot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: 'var(--bg-card)' }} activeDot={{ r: 7 }} />
+            <XAxis dataKey="month" tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
+            <YAxis tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+            <Tooltip contentStyle={tooltipStyle} itemStyle={{fontWeight: '800'}} />
+            <Legend verticalAlign="top" height={40} iconType="circle" wrapperStyle={{fontWeight: '700', fontSize: '13px', color: 'var(--text-muted)'}} />
+            <Area name="Market Value" type="monotone" dataKey="market_value_aum" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorMarket)" />
+            <Line name="Invested Value" type="monotone" dataKey="invested_aum" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: 'var(--bg-card)' }} activeDot={{ r: 6 }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
-        <div className="card">
+        <div style={chartCardStyle}>
           <p style={chartLabel}>Monthly Actual Commission</p>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
-              <XAxis dataKey="month" tick={{fontWeight: 800, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontWeight: 800, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
-              <Tooltip contentStyle={{borderRadius: '12px', fontWeight: '800', background: 'var(--bg-card)', border: '2.5px solid var(--border)', color: 'var(--text-main)', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)'}} itemStyle={{fontWeight: '900'}} />
-              <Line type="stepAfter" name="Commission" dataKey="commission" stroke="#f59e0b" strokeWidth={4} dot={{ r: 5, fill: '#f59e0b', stroke: 'var(--bg-card)', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+              <XAxis dataKey="month" tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+              <Tooltip contentStyle={tooltipStyle} itemStyle={{fontWeight: '800'}} />
+              <Line type="stepAfter" name="Commission" dataKey="commission" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b', stroke: 'var(--bg-card)', strokeWidth: 2 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="card">
+        <div style={chartCardStyle}>
           <p style={chartLabel}>SIP Book Growth</p>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorSIP" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#0284c7" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#0284c7" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
-              <XAxis dataKey="month" tick={{fontWeight: 800, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontWeight: 800, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
-              <Tooltip contentStyle={{borderRadius: '12px', fontWeight: '800', background: 'var(--bg-card)', border: '2.5px solid var(--border)', color: 'var(--text-main)', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)'}} itemStyle={{fontWeight: '900'}} />
-              <Area type="monotone" name="SIP Book" dataKey="sip_growth" stroke="#06b6d4" strokeWidth={4} fillOpacity={1} fill="url(#colorSIP)" />
+              <XAxis dataKey="month" tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+              <Tooltip contentStyle={tooltipStyle} itemStyle={{fontWeight: '800'}} />
+              <Area type="monotone" name="SIP Book" dataKey="sip_growth" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#colorSIP)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
