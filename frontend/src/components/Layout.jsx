@@ -3,6 +3,7 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AutoLogout from './AutoLogout';
 import CommandPalette from './CommandPalette';
+import { Home, Search } from 'lucide-react'; // ✅ Imported Lucide icons
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -72,7 +73,10 @@ const Layout = () => {
             
                 {/* Breadcrumbs */}
                 <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.3px', flexWrap: 'wrap' }}>
-                    <Link to="/dashboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}>🏠 Home</Link>
+                    {/* ✅ Clean Lucide Home Icon */}
+                    <Link to="/dashboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Home size={16} /> Home
+                    </Link>
                     {pathnames.map((value, index) => {
                     const to = `/${pathnames.slice(0, index + 1).join('/')}`;
                     const isLast = index === pathnames.length - 1;
@@ -92,16 +96,17 @@ const Layout = () => {
                     style={{ 
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', 
                         padding: '12px 20px', background: 'var(--bg-card)', 
-                        border: '2.5px solid var(--border)', borderRadius: '12px', 
-                        color: 'var(--text-muted)', fontSize: '15px', fontWeight: '700', 
-                        cursor: 'pointer', boxShadow: '4px 4px 0px rgba(0,0,0,0.05)', 
+                        border: '1px solid var(--border)', borderRadius: '12px', /* ✅ Soft SaaS Border */
+                        color: 'var(--text-muted)', fontSize: '15px', fontWeight: '600', 
+                        cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', /* ✅ Soft Drop Shadow */
                         transition: 'all 0.2s ease', outline: 'none'
                     }}
                 >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-main)' }}>
-                        <span style={{ opacity: 0.7 }}>🔍</span> Search...
+                        {/* ✅ Clean Lucide Search Icon */}
+                        <Search size={18} style={{ opacity: 0.7 }} /> Search...
                     </span>
-                    <span style={{ background: 'var(--bg-main)', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', border: '1.5px solid var(--border)', letterSpacing: '0.5px' }}>
+                    <span style={{ background: 'var(--bg-main)', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', border: '1px solid var(--border)', letterSpacing: '0.5px' }}>
                         Ctrl K
                     </span>
                 </button>
@@ -129,7 +134,7 @@ const Layout = () => {
             position: sticky; 
             top: 0; 
             background: var(--bg-card); 
-            border-bottom: 2.5px solid var(--border); 
+            border-bottom: 1px solid var(--border); /* ✅ Soft SaaS Border */
             padding: 12px 16px; 
             z-index: 1000; 
             align-items: center; 
@@ -154,4 +159,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default Layout;s
