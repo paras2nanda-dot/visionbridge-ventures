@@ -97,7 +97,7 @@ const ClientDashboard = () => {
   const safeNum = (val) => parseFloat(val) || 0;
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
-  // 🧪 RECTIFIED CALCULATION: Exhaustive field check for Debt and Gold
+  // 🧪 RECTIFIED CALCULATION: Aggressive field extraction for all asset classes
   const getAssetAllocation = () => {
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
@@ -109,12 +109,12 @@ const ClientDashboard = () => {
       );
       
       if (master && investedValue > 0) {
-          // Robust check for field names in the database
-          const l = safeNum(master.large_percent || master.large_cap || master.large);
-          const m = safeNum(master.mid_percent || master.mid_cap || master.mid);
-          const s = safeNum(master.small_percent || master.small_cap || master.small);
-          const d = safeNum(master.debt_percent || master.debt_cap || master.debt);
-          const g = safeNum(master.gold_percent || master.gold_cap || master.gold);
+          // Extremely robust extraction, checking every possible variant of the database key
+          const l = safeNum(master.large_percent || master.large_cap || master.large_allocation || master.large);
+          const m = safeNum(master.mid_percent || master.mid_cap || master.mid_allocation || master.mid);
+          const s = safeNum(master.small_percent || master.small_cap || master.small_allocation || master.small);
+          const d = safeNum(master.debt_percent || master.debt_cap || master.debt_allocation || master.debt);
+          const g = safeNum(master.gold_percent || master.gold_cap || master.gold_allocation || master.gold);
 
           totals.large += investedValue * (l / 100);
           totals.mid += investedValue * (m / 100);
