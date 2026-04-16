@@ -4,6 +4,9 @@ import ClientDashboard from './ClientDashboard';
 import ActivityFeed from '../../components/ActivityFeed';
 import api from '../../services/api';
 
+// ✅ Imported professional Lucide icons
+import { Briefcase, Users, Clock, Shield, ShieldCheck, Trash2 } from 'lucide-react';
+
 // --- Internal Security Component ---
 const PasskeyManager = () => {
   const [passkeys, setPasskeys] = useState([]);
@@ -34,29 +37,31 @@ const PasskeyManager = () => {
   useEffect(() => { fetchPasskeys(); }, []);
 
   return (
-    <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '12px', border: '2.5px solid var(--border)', boxShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
-      <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '900', fontSize: '20px' }}>
-        🛡️ Biometric Security
+    <div style={{ padding: '32px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+      <h3 style={{ marginBottom: '12px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '800', fontSize: '20px' }}>
+        <ShieldCheck size={24} color="#0284c7" /> Biometric Security
       </h3>
-      <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px', fontWeight: '600' }}>
-        Manage the devices authorized to log in with your fingerprint or face recognition.
+      <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>
+        Manage the devices authorized to log in with fingerprint or face recognition.
       </p>
 
-      {loading ? <p style={{ fontWeight: '800', color: 'var(--text-muted)' }}>Loading devices...</p> : passkeys.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontWeight: '700', padding: '20px', background: 'var(--bg-main)', borderRadius: '8px', border: '2.5px solid var(--border)', textAlign: 'center' }}>No biometric devices registered.</p>
+      {loading ? <p style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Loading devices...</p> : passkeys.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontWeight: '600', padding: '24px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', textAlign: 'center' }}>No biometric devices registered.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {passkeys.map(key => (
-            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: 'var(--bg-main)', borderRadius: '10px', border: '2.5px solid var(--border)' }}>
+            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontWeight: '900', fontSize: '15px', color: 'var(--text-main)', marginBottom: '4px' }}>Registered Device</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>Added on: {new Date(key.created_at).toLocaleDateString()}</div>
+                <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-main)', marginBottom: '6px' }}>Authorized Device</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '500' }}>Added: {new Date(key.created_at).toLocaleDateString()}</div>
               </div>
               <button 
                 onClick={() => handleDelete(key.id)}
-                style={{ background: '#ef4444', color: 'white', border: '2.5px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', color: '#ef4444', border: '1px solid #fca5a5', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '700', transition: 'all 0.2s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
               >
-                Remove
+                <Trash2 size={16} /> Remove
               </button>
             </div>
           ))}
@@ -119,26 +124,25 @@ const Dashboard = () => {
   };
 
   const tabStyle = (tabName) => ({
-    padding: '14px 24px', 
+    padding: '16px 24px', 
     cursor: 'pointer',
-    fontSize: '15px', 
-    letterSpacing: '0.3px',
-    textTransform: 'none', 
-    fontWeight: activeTab === tabName ? '900' : '700',
-    color: activeTab === tabName ? '#38bdf8' : 'var(--text-muted)',
-    borderBottom: activeTab === tabName ? '4px solid #38bdf8' : '4px solid transparent',
+    fontSize: '14px', 
+    letterSpacing: '0.5px',
+    fontWeight: activeTab === tabName ? '800' : '600',
+    color: activeTab === tabName ? '#0284c7' : 'var(--text-muted)',
+    borderBottom: activeTab === tabName ? '3px solid #0284c7' : '3px solid transparent',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '8px',
     whiteSpace: 'nowrap', 
     flexShrink: 0 
   });
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', padding: '15px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
+    <div style={{ width: '100%', minHeight: '100vh', padding: '24px 32px', background: 'var(--bg-main)', overflowX: 'hidden' }}>
       
-      {/* Strict CSS override to prevent global button styles from ruining the tabs */}
+      {/* Strict CSS override for clean tab styling */}
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
         .dashboard-tabs button { 
@@ -149,48 +153,46 @@ const Dashboard = () => {
           background: transparent !important; 
           border-radius: 0 !important;
         } 
-        .dashboard-tabs button:hover { color: #38bdf8; opacity: 0.8; transform: none !important; }
+        .dashboard-tabs button:hover { color: #0284c7; }
       `}</style>
       
-      <h1 className="title" style={{ fontWeight: '900', color: 'var(--text-main)', marginBottom: '30px', fontSize: '32px' }}>
-        Dashboard
-      </h1>
+      {/* 🚀 Giant "Dashboard" title removed to rely on clean breadcrumbs */}
       
       <div 
         className="dashboard-tabs" 
         ref={tabContainerRef}
         style={{ 
             display: 'flex', 
-            gap: '10px', 
-            borderBottom: '2.5px solid var(--border)',
+            gap: '16px', 
+            borderBottom: '1px solid var(--border)',
             background: 'var(--bg-main)',
             position: 'sticky',
             top: '0', 
-            paddingTop: '5px',
+            paddingTop: '8px',
             paddingBottom: '0',
             zIndex: 100,
             overflowX: 'auto', 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none', 
-            marginBottom: '35px',
+            marginBottom: '32px',
             scrollBehavior: 'smooth'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
-          🏢 Business Analytics
+          <Briefcase size={18} /> Business Analytics
         </button>
         <button ref={tabRefs.client} style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
-          👤 Client Insights
+          <Users size={18} /> Client Insights
         </button>
         <button ref={tabRefs.activity} style={tabStyle('activity')} onClick={(e) => handleTabClick(e, 'activity')}>
-          🕒 Recent Activities
+          <Clock size={18} /> Recent Activities
         </button>
         <button ref={tabRefs.security} style={tabStyle('security')} onClick={(e) => handleTabClick(e, 'security')}>
-          🛡️ Security
+          <Shield size={18} /> Security
         </button>
       </div>
 
       <div 
-        style={{ paddingTop: '5px', minHeight: '60vh', width: '100%' }}
+        style={{ paddingTop: '8px', minHeight: '60vh', width: '100%' }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -198,7 +200,7 @@ const Dashboard = () => {
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
         {activeTab === 'activity' && <div style={{ maxWidth: '1000px', margin: '0 auto' }}><ActivityFeed /></div>}
-        {activeTab === 'security' && <div style={{ maxWidth: '600px', margin: '0 auto' }}><PasskeyManager /></div>}
+        {activeTab === 'security' && <div style={{ maxWidth: '700px', margin: '0 auto' }}><PasskeyManager /></div>}
       </div>
     </div>
   );
