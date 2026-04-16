@@ -4,7 +4,7 @@ import ClientDashboard from './ClientDashboard';
 import ActivityFeed from '../../components/ActivityFeed';
 import api from '../../services/api';
 
-import { Briefcase, Users, Clock, Shield, ShieldCheck, Trash2 } from 'lucide-react';
+import { Briefcase, Users, Clock, Shield, ShieldCheck, Trash2, Fingerprint, Smartphone } from 'lucide-react';
 
 // --- Internal Security Component ---
 const PasskeyManager = () => {
@@ -37,30 +37,43 @@ const PasskeyManager = () => {
 
   return (
     <div style={{ padding: '32px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-      <h3 style={{ marginBottom: '12px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '800', fontSize: '20px' }}>
+      <h3 style={{ marginBottom: '12px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '800', fontSize: '20px', letterSpacing: '-0.3px' }}>
         <ShieldCheck size={24} color="#0284c7" /> Biometric Security
       </h3>
-      <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>
+      <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500', lineHeight: 1.5 }}>
         Manage the devices authorized to log in with fingerprint or face recognition.
       </p>
 
-      {loading ? <p style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Loading devices...</p> : passkeys.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontWeight: '600', padding: '24px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', textAlign: 'center' }}>No biometric devices registered.</p>
+      {loading ? (
+        <p style={{ fontWeight: '600', color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>Loading secure devices...</p>
+      ) : passkeys.length === 0 ? (
+        <div style={{ padding: '60px 20px', background: 'var(--bg-main)', borderRadius: '16px', border: '1px dashed var(--border)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <Fingerprint size={48} color="var(--text-muted)" style={{ opacity: 0.3 }} />
+            <div>
+                <div style={{ color: 'var(--text-main)', fontWeight: '800', fontSize: '15px', marginBottom: '6px' }}>No biometric devices registered</div>
+                <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px' }}>Register your device on the login screen to enable passwordless access.</div>
+            </div>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {passkeys.map(key => (
-            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-              <div>
-                <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-main)', marginBottom: '6px' }}>Authorized Device</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '500' }}>Added: {new Date(key.created_at).toLocaleDateString()}</div>
+            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)', transition: 'box-shadow 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)'} onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ background: 'rgba(2, 132, 199, 0.1)', padding: '12px', borderRadius: '10px' }}>
+                    <Smartphone size={20} color="#0284c7" />
+                </div>
+                <div>
+                    <div style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text-main)', marginBottom: '4px' }}>Authorized Device</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Added: {new Date(key.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                </div>
               </div>
               <button 
                 onClick={() => handleDelete(key.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', color: '#ef4444', border: '1px solid #fca5a5', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '700', transition: 'all 0.2s' }}
-                onMouseOver={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.05)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '10px 16px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontWeight: '800', transition: 'all 0.2s', letterSpacing: '0.5px' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)'; }}
               >
-                <Trash2 size={16} /> Remove
+                <Trash2 size={16} /> REMOVE
               </button>
             </div>
           ))}
@@ -126,7 +139,7 @@ const Dashboard = () => {
     padding: '12px 24px', 
     cursor: 'pointer',
     fontSize: '14px', 
-    letterSpacing: '0.5px',
+    letterSpacing: '0.3px',
     fontWeight: activeTab === tabName ? '800' : '600',
     color: activeTab === tabName ? '#0284c7' : 'var(--text-muted)',
     borderBottom: activeTab === tabName ? '3px solid #0284c7' : '3px solid transparent',
@@ -170,7 +183,7 @@ const Dashboard = () => {
             overflowX: 'auto', 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none', 
-            marginBottom: '24px',
+            marginBottom: '32px',
             scrollBehavior: 'smooth'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
