@@ -217,7 +217,7 @@ export default function Login() {
             <span style={{ position: 'relative', zIndex: 2, background: 'var(--bg-main)', padding: '0 16px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: '800', letterSpacing: '1px' }}>OR</span>
           </div>
 
-          {/* 🛡️ BIOMETRIC LOGIN BUTTON (REFINED BANKING SHIELD) */}
+          {/* 🛡️ BIOMETRIC LOGIN BUTTON (FIXED BANKING SHIELD) */}
           <div style={{ width: '100%' }}>
              <button 
                 type="button" 
@@ -226,16 +226,15 @@ export default function Login() {
                 disabled={isLoggingIn || !username.trim()}
                 title="Enter your username first, then click here to login with your fingerprint."
               >
-                {/* ✅ Refined Banking Shield with Detailed Fingerprint */}
+                {/* ✅ True Biometric Shield SVG (No more little astronaut!) */}
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     {/* Outer Shield */}
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    {/* Detailed Inner Fingerprint Arcs */}
-                    <path d="M12 8a2.5 2.5 0 0 1 2.5 2.5" />
-                    <path d="M9.5 10.5a2.5 2.5 0 0 1 5 0" />
-                    <path d="M12 15.5V13" />
-                    <path d="M9 15c0-1.66 1.34-3 3-3s3 1.34 3 3" />
-                    <path d="M10.5 17.5a1.5 1.5 0 0 1 3 0" />
+                    {/* Concentric Biometric Arcs */}
+                    <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2c0 .33.08.64.21.92" />
+                    <path d="M12 7c2.21 0 4 1.79 4 4 0 .61-.13 1.19-.38 1.71" />
+                    <path d="M12 15v-2" />
+                    <path d="M15 13.5c0-1.66-1.34-3-3-3" />
                 </svg>
                 Login with Biometrics
              </button>
