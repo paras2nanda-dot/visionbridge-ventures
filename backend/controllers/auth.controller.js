@@ -118,7 +118,7 @@ export const generateRegOptions = async (req, res) => {
       userDisplayName: username,
       excludeCredentials: safeExcludeCredentials,
       authenticatorSelection: {
-        residentKey: 'preferred',
+        residentKey: 'required', // 🟢 Set to 'required' for One-Tap Discoverable credentials
         userVerification: 'preferred',
       },
     });
@@ -174,33 +174,31 @@ export const verifyReg = async (req, res) => {
 };
 
 export const generateAuthOptions = async (req, res) => {
-  const username = req.body.username?.trim().toLowerCase();
+  const username = req.body.username?.trim().toLowerCase(); // Optional for discoverable
   const { rpID } = getWebAuthnConfig(req);
-
-  if (!username) return res.status(400).json({ error: "Username required" });
 
   try {
     await ensurePasskeyTable();
-    const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     
-    if (userKeys.rows.length === 0) {
-        return res.status(404).json({ error: "No biometrics registered. Please login with password to register this device." });
-    }
-
-    const safeAllowCredentials = userKeys.rows
-      .filter(key => key.credential_id)
-      .map(key => ({
+    let allowCredentials = [];
+    if (username) {
+      const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
+      allowCredentials = userKeys.rows.map(key => ({
         id: key.credential_id, 
         type: 'public-key',
       }));
+    }
 
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials: safeAllowCredentials,
+      allowCredentials, // 🟢 Empty array allows "Discoverable Credentials" (One-Tap login)
       userVerification: 'preferred',
     });
 
-    challengeStore.set(`auth_${username}`, options.challenge);
+    // Use a generic key for discoverable challenges, or user-specific if username is provided
+    const challengeKey = username ? `auth_${username}` : `auth_discoverable`;
+    challengeStore.set(challengeKey, options.challenge);
+    
     res.json(options);
   } catch (err) {
     console.error("Auth Options Error:", err);
@@ -212,13 +210,17 @@ export const verifyAuth = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data; 
   const { rpID, origin } = getWebAuthnConfig(req);
-  const expectedChallenge = challengeStore.get(`auth_${username}`);
+  
+  // Try to retrieve the correct challenge
+  const challengeKey = username ? `auth_${username}` : `auth_discoverable`;
+  const expectedChallenge = challengeStore.get(challengeKey);
 
   if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Try again." });
 
   try {
-    const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
-    const passkey = userKeys.rows.find(k => k.credential_id === body.id);
+    // 🟢 FIND THE PASSKEY BY CREDENTIAL ID (Supports One-Tap login)
+    const keyResult = await pool.query('SELECT * FROM user_passkeys WHERE credential_id = $1', [body.id]);
+    const passkey = keyResult.rows[0];
 
     if (!passkey) {
         return res.status(400).json({ 
@@ -240,16 +242,17 @@ export const verifyAuth = async (req, res) => {
 
     if (verification.verified) {
       await pool.query('UPDATE user_passkeys SET counter = $1 WHERE id = $2', [verification.authenticationInfo.newCounter, passkey.id]);
-      challengeStore.delete(`auth_${username}`);
+      challengeStore.delete(challengeKey);
 
+      const authUsername = passkey.username; // Use the username found in the DB
       const token = jwt.sign(
-        { username, role: 'admin' }, 
+        { username: authUsername, role: 'admin' }, 
         process.env.JWT_SECRET || 'fallback_secret_key', 
         { expiresIn: '8h' }
       );
 
       // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
-      await logActivity(username, "UPDATE", "Login", "Authenticated via Biometrics");
+      await logActivity(authUsername, "UPDATE", "Login", "Authenticated via Biometrics");
 
       res.cookie('token', token, {
         httpOnly: true,
@@ -258,7 +261,7 @@ export const verifyAuth = async (req, res) => {
         maxAge: 8 * 60 * 60 * 1000 
       });
 
-      return res.json({ message: "Biometric login successful", user: { username }, token });
+      return res.json({ message: "Biometric login successful", user: { username: authUsername }, token });
     }
   } catch (error) {
     console.error("WebAuthn Auth Error:", error);
