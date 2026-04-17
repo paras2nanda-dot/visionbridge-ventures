@@ -28,17 +28,24 @@ const Dashboard = () => {
 
   const handleTabClick = (e, tabName) => switchTab(tabName);
 
-  const onTouchStart = (e) => {
+  // 🟢 FIXED: Using e.clientX which works for both Mouse and Touch pointers
+  const onPointerDown = (e) => {
     touchEndX.current = null;
-    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartX.current = e.clientX;
   };
 
-  const onTouchMove = (e) => {
-    touchEndX.current = e.targetTouches[0].clientX;
+  const onPointerMove = (e) => {
+    if (touchStartX.current !== null) {
+      touchEndX.current = e.clientX;
+    }
   };
 
-  const onTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
+  const onPointerUp = () => {
+    if (touchStartX.current === null || touchEndX.current === null) {
+      touchStartX.current = null;
+      return;
+    }
+
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -51,6 +58,10 @@ const Dashboard = () => {
         switchTab(tabOrder[currentIndex - 1]);
       }
     }
+
+    // Reset tracking
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   const tabStyle = (tabName) => ({
@@ -114,9 +125,9 @@ const Dashboard = () => {
 
       <div 
         style={{ paddingTop: '8px', minHeight: '60vh', width: '100%' }}
-        onPointerDown={onTouchStart}
-        onPointerMove={onTouchMove}
-        onPointerUp={onTouchEnd}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
       >
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
