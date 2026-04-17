@@ -99,7 +99,7 @@ const SettingsModal = ({ onClose }) => {
     display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '10px',
     background: activeTab === id ? 'rgba(2, 132, 199, 0.1)' : 'transparent',
     color: activeTab === id ? '#0284c7' : 'var(--text-muted)',
-    border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '13px', transition: 'all 0.2s'
+    border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '13px', transition: 'all 0.2s', textAlign: 'left'
   });
 
   return createPortal(
@@ -114,12 +114,13 @@ const SettingsModal = ({ onClose }) => {
           background: var(--bg-card); width: 95%; max-width: 900px; height: 600px;
           display: flex; border-radius: 20px; overflow: hidden; border: 1px solid var(--border);
           box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: slideUpSpring 0.4s ease-out;
+          position: relative;
         }
         .settings-sidebar {
           width: 240px; background: var(--bg-main); border-right: 1px solid var(--border);
-          padding: 24px 16px; display: flex; flexDirection: column; gap: 8px;
+          padding: 24px 16px; display: flex; flex-direction: column; gap: 8px;
         }
-        .settings-content { flex: 1; padding: 32px; overflow-y: auto; background: var(--bg-card); }
+        .settings-content { flex: 1; padding: 32px; overflow-y: auto; background: var(--bg-card); position: relative; }
         .theme-card {
           background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px;
           padding: 16px; cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s;
@@ -143,7 +144,7 @@ const SettingsModal = ({ onClose }) => {
           </div>
 
           <div className="settings-content">
-            <div style={{ display: 'flex', justifyContent: 'flex-end', position: 'absolute', top: '20px', right: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', position: 'absolute', top: '20px', right: '24px', zIndex: 10 }}>
                 <button onClick={onClose} style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-main)', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16}/></button>
             </div>
 
@@ -168,7 +169,7 @@ const SettingsModal = ({ onClose }) => {
                 <div className="fade-in">
                     <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '18px', fontWeight: '800' }}>Audit Trail</h3>
                     <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600' }}>Review recent system changes and user actions.</p>
-                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-main)' }}>
                         <ActivityFeed />
                     </div>
                 </div>
@@ -176,7 +177,6 @@ const SettingsModal = ({ onClose }) => {
           </div>
         </div>
       </div>
-    </pre>
     </>,
     document.body
   );
