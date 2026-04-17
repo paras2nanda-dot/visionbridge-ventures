@@ -57,6 +57,7 @@ const ClientDashboard = () => {
   const [schemes, setSchemes] = useState([]); 
   const [summary, setSummary] = useState({ totalAUM: 0, totalSipBook: 0, sipCount: 0 });
   const [isLoading, setIsLoading] = useState(false);
+  const [clientUpcomingSIPs, setClientUpcomingSIPs] = useState([]);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -75,21 +76,42 @@ const ClientDashboard = () => {
 
   const handleSelectClient = (client) => {
     const token = sessionStorage.getItem("token");
+    const headers = { 'Authorization': `Bearer ${token}` };
     setSearchTerm(`${client.full_name} (${client.client_code || 'C' + client.id})`);
     setIsLoading(true);
 
-    fetch(`https://visionbridge-backend.onrender.com/api/client-dashboard/${client.id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setSelectedClient(data.profile);
-        setPortfolio(data.portfolio || []);
-        setSummary(data.summary || { totalAUM: 0, totalSipBook: 0, sipCount: 0 });
+    // Fetch Dashboard data and SIP list simultaneously to check for closures
+    Promise.all([
+      fetch(`https://visionbridge-backend.onrender.com/api/client-dashboard/${client.id}`, { headers }),
+      fetch(`https://visionbridge-backend.onrender.com/api/sips`, { headers })
+    ])
+      .then(async ([dashRes, sipRes]) => {
+        const dashData = await dashRes.json();
+        const sipData = await sipRes.json();
+
+        setSelectedClient(dashData.profile);
+        setPortfolio(dashData.portfolio || []);
+        setSummary(dashData.summary || { totalAUM: 0, totalSipBook: 0, sipCount: 0 });
+
+        // Filter upcoming SIP closures for THIS SPECIFIC client
+        if (Array.isArray(sipData)) {
+            const today = new Date();
+            const sixtyDaysFromNow = new Date();
+            sixtyDaysFromNow.setDate(today.getDate() + 60);
+
+            const filtered = sipData.filter(sip => {
+                const isSameClient = String(sip.client_id) === String(client.id);
+                if (!isSameClient || !sip.end_date || sip.status !== 'Active') return false;
+                const endDate = new Date(sip.end_date);
+                return endDate >= today && endDate <= sixtyDaysFromNow;
+            });
+            setClientUpcomingSIPs(filtered);
+        }
+
         setIsLoading(false);
       })
       .catch(err => {
-        console.error("Error:", err);
+        console.error("Error loading profile:", err);
         setIsLoading(false);
       });
   };
@@ -97,19 +119,14 @@ const ClientDashboard = () => {
   const safeNum = (val) => parseFloat(val) || 0;
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
-  // 🧪 RECTIFIED CALCULATION: Aggressive field extraction for all asset classes
   const getAssetAllocation = () => {
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
       const investedValue = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
-      
-      const master = schemes.find(s => 
-        s.scheme_name.trim().toLowerCase() === item.scheme_name.trim().toLowerCase()
-      );
+      const master = schemes.find(s => s.scheme_name.trim().toLowerCase() === item.scheme_name.trim().toLowerCase());
       
       if (master && investedValue > 0) {
-          // Extremely robust extraction, checking every possible variant of the database key
           const l = safeNum(master.large_percent || master.large_cap || master.large_allocation || master.large);
           const m = safeNum(master.mid_percent || master.mid_cap || master.mid_allocation || master.mid);
           const s = safeNum(master.small_percent || master.small_cap || master.small_allocation || master.small);
@@ -148,14 +165,14 @@ const ClientDashboard = () => {
           placeholder="Search by Client ID or Name..." 
           style={{ width: '100%', padding: '16px 20px', paddingLeft: '48px', fontSize: '15px', fontWeight: '600', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-main)', outline: 'none', transition: 'border-color 0.2s ease, box-shadow 0.2s ease', boxShadow: '0 2px 4px -1px rgba(0,0,0,0.02)' }}
           value={searchTerm}
-          onChange={(e) => { setSearchTerm(e.target.value); setSelectedClient(null); }}
+          onChange={(e) => { setSearchTerm(e.target.value); setSelectedClient(null); setClientUpcomingSIPs([]); }}
         />
         <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         
         {searchTerm && !selectedClient?.full_name && (
           <div style={{ position: 'absolute', width: '100%', background: 'var(--bg-card)', zIndex: 100, border: '1px solid var(--border)', borderRadius: '12px', marginTop: '8px', maxHeight: '250px', overflowY: 'auto', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
             {clients.filter(c => (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.client_code || '').toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
-                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: '700', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-main)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                <div key={c.id} onClick={() => handleSelectClient(c)} style={{ padding: '16px 20px', cursor: 'pointer', borderBottom: '1px solid var(--border)', color: 'var(--text-main)', fontWeight: '700', transition: 'background 0.2s' }}>
                   <span style={{ color: '#0284c7', marginRight: '12px', fontWeight: '800' }}>{c.client_code}</span> {c.full_name}
                 </div>
               ))}
@@ -170,6 +187,37 @@ const ClientDashboard = () => {
         </div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
+          {/* 🔴 ALERT: CLIENT-SPECIFIC UPCOMING CLOSURES */}
+          {clientUpcomingSIPs.length > 0 && (
+            <div style={{ ...cardStyle, borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.02)', borderLeft: '6px solid #ef4444' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#ef4444', fontSize: '16px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertTriangle size={20} /> Action Required: Upcoming SIP Maturities
+                </h3>
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                        <thead>
+                            <tr style={{ textAlign: 'left', color: 'var(--text-muted)' }}>
+                                <th style={{ padding: '8px 0', fontWeight: '700' }}>Fund Name</th>
+                                <th style={{ padding: '8px 0', fontWeight: '700' }}>Maturity Date</th>
+                                <th style={{ padding: '8px 0', textAlign: 'right', fontWeight: '700' }}>Monthly Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {clientUpcomingSIPs.map(sip => (
+                                <tr key={sip.id} style={{ borderBottom: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                                    <td style={{ padding: '12px 0', fontWeight: '700', color: 'var(--text-main)' }}>{sip.scheme_name}</td>
+                                    <td style={{ padding: '12px 0' }}>
+                                        <span style={{ color: '#ef4444', fontWeight: '800' }}>{new Date(sip.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                    </td>
+                                    <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: '800' }}>₹{formatINR(sip.amount)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+          )}
+
           {/* Header Card */}
           <div style={{...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px'}}>
               <div>
@@ -227,7 +275,7 @@ const ClientDashboard = () => {
                     </thead>
                     <tbody>
                       {portfolio.map((item, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-main)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                        <tr key={i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
                           <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '700' }}>{item.scheme_name}</td>
                           <td style={{ padding: '16px 24px', textAlign: 'center', color: '#10b981', fontWeight: '700' }}>{safeNum(item.sip_amount) > 0 ? `₹${formatINR(item.sip_amount)}` : '-'}</td>
                           <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(item.invested_amount)}</td>
