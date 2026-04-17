@@ -47,18 +47,24 @@ export default function Login() {
     if (!wantsToRegister) return;
 
     try {
+      // 1. Fetch options from backend
       const { data: options } = await api.post('/auth/webauthn/register/generate', { username: authUsername });
+      
+      // 2. Start browser registration flow
+      // startRegistration handles the base64 conversions automatically
       const registrationResponse = await startRegistration(options);
+      
+      // 3. Send the response back to verify and save
       await api.post('/auth/webauthn/register/verify', {
         username: authUsername,
         data: registrationResponse,
       });
 
-      toast.success("Device registered! You can now use Fingerprint login.");
+      toast.success("Device registered successfully!");
     } catch (err) {
-      console.error(err);
+      console.error("Biometric Registration Error:", err);
       if (err.name !== 'NotAllowedError') {
-         toast.error("Fingerprint registration failed or was cancelled.");
+         toast.error(err.response?.data?.error || "Registration failed. Check console for details.");
       }
     }
   };
@@ -90,8 +96,8 @@ export default function Login() {
       navigate("/dashboard");
 
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.error || "Biometric login failed or was cancelled.");
+      console.error("Biometric Login Error:", err);
+      toast.error(err.response?.data?.error || "Biometric login failed.");
     } finally {
       setIsLoggingIn(false);
     }

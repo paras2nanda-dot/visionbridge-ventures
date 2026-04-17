@@ -86,18 +86,16 @@ export const generateRegOptions = async (req, res) => {
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: Buffer.from(username), 
+      userID: username, // Pass as string, library handles Buffer conversion
       userName: username,
+      userDisplayName: username,
       excludeCredentials: userPasskeys.rows.map(key => ({
-        id: Buffer.from(key.credential_id, 'base64url'),
+        id: key.credential_id, // Pass the base64url string directly
         type: 'public-key',
       })),
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'preferred',
-        // ❌ REMOVED: authenticatorAttachment: 'platform'
-        // By removing this, we allow phones, hardware keys, and cross-device authenticators
-        // to register, preventing instant browser cancellations on desktops.
       },
     });
 
@@ -162,7 +160,7 @@ export const generateAuthOptions = async (req, res) => {
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: userKeys.rows.map(key => ({
-        id: Buffer.from(key.credential_id, 'base64url'),
+        id: key.credential_id,
         type: 'public-key',
       })),
       userVerification: 'preferred',
