@@ -17,10 +17,11 @@ const Transactions = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 🟢 Added switch_in_scheme_id to the initial state
   const initialState = {
     transaction_id: '',
     transaction_date: new Date().toISOString().split('T')[0],
-    client_code_input: '', client_id: '', scheme_id: '', 
+    client_code_input: '', client_id: '', scheme_id: '', switch_in_scheme_id: '',
     transaction_type: 'Purchase', amount: '', platform: 'NSE', notes: ''
   };
 
@@ -54,13 +55,42 @@ const Transactions = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isViewing) return setIsViewing(false);
-    if (!formData.client_id || !formData.scheme_id) return toast.warn("⚠️ Validate Client and Scheme.");
+    
+    const isSwitch = formData.transaction_type === 'Switch';
+    if (!formData.client_id) return toast.warn("⚠️ Validate Client.");
+    if (!formData.scheme_id) return toast.warn("⚠️ Select Scheme.");
+    if (isSwitch && !formData.switch_in_scheme_id) return toast.warn("⚠️ Select Switch In Scheme.");
     
     setIsSaving(true); 
     const cleanAmount = formData.amount.toString().replace(/,/g, '');
     try {
-      if (isEditing) await api.put(`/transactions/${editingId}`, {...formData, amount: cleanAmount});
-      else await api.post(`/transactions`, {...formData, amount: cleanAmount});
+      if (isEditing) {
+        await api.put(`/transactions/${editingId}`, {...formData, amount: cleanAmount});
+      } else {
+        if (isSwitch) {
+          // 🟢 LEG 1: Create the "Switch Out" (Redemption) transaction
+          await api.post(`/transactions`, {
+            ...formData, 
+            transaction_type: 'Switch Out', 
+            amount: cleanAmount
+          });
+          
+          // 🟢 LEG 2: Generate next TID and create the "Switch In" (Purchase) transaction
+          const currentNum = parseInt(formData.transaction_id.replace(/\D/g, '') || 0);
+          const nextTID = `TID${(currentNum + 1).toString().padStart(5, '0')}`;
+          
+          await api.post(`/transactions`, {
+            ...formData, 
+            transaction_id: nextTID,
+            transaction_type: 'Switch In', 
+            scheme_id: formData.switch_in_scheme_id, 
+            amount: cleanAmount
+          });
+        } else {
+          // Normal Purchase or Redemption
+          await api.post(`/transactions`, {...formData, amount: cleanAmount});
+        }
+      }
       toast.success("✅ Saved Successfully");
       setIsEditing(false); setFormData(initialState); setClientName(''); fetchInitialData();
     } catch (err) { toast.error("Save Error"); }
@@ -135,19 +165,43 @@ const Transactions = () => {
                 setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
             }} required /></div>
             <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, opacity: 0.7}} value={clientName} readOnly /></div>
-            <div><label style={labelStyle}>Scheme Name *</label>
-              <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
-                <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
-              </select></div>
+            
+            {/* 🟢 REORDERED TYPE FIELD FOR BETTER UX */}
             <div>
               <label style={labelStyle}>Type</label>
-              {/* 🟢 RESTORED EXACT ORIGINAL 3 OPTIONS */}
-              <select style={inputStyle} value={formData.transaction_type} disabled={isViewing} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
-                <option value="Purchase">Purchase</option>
-                <option value="Redemption">Redemption</option>
-                <option value="Switch">Switch</option>
+              <select style={inputStyle} value={formData.transaction_type} disabled={isViewing || isEditing} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
+                {isEditing && ['Switch In', 'Switch Out'].includes(formData.transaction_type) ? (
+                  <option value={formData.transaction_type}>{formData.transaction_type}</option>
+                ) : (
+                  <>
+                    <option value="Purchase">Purchase</option>
+                    <option value="Redemption">Redemption</option>
+                    <option value="Switch">Switch</option>
+                  </>
+                )}
               </select>
             </div>
+
+            {/* 🟢 DYNAMIC SCHEME NAME */}
+            <div>
+              <label style={labelStyle}>
+                {formData.transaction_type === 'Switch' ? 'Switch Out Scheme *' : 'Scheme Name *'}
+              </label>
+              <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
+                <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+              </select>
+            </div>
+
+            {/* 🟢 CONDITIONAL "SWITCH IN" SCHEME */}
+            {formData.transaction_type === 'Switch' && (
+              <div className="fade-in">
+                <label style={labelStyle}>Switch In Scheme *</label>
+                <select style={inputStyle} value={formData.switch_in_scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, switch_in_scheme_id: e.target.value})} required>
+                  <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+                </select>
+              </div>
+            )}
+
             <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
             <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '80px', resize: 'vertical'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
           </div>
@@ -242,10 +296,10 @@ const Transactions = () => {
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(t.amount)}</td>
                   <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View Details" onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-main)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
+                      <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code, switch_in_scheme_id: ''}); setClientName(t.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View Details" onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-main)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
                         <Eye size={18} />
                       </button>
-                      <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code}); setClientName(t.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit Transaction" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                      <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(t.id); setFormData({...t, client_code_input: t.client_code, switch_in_scheme_id: ''}); setClientName(t.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit Transaction" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
                         <Edit size={18} />
                       </button>
                       <button onClick={() => handleDelete(t.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete Transaction" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
