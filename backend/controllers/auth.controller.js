@@ -25,6 +25,18 @@ const getWebAuthnConfig = (req) => {
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
 
+// 🛡️ INTERNAL AUDIT LOG HELPER
+const logActivity = async (username, action, details) => {
+  try {
+    await pool.query(
+      'INSERT INTO activity_logs (username, action, details) VALUES ($1, $2, $3)',
+      [username, action, details]
+    );
+  } catch (err) {
+    console.error("Audit Logging Failed:", err.message);
+  }
+};
+
 // 🛡️ AUTO-HEALING DB FUNCTION
 const ensurePasskeyTable = async () => {
   try {
@@ -158,8 +170,8 @@ export const verifyReg = async (req, res) => {
         ]
       );
 
-      // 📝 AUDIT TRAIL LOG (Optional: Connect to your ActivityFeed service)
-      console.log(`AUDIT: Passkey registered for user: ${username}`);
+      // 📝 LOG TO DATABASE AUDIT TRAIL
+      await logActivity(username, "SECURITY", `Registered new biometric device (ID: ${credential.id.slice(0, 8)}...)`);
 
       challengeStore.delete(`reg_${username}`);
       return res.json({ verified: true, message: "Device registered successfully!" });
@@ -245,6 +257,9 @@ export const verifyAuth = async (req, res) => {
         { expiresIn: '8h' }
       );
 
+      // 📝 LOG TO DATABASE AUDIT TRAIL
+      await logActivity(username, "LOGIN", "Logged in via Biometrics");
+
       res.cookie('token', token, {
         httpOnly: true,
         secure: true, 
@@ -291,8 +306,8 @@ export const deletePasskey = async (req, res) => {
       return res.status(404).json({ error: "Passkey not found or unauthorized." });
     }
 
-    // 📝 AUDIT TRAIL LOG
-    console.log(`AUDIT: Passkey revoked for user: ${username}`);
+    // 📝 LOG TO DATABASE AUDIT TRAIL
+    await logActivity(username, "SECURITY", `Revoked biometric device (ID: ${id})`);
 
     res.json({ message: "Passkey removed successfully" });
   } catch (err) {
