@@ -7,7 +7,6 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
-import crypto from "crypto";
 
 const rpName = 'VisionBridge Ventures';
 
@@ -26,15 +25,11 @@ const getWebAuthnConfig = (req) => {
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
 
-// 🛡️ NATIVE CONVERSION HELPERS (Bypasses library version crashes)
-const base64urlToUint8Array = (base64url) => {
-  const padding = '='.repeat((4 - base64url.length % 4) % 4);
-  const base64 = (base64url + padding).replace(/\-/g, '+').replace(/_/g, '/');
+// 🛡️ NATIVE CONVERSION HELPER (Transforms DB Strings back to Binary for the Library)
+const toUint8Array = (base64urlString) => {
+  const padding = '='.repeat((4 - base64urlString.length % 4) % 4);
+  const base64 = (base64urlString + padding).replace(/\-/g, '+').replace(/_/g, '/');
   return new Uint8Array(Buffer.from(base64, 'base64'));
-};
-
-const uint8ArrayToBase64url = (uint8array) => {
-  return Buffer.from(uint8array).toString('base64url');
 };
 
 // 🛡️ AUTO-HEALING DB FUNCTION
@@ -117,7 +112,7 @@ export const generateRegOptions = async (req, res) => {
       if (key.credential_id) {
         try {
           safeExcludeCredentials.push({
-            id: base64urlToUint8Array(key.credential_id),
+            id: toUint8Array(key.credential_id),
             type: 'public-key',
           });
         } catch (e) {
@@ -126,13 +121,13 @@ export const generateRegOptions = async (req, res) => {
       }
     }
 
+    // 🟢 Let the library generate the challenge automatically so it formats correctly for the frontend
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
       userID: new Uint8Array(Buffer.from(username)), 
       userName: username,
       userDisplayName: username,
-      challenge: crypto.randomBytes(32), // 🟢 Explicitly generate challenge to prevent undefined crashes
       excludeCredentials: safeExcludeCredentials,
       authenticatorSelection: {
         residentKey: 'preferred',
@@ -172,8 +167,8 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          uint8ArrayToBase64url(credentialID), 
-          uint8ArrayToBase64url(credentialPublicKey), 
+          Buffer.from(credentialID).toString('base64url'), 
+          Buffer.from(credentialPublicKey).toString('base64url'), 
           counter
         ]
       );
@@ -195,8 +190,8 @@ export const generateAuthOptions = async (req, res) => {
 
   try {
     await ensurePasskeyTable();
-    // Fetches ALL devices registered to this user
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
+    
     if (userKeys.rows.length === 0) {
         return res.status(404).json({ error: "No biometrics registered. Please login with password to register this device." });
     }
@@ -206,18 +201,18 @@ export const generateAuthOptions = async (req, res) => {
       if (key.credential_id) {
         try {
           safeAllowCredentials.push({
-            id: base64urlToUint8Array(key.credential_id),
+            id: toUint8Array(key.credential_id),
             type: 'public-key',
           });
         } catch (e) {
-          // Skip corrupt keys safely
+          // Skip corrupt keys silently
         }
       }
     }
 
+    // 🟢 Let the library generate the challenge automatically here as well
     const options = await generateAuthenticationOptions({
       rpID,
-      challenge: crypto.randomBytes(32), // 🟢 Explicitly generate challenge
       allowCredentials: safeAllowCredentials,
       userVerification: 'preferred',
     });
@@ -256,8 +251,8 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialPublicKey: base64urlToUint8Array(passkey.public_key),
-        credentialID: base64urlToUint8Array(passkey.credential_id),
+        credentialPublicKey: toUint8Array(passkey.public_key),
+        credentialID: toUint8Array(passkey.credential_id),
         counter: Number(passkey.counter),
       },
     });
