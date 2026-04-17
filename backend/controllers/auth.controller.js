@@ -7,7 +7,6 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 const rpName = 'VisionBridge Ventures';
 
@@ -16,7 +15,7 @@ const getWebAuthnConfig = (req) => {
   const origin = req.headers.origin || 'https://visionbridge-ventures.vercel.app';
   let rpID;
   try {
-    rpID = new URL(origin).hostname; // Safely extracts just the domain/localhost
+    rpID = new URL(origin).hostname;
   } catch (e) {
     rpID = 'visionbridge-ventures.vercel.app';
   }
@@ -25,6 +24,25 @@ const getWebAuthnConfig = (req) => {
 
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
+
+// 🛡️ AUTO-HEALING DB FUNCTION
+// Ensures the table exists so queries don't crash the server!
+const ensurePasskeyTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_passkeys (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        credential_id TEXT NOT NULL,
+        public_key TEXT NOT NULL,
+        counter BIGINT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } catch (err) {
+    console.error("Error ensuring passkey table exists:", err.message);
+  }
+};
 
 // ==========================================
 // STANDARD AUTHENTICATION
@@ -80,27 +98,19 @@ export const generateRegOptions = async (req, res) => {
   }
 
   try {
+    await ensurePasskeyTable(); // Prevent DB crashes
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
-    // 🛡️ Bulletproof filter to skip any corrupted database rows from previous tests
-    const safeExcludeCredentials = [];
-    for (const key of userPasskeys.rows) {
-      try {
-        if (key.credential_id) {
-          safeExcludeCredentials.push({
-            id: isoBase64URL.toBuffer(key.credential_id),
-            type: 'public-key',
-          });
-        }
-      } catch (e) {
-        console.warn(`Skipping corrupted credential ID in DB: ${key.credential_id}`);
-      }
-    }
+    // Use Native Node Buffers to avoid library version mismatches
+    const safeExcludeCredentials = userPasskeys.rows.map(key => ({
+      id: Buffer.from(key.credential_id, 'base64url'), 
+      type: 'public-key',
+    }));
 
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: new Uint8Array(Buffer.from(username)), // Universally supported Buffer format
+      userID: Buffer.from(username), // Standard Buffer format works across most versions
       userName: username,
       userDisplayName: username,
       excludeCredentials: safeExcludeCredentials,
@@ -114,8 +124,7 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    // 🟢 Send the exact error message to the frontend so we can see it on screen!
-    res.status(500).json({ error: `Registration setup failed: ${err.message}` });
+    res.status(500).json({ error: `Backend Crash: ${err.message}` });
   }
 };
 
@@ -138,12 +147,13 @@ export const verifyReg = async (req, res) => {
     if (verification.verified && verification.registrationInfo) {
       const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
 
+      await ensurePasskeyTable();
       await pool.query(
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          isoBase64URL.fromBuffer(credentialID), 
-          isoBase64URL.fromBuffer(credentialPublicKey), 
+          Buffer.from(credentialID).toString('base64url'), 
+          Buffer.from(credentialPublicKey).toString('base64url'), 
           counter
         ]
       );
@@ -164,23 +174,14 @@ export const generateAuthOptions = async (req, res) => {
   if (!username) return res.status(400).json({ error: "Username required" });
 
   try {
+    await ensurePasskeyTable();
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     if (userKeys.rows.length === 0) return res.status(404).json({ error: "No biometrics registered for this user." });
 
-    // 🛡️ Apply the same bulletproof filter for logging in
-    const safeAllowCredentials = [];
-    for (const key of userKeys.rows) {
-      try {
-        if (key.credential_id) {
-          safeAllowCredentials.push({
-            id: isoBase64URL.toBuffer(key.credential_id),
-            type: 'public-key',
-          });
-        }
-      } catch (e) {
-        console.warn(`Skipping corrupted credential ID in DB: ${key.credential_id}`);
-      }
-    }
+    const safeAllowCredentials = userKeys.rows.map(key => ({
+      id: Buffer.from(key.credential_id, 'base64url'),
+      type: 'public-key',
+    }));
 
     const options = await generateAuthenticationOptions({
       rpID,
@@ -206,13 +207,9 @@ export const verifyAuth = async (req, res) => {
 
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
-    const passkey = userKeys.rows.find(k => {
-      try {
-        return isoBase64URL.fromBuffer(isoBase64URL.toBuffer(k.credential_id)) === body.id;
-      } catch (e) {
-        return k.credential_id === body.id; // Fallback for pure string comparison
-      }
-    });
+    
+    // Find matching key using base64url string comparison
+    const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
     if (!passkey) return res.status(400).json({ error: "Fingerprint device not recognized." });
 
@@ -222,8 +219,8 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialPublicKey: isoBase64URL.toBuffer(passkey.public_key),
-        credentialID: isoBase64URL.toBuffer(passkey.credential_id),
+        credentialPublicKey: Buffer.from(passkey.public_key, 'base64url'),
+        credentialID: Buffer.from(passkey.credential_id, 'base64url'),
         counter: Number(passkey.counter),
       },
     });
@@ -254,12 +251,13 @@ export const verifyAuth = async (req, res) => {
 };
 
 // ==========================================
-// ⚙️ PASSKEY MANAGEMENT (NEW)
+// ⚙️ PASSKEY MANAGEMENT
 // ==========================================
 
 export const getPasskeys = async (req, res) => {
   try {
     const username = req.user.username; 
+    await ensurePasskeyTable();
     const result = await pool.query(
       'SELECT id, username, created_at FROM user_passkeys WHERE username = $1 ORDER BY created_at DESC',
       [username]
