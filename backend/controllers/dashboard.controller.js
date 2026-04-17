@@ -22,7 +22,7 @@ const calculateAge = (dobString) => {
 };
 
 /**
- * 🏢 BUSINESS DASHBOARD LOGIC (Updated for 10-Card Precision)
+ * 🏢 BUSINESS DASHBOARD LOGIC (Updated for 10-Card Precision & Switch Logic)
  */
 export const getBusinessStats = async (req, res) => {
   try {
@@ -33,7 +33,10 @@ export const getBusinessStats = async (req, res) => {
       ),
       active_clients_pool AS (
         SELECT client_id FROM (
-            SELECT client_id, SUM(CASE WHEN LOWER(transaction_type) IN ('purchase', 'switch in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) as net_inv
+            SELECT client_id, SUM(CASE 
+              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+              ELSE 0 END) as net_inv
             FROM transactions GROUP BY client_id
         ) t WHERE net_inv >= 1
         UNION
@@ -56,12 +59,15 @@ export const getBusinessStats = async (req, res) => {
           m.commission_rate, 
           COALESCE(m.total_current_value, 0) as market_value,
           COALESCE((
-            SELECT SUM(CASE WHEN LOWER(transaction_type) IN ('purchase', 'switch in') THEN amount::NUMERIC WHEN LOWER(transaction_type) IN ('redemption', 'switch out') THEN -amount::NUMERIC ELSE 0 END) 
+            SELECT SUM(CASE 
+              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+              ELSE 0 END) 
             FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
           ), 0) as trans_invested,
           COALESCE((
             SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
-            FROM sips WHERE scheme_id::TEXT = m.id::TEXT
+            FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
           ), 0) as sip_invested
         FROM mf_schemes m
       )
@@ -102,12 +108,30 @@ export const getBusinessStats = async (req, res) => {
     });
     upcomingBirthdays.sort((a, b) => a.days_left - b.days_left);
 
-    // 4. Best Selling Funds
+    // 4. Best Selling Funds (Top Funds by Exposure) 
+    // 🟢 FIXED: Now dynamically calculates Live AUM (Transactions + SIPs) including Switch effects
     const topFundsRes = await pool.query(`
-      SELECT scheme_name, COALESCE(total_current_value, 0) as invested_value 
-      FROM mf_schemes 
-      WHERE total_current_value > 0 
-      ORDER BY total_current_value DESC LIMIT 3
+      WITH fund_exposure AS (
+        SELECT 
+          m.scheme_name,
+          COALESCE((
+            SELECT SUM(CASE 
+              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+              ELSE 0 END) 
+            FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
+          ), 0) +
+          COALESCE((
+            SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
+            FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
+          ), 0) as invested_value
+        FROM mf_schemes m
+      )
+      SELECT scheme_name, invested_value 
+      FROM fund_exposure 
+      WHERE invested_value > 0 
+      ORDER BY invested_value DESC 
+      LIMIT 3
     `);
 
     // 5. 🔔 SIP END ALERTS
@@ -174,8 +198,12 @@ export const getClientDashboardStats = async (req, res) => {
 
     const portfolioQuery = `
       SELECT m.scheme_name, m.large_cap, m.mid_cap, m.small_cap, m.debt_allocation, m.gold_allocation,
-      COALESCE((SELECT SUM(CASE WHEN LOWER(transaction_type) IN ('purchase', 'switch in') THEN amount::NUMERIC WHEN LOWER(transaction_type) IN ('redemption', 'switch out') THEN -amount::NUMERIC ELSE 0 END) FROM transactions WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT), 0) +
-      COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT), 0) as invested_amount,
+      COALESCE((SELECT SUM(CASE 
+        WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+        WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+        ELSE 0 END) 
+      FROM transactions WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT), 0) +
+      COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as invested_amount,
       COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as sip_amount
       FROM mf_schemes m
       WHERE m.id::TEXT IN (SELECT scheme_id::TEXT FROM transactions WHERE client_id::TEXT = $1::TEXT UNION SELECT scheme_id::TEXT FROM sips WHERE client_id::TEXT = $1::TEXT)
