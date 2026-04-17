@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import ActivityFeed from './ActivityFeed';
 import api from '../services/api';
-import { Palette, ShieldCheck, History, X, Smartphone, Trash2, Fingerprint } from 'lucide-react';
+import { Palette, ShieldCheck, History, X, Smartphone, Trash2, Fingerprint, Loader2 } from 'lucide-react';
 
 // --- Internal Security Component for Settings ---
 const SettingsSecurity = () => {
@@ -21,7 +21,7 @@ const SettingsSecurity = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Remove this biometric login?")) return;
+    if (!window.confirm("Are you sure you want to revoke this passkey? This device will no longer be able to log in without a password.")) return;
     try {
       await api.delete(`/auth/webauthn/passkeys/${id}`);
       setPasskeys(passkeys.filter(k => k.id !== id));
@@ -33,33 +33,63 @@ const SettingsSecurity = () => {
   useEffect(() => { fetchPasskeys(); }, []);
 
   return (
-    <div className="fade-in">
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '18px', fontWeight: '800' }}>Biometric Security</h3>
-      <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600', lineHeight: 1.4 }}>Manage devices authorized for fingerprint or face recognition.</p>
+      <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600', lineHeight: 1.4 }}>
+        Manage passkeys authorized for passwordless login. To register a new device (like your smartphone), log into your account from that device.
+      </p>
       
       {loading ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Syncing secure devices...</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600' }}>
+           <Loader2 size={16} className="spin" /> Syncing secure devices...
+        </div>
       ) : passkeys.length === 0 ? (
         <div style={{ padding: '40px 20px', background: 'var(--bg-main)', borderRadius: '16px', border: '1px dashed var(--border)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
             <Fingerprint size={32} color="var(--text-muted)" style={{ opacity: 0.3 }} />
-            <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px' }}>No biometric devices registered.</div>
+            <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px' }}>No biometric passkeys registered yet.</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {passkeys.map(key => (
-            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Smartphone size={18} color="#0284c7" />
+          {passkeys.map((key, index) => (
+            <div key={key.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)', transition: 'all 0.2s' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ background: 'rgba(2, 132, 199, 0.1)', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Fingerprint size={22} color="#0284c7" />
+                </div>
                 <div>
-                    <div style={{ fontWeight: '800', fontSize: '14px', color: 'var(--text-main)' }}>Authorized Device</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Added {new Date(key.created_at).toLocaleDateString()}</div>
+                    <div style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      Registered Device {passkeys.length - index}
+                      <span style={{ fontSize: '10px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', padding: '2px 6px', borderRadius: '4px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500', marginTop: '4px' }}>
+                      Added on {new Date(key.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '4px', opacity: 0.6, letterSpacing: '0.5px' }}>
+                      PASSKEY ID: #{key.id}
+                    </div>
                 </div>
               </div>
-              <button onClick={() => handleDelete(key.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}><Trash2 size={16} /></button>
+              <button 
+                onClick={() => handleDelete(key.id)} 
+                style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', cursor: 'pointer', padding: '10px 14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', transition: 'all 0.2s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)'; }}
+              >
+                <Trash2 size={16} /> Revoke
+              </button>
             </div>
           ))}
         </div>
       )}
+      
+      {/* Required for the Loader2 spin animation if not globally defined */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spin { animation: spin 1s linear infinite; }
+      `}</style>
     </div>
   );
 };
