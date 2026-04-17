@@ -8,6 +8,9 @@ import {
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
 
+// 🟢 IMPORT YOUR EXISTING SYSTEM LOGGER
+import { logActivity } from "./activityController.js";
+
 const rpName = 'VisionBridge Ventures';
 
 // 💡 DYNAMIC ENVIRONMENT HANDLER
@@ -24,19 +27,6 @@ const getWebAuthnConfig = (req) => {
 
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
-
-// 🛡️ INTERNAL AUDIT LOG HELPER
-// This inserts directly into the table your ActivityFeed reads from
-const logActivity = async (username, action, details) => {
-  try {
-    await pool.query(
-      'INSERT INTO activity_logs (username, action, details) VALUES ($1, $2, $3)',
-      [username, action, details]
-    );
-  } catch (err) {
-    console.error("Audit Logging Failed:", err.message);
-  }
-};
 
 // 🛡️ AUTO-HEALING DB FUNCTION
 const ensurePasskeyTable = async () => {
@@ -171,8 +161,8 @@ export const verifyReg = async (req, res) => {
         ]
       );
 
-      // 📝 RECORD IN DATABASE AUDIT TRAIL
-      await logActivity(username, "SECURITY", "Registered new biometric device");
+      // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
+      await logActivity(username, "CREATE", "Security", "Registered new biometric device");
 
       challengeStore.delete(`reg_${username}`);
       return res.json({ verified: true, message: "Device registered successfully!" });
@@ -258,8 +248,8 @@ export const verifyAuth = async (req, res) => {
         { expiresIn: '8h' }
       );
 
-      // 📝 RECORD IN DATABASE AUDIT TRAIL
-      await logActivity(username, "LOGIN", "Authenticated via Biometrics");
+      // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
+      await logActivity(username, "UPDATE", "Login", "Authenticated via Biometrics");
 
       res.cookie('token', token, {
         httpOnly: true,
@@ -307,8 +297,8 @@ export const deletePasskey = async (req, res) => {
       return res.status(404).json({ error: "Passkey not found or unauthorized." });
     }
 
-    // 📝 RECORD IN DATABASE AUDIT TRAIL
-    await logActivity(username, "SECURITY", "Revoked biometric device");
+    // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
+    await logActivity(username, "DELETE", "Security", "Revoked biometric device");
 
     res.json({ message: "Passkey removed successfully" });
   } catch (err) {
