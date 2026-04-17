@@ -103,14 +103,14 @@ export const generateRegOptions = async (req, res) => {
     const safeExcludeCredentials = userPasskeys.rows
       .filter(key => key.credential_id)
       .map(key => ({
-        id: key.credential_id, // v13 expects Base64URL strings here
+        id: key.credential_id, 
         type: 'public-key',
       }));
 
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: new Uint8Array(Buffer.from(username)), // v13 expects Uint8Array
+      userID: new Uint8Array(Buffer.from(username)), 
       userName: username,
       userDisplayName: username,
       excludeCredentials: safeExcludeCredentials,
@@ -145,7 +145,6 @@ export const verifyReg = async (req, res) => {
     });
 
     if (verification.verified && verification.registrationInfo) {
-      // 🟢 v13 BREAKING CHANGE FIX: Destructure 'credential' object instead of 'credentialID'
       const { credential } = verification.registrationInfo;
 
       await ensurePasskeyTable();
@@ -153,11 +152,14 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          credential.id, // Already a Base64URL string in v13!
-          Buffer.from(credential.publicKey).toString('base64url'), // Convert Uint8Array to string for DB
+          credential.id, 
+          Buffer.from(credential.publicKey).toString('base64url'), 
           credential.counter
         ]
       );
+
+      // 📝 AUDIT TRAIL LOG (Optional: Connect to your ActivityFeed service)
+      console.log(`AUDIT: Passkey registered for user: ${username}`);
 
       challengeStore.delete(`reg_${username}`);
       return res.json({ verified: true, message: "Device registered successfully!" });
@@ -185,7 +187,7 @@ export const generateAuthOptions = async (req, res) => {
     const safeAllowCredentials = userKeys.rows
       .filter(key => key.credential_id)
       .map(key => ({
-        id: key.credential_id, // v13 expects Base64URL strings here
+        id: key.credential_id, 
         type: 'public-key',
       }));
 
@@ -213,7 +215,6 @@ export const verifyAuth = async (req, res) => {
 
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
-    
     const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
     if (!passkey) {
@@ -227,10 +228,9 @@ export const verifyAuth = async (req, res) => {
       expectedChallenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      // 🟢 v13 BREAKING CHANGE FIX: Use 'credential' instead of 'authenticator'
       credential: {
-        id: passkey.credential_id, // Must be Base64URL string
-        publicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')), // Must be Uint8Array
+        id: passkey.credential_id, 
+        publicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')), 
         counter: Number(passkey.counter),
       },
     });
@@ -290,6 +290,9 @@ export const deletePasskey = async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Passkey not found or unauthorized." });
     }
+
+    // 📝 AUDIT TRAIL LOG
+    console.log(`AUDIT: Passkey revoked for user: ${username}`);
 
     res.json({ message: "Passkey removed successfully" });
   } catch (err) {
