@@ -38,22 +38,33 @@ export default function Login() {
   };
 
   // ==============================================
-  // 🛡️ PASSKEY: REGISTER FINGERPRINT (After Login)
+  // 🛡️ SMART PASSKEY REGISTRATION PROMPT
   // ==============================================
   const promptFingerprintRegistration = async (authUsername) => {
+    // 1. Only prompt for specific admins
     if (!['paras', 'himanshu'].includes(authUsername.toLowerCase())) return;
 
-    const wantsToRegister = window.confirm("Would you like to register this device for Fingerprint/FaceID login?");
-    if (!wantsToRegister) return;
-
     try {
-      // 1. Fetch options from backend
+      // 2. CHECK: Does this user already have any passkeys?
+      const { data: existingKeys } = await api.get('/auth/webauthn/passkeys');
+      
+      // 3. If they already have keys, don't nag them. 
+      if (existingKeys && existingKeys.length > 0) {
+        console.log("User already has biometrics registered. Skipping prompt.");
+        return;
+      }
+
+      // 4. Only show if no keys exist in the database
+      const wantsToRegister = window.confirm("Would you like to register this device for Fingerprint/FaceID login?");
+      if (!wantsToRegister) return;
+
+      // 5. Fetch options from backend
       const { data: options } = await api.post('/auth/webauthn/register/generate', { username: authUsername });
       
-      // 2. Start browser registration flow (Updated syntax for v10+)
+      // 6. Start browser registration flow
       const registrationResponse = await startRegistration({ optionsJSON: options });
       
-      // 3. Send the response back to verify and save
+      // 7. Send the response back to verify and save
       await api.post('/auth/webauthn/register/verify', {
         username: authUsername,
         data: registrationResponse,
@@ -61,9 +72,10 @@ export default function Login() {
 
       toast.success("Device registered successfully!");
     } catch (err) {
-      console.error("Biometric Registration Error:", err);
-      if (err.name !== 'NotAllowedError') {
-         toast.error(err.response?.data?.error || "Registration failed. Check console for details.");
+      console.error("Biometric Check/Reg Error:", err);
+      // Only show error toast if the user didn't intentionally cancel the browser prompt
+      if (err.name !== 'NotAllowedError' && err.response) {
+         toast.error(err.response?.data?.error || "Registration failed.");
       }
     }
   };
@@ -84,7 +96,6 @@ export default function Login() {
     try {
       const { data: options } = await api.post('/auth/webauthn/login/generate', { username: cleanUsername });
       
-      // Updated syntax for v10+
       const authenticationResponse = await startAuthentication({ optionsJSON: options });
       
       const res = await api.post('/auth/webauthn/login/verify', {
@@ -126,6 +137,7 @@ export default function Login() {
       sessionStorage.setItem("token", res.data.token); 
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
       
+      // Start the smart biometric check
       await promptFingerprintRegistration(cleanUsername);
 
       navigate("/dashboard");
