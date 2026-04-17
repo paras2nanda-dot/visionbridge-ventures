@@ -141,12 +141,11 @@ const Transactions = () => {
               </select></div>
             <div>
               <label style={labelStyle}>Type</label>
-              {/* 🟢 RESTORED ORIGINAL DROPDOWNS: Purchase, Redemption, Switch */}
+              {/* 🟢 RESTORED EXACT ORIGINAL 3 OPTIONS */}
               <select style={inputStyle} value={formData.transaction_type} disabled={isViewing} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
                 <option value="Purchase">Purchase</option>
                 <option value="Redemption">Redemption</option>
-                <option value="Switch In">Switch In</option>
-                <option value="Switch Out">Switch Out</option>
+                <option value="Switch">Switch</option>
               </select>
             </div>
             <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
