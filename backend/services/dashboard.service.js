@@ -1,4 +1,4 @@
-import pool from "../config/db.js";
+import { pool } from "../config/db.js";
 
 export const buildDashboard = async () => {
   try {
@@ -8,12 +8,13 @@ export const buildDashboard = async () => {
     );
 
     // 2️⃣ Invested AUM (Transactions + SIP Installments Served)
+    // 🟢 FIXED: Made transaction_type matching robust for 'Switch In' and 'Switch Out'
     const investedAumRes = await pool.query(`
       WITH txn_sum AS (
         SELECT COALESCE(SUM(
           CASE 
-            WHEN transaction_type IN ('PURCHASE','SWITCH_IN') THEN amount
-            WHEN transaction_type IN ('REDEMPTION','SWITCH_OUT') THEN -amount
+            WHEN UPPER(TRIM(transaction_type)) IN ('PURCHASE', 'SWITCH IN', 'SWITCH_IN') THEN amount
+            WHEN UPPER(TRIM(transaction_type)) IN ('REDEMPTION', 'SWITCH OUT', 'SWITCH_OUT') THEN -amount
             ELSE 0 
           END), 0) as amt FROM transactions
       ),
