@@ -7,6 +7,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 const rpName = 'VisionBridge Ventures';
 
@@ -100,17 +101,29 @@ export const generateRegOptions = async (req, res) => {
     await ensurePasskeyTable(); 
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
+    // 🛡️ Bulletproof DB extraction: ensure it is strictly a string before buffer conversion
+    const safeExcludeCredentials = [];
+    for (const key of userPasskeys.rows) {
+      if (key.credential_id && typeof key.credential_id === 'string') {
+        try {
+          safeExcludeCredentials.push({
+            id: isoBase64URL.toBuffer(key.credential_id),
+            type: 'public-key',
+          });
+        } catch (e) {
+          console.warn("Skipping corrupted credential ID during exclusion mapping.");
+        }
+      }
+    }
+
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      // 🟢 FIX: Encode as a pure Base64URL string to survive res.json() serialization perfectly!
-      userID: Buffer.from(username).toString('base64url'), 
+      // 🟢 FIX: Strictly enforce Uint8Array as required by SimpleWebAuthn v10+
+      userID: new Uint8Array(Buffer.from(username)), 
       userName: username,
       userDisplayName: username,
-      excludeCredentials: userPasskeys.rows.map(key => ({
-        id: key.credential_id, // 🟢 FIX: Pass as pure string, preventing the input.replace crash
-        type: 'public-key',
-      })),
+      excludeCredentials: safeExcludeCredentials,
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'preferred',
@@ -121,7 +134,7 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    res.status(500).json({ error: `Backend Crash: ${err.message}` });
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -149,9 +162,8 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          // 🟢 Convert binary Uint8Arrays to pure strings before saving to database
-          Buffer.from(credentialID).toString('base64url'), 
-          Buffer.from(credentialPublicKey).toString('base64url'), 
+          isoBase64URL.fromBuffer(credentialID), 
+          isoBase64URL.fromBuffer(credentialPublicKey), 
           counter
         ]
       );
@@ -176,12 +188,23 @@ export const generateAuthOptions = async (req, res) => {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     if (userKeys.rows.length === 0) return res.status(404).json({ error: "No biometrics registered for this user." });
 
+    const safeAllowCredentials = [];
+    for (const key of userKeys.rows) {
+      if (key.credential_id && typeof key.credential_id === 'string') {
+        try {
+          safeAllowCredentials.push({
+            id: isoBase64URL.toBuffer(key.credential_id),
+            type: 'public-key',
+          });
+        } catch (e) {
+          // Skip silently
+        }
+      }
+    }
+
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials: userKeys.rows.map(key => ({
-        id: key.credential_id, // 🟢 FIX: Pass pure string
-        type: 'public-key',
-      })),
+      allowCredentials: safeAllowCredentials,
       userVerification: 'preferred',
     });
 
@@ -189,7 +212,7 @@ export const generateAuthOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Auth Options Error:", err);
-    res.status(500).json({ error: `Auth setup failed: ${err.message}` });
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -203,9 +226,13 @@ export const verifyAuth = async (req, res) => {
 
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
+    
+    // Exact string match on the credential ID
     const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
-    if (!passkey) return res.status(400).json({ error: "Fingerprint device not recognized." });
+    if (!passkey || typeof passkey.public_key !== 'string') {
+      return res.status(400).json({ error: "Fingerprint device not recognized or invalid key format." });
+    }
 
     const verification = await verifyAuthenticationResponse({
       response: body,
@@ -213,9 +240,8 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        // 🟢 Revert the pure strings from the database back into Buffers for verification
-        credentialPublicKey: Buffer.from(passkey.public_key, 'base64url'),
-        credentialID: Buffer.from(passkey.credential_id, 'base64url'),
+        credentialPublicKey: isoBase64URL.toBuffer(passkey.public_key),
+        credentialID: isoBase64URL.toBuffer(passkey.credential_id),
         counter: Number(passkey.counter),
       },
     });
