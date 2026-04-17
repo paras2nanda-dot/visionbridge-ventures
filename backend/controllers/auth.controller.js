@@ -100,20 +100,17 @@ export const generateRegOptions = async (req, res) => {
     await ensurePasskeyTable(); 
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
-    // Format for v13: Must pass Uint8Array into the generator
     const safeExcludeCredentials = userPasskeys.rows
       .filter(key => key.credential_id)
       .map(key => ({
-        id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
+        id: key.credential_id, // v13 expects Base64URL strings here
         type: 'public-key',
       }));
 
-    // We no longer manually override the challenge. The library generates it and 
-    // automatically formats it as a Base64URL string for the frontend response.
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: new Uint8Array(Buffer.from(username)), 
+      userID: new Uint8Array(Buffer.from(username)), // v13 expects Uint8Array
       userName: username,
       userDisplayName: username,
       excludeCredentials: safeExcludeCredentials,
@@ -148,17 +145,17 @@ export const verifyReg = async (req, res) => {
     });
 
     if (verification.verified && verification.registrationInfo) {
-      const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
+      // 🟢 v13 BREAKING CHANGE FIX: Destructure 'credential' object instead of 'credentialID'
+      const { credential } = verification.registrationInfo;
 
-      // Store as Base64URL strings in DB
       await ensurePasskeyTable();
       await pool.query(
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          Buffer.from(credentialID).toString('base64url'), 
-          Buffer.from(credentialPublicKey).toString('base64url'), 
-          counter
+          credential.id, // Already a Base64URL string in v13!
+          Buffer.from(credential.publicKey).toString('base64url'), // Convert Uint8Array to string for DB
+          credential.counter
         ]
       );
 
@@ -188,7 +185,7 @@ export const generateAuthOptions = async (req, res) => {
     const safeAllowCredentials = userKeys.rows
       .filter(key => key.credential_id)
       .map(key => ({
-        id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
+        id: key.credential_id, // v13 expects Base64URL strings here
         type: 'public-key',
       }));
 
@@ -208,7 +205,7 @@ export const generateAuthOptions = async (req, res) => {
 
 export const verifyAuth = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
-  const body = req.body.data; // body.id is passed from frontend as a base64url string
+  const body = req.body.data; 
   const { rpID, origin } = getWebAuthnConfig(req);
   const expectedChallenge = challengeStore.get(`auth_${username}`);
 
@@ -217,7 +214,6 @@ export const verifyAuth = async (req, res) => {
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     
-    // We can safely match string-to-string because we saved it as base64url in verifyReg
     const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
     if (!passkey) {
@@ -231,10 +227,10 @@ export const verifyAuth = async (req, res) => {
       expectedChallenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      authenticator: {
-        // v13 expects these to be reconstructed as Uint8Array
-        credentialPublicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')),
-        credentialID: new Uint8Array(Buffer.from(passkey.credential_id, 'base64url')),
+      // 🟢 v13 BREAKING CHANGE FIX: Use 'credential' instead of 'authenticator'
+      credential: {
+        id: passkey.credential_id, // Must be Base64URL string
+        publicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')), // Must be Uint8Array
         counter: Number(passkey.counter),
       },
     });
