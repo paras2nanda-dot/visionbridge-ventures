@@ -7,16 +7,16 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 const rpName = 'VisionBridge Ventures';
 
-// 💡 DYNAMIC ENVIRONMENT HANDLER:
-// This extracts the correct domain (localhost vs vercel) from the incoming request.
+// 💡 DYNAMIC ENVIRONMENT HANDLER
 const getWebAuthnConfig = (req) => {
   const origin = req.headers.origin || 'https://visionbridge-ventures.vercel.app';
   let rpID;
   try {
-    rpID = new URL(origin).hostname; // Extracts 'localhost' or your vercel domain
+    rpID = new URL(origin).hostname;
   } catch (e) {
     rpID = 'visionbridge-ventures.vercel.app';
   }
@@ -71,7 +71,6 @@ export const logout = (req, res) => {
 // 🛡️ BIOMETRIC (PASSKEY) AUTHENTICATION
 // ==========================================
 
-// 1. Ask the device to generate a new Fingerprint/FaceID lock
 export const generateRegOptions = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const { rpID } = getWebAuthnConfig(req);
@@ -86,11 +85,13 @@ export const generateRegOptions = async (req, res) => {
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: username, // Pass as string, library handles Buffer conversion
+      // 🟢 FIX: Generate a consistent binary User ID from the username
+      userID: Uint8Array.from(username, c => c.charCodeAt(0)), 
       userName: username,
       userDisplayName: username,
       excludeCredentials: userPasskeys.rows.map(key => ({
-        id: key.credential_id, // Pass the base64url string directly
+        // 🟢 FIX: Ensure credential ID is converted from base64url to binary
+        id: isoBase64URL.toBuffer(key.credential_id), 
         type: 'public-key',
       })),
       authenticatorSelection: {
@@ -103,11 +104,10 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal Server Error during registration setup." });
   }
 };
 
-// 2. Verify the generated lock and save the Public Key
 export const verifyReg = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
@@ -131,8 +131,8 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          Buffer.from(credentialID).toString('base64url'), 
-          Buffer.from(credentialPublicKey).toString('base64url'), 
+          isoBase64URL.fromBuffer(credentialID), 
+          isoBase64URL.fromBuffer(credentialPublicKey), 
           counter
         ]
       );
@@ -146,7 +146,6 @@ export const verifyReg = async (req, res) => {
   }
 };
 
-// 3. Login: Create a crypto puzzle for the device to solve
 export const generateAuthOptions = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const { rpID } = getWebAuthnConfig(req);
@@ -160,7 +159,7 @@ export const generateAuthOptions = async (req, res) => {
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: userKeys.rows.map(key => ({
-        id: key.credential_id,
+        id: isoBase64URL.toBuffer(key.credential_id),
         type: 'public-key',
       })),
       userVerification: 'preferred',
@@ -169,11 +168,11 @@ export const generateAuthOptions = async (req, res) => {
     challengeStore.set(`auth_${username}`, options.challenge);
     res.json(options);
   } catch (err) {
+    console.error("Auth Options Error:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// 4. Login: Verify the puzzle answer
 export const verifyAuth = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
@@ -194,8 +193,8 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialPublicKey: Buffer.from(passkey.public_key, 'base64url'),
-        credentialID: Buffer.from(passkey.credential_id, 'base64url'),
+        credentialPublicKey: isoBase64URL.toBuffer(passkey.public_key),
+        credentialID: isoBase64URL.toBuffer(passkey.credential_id),
         counter: Number(passkey.counter),
       },
     });
@@ -229,7 +228,6 @@ export const verifyAuth = async (req, res) => {
 // ⚙️ PASSKEY MANAGEMENT (NEW)
 // ==========================================
 
-// Fetch all registered passkeys for the logged-in user
 export const getPasskeys = async (req, res) => {
   try {
     const username = req.user.username; 
@@ -243,7 +241,6 @@ export const getPasskeys = async (req, res) => {
   }
 };
 
-// Delete a specific passkey
 export const deletePasskey = async (req, res) => {
   const { id } = req.params;
   const username = req.user.username;
