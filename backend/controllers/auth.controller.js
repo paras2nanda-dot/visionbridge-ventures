@@ -7,6 +7,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
+import crypto from "crypto";
 
 const rpName = 'VisionBridge Ventures';
 
@@ -24,6 +25,17 @@ const getWebAuthnConfig = (req) => {
 
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
+
+// 🛡️ NATIVE CONVERSION HELPERS (Bypasses library version crashes)
+const base64urlToUint8Array = (base64url) => {
+  const padding = '='.repeat((4 - base64url.length % 4) % 4);
+  const base64 = (base64url + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  return new Uint8Array(Buffer.from(base64, 'base64'));
+};
+
+const uint8ArrayToBase64url = (uint8array) => {
+  return Buffer.from(uint8array).toString('base64url');
+};
 
 // 🛡️ AUTO-HEALING DB FUNCTION
 const ensurePasskeyTable = async () => {
@@ -103,10 +115,14 @@ export const generateRegOptions = async (req, res) => {
     const safeExcludeCredentials = [];
     for (const key of userPasskeys.rows) {
       if (key.credential_id) {
-        safeExcludeCredentials.push({
-          id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
-          type: 'public-key',
-        });
+        try {
+          safeExcludeCredentials.push({
+            id: base64urlToUint8Array(key.credential_id),
+            type: 'public-key',
+          });
+        } catch (e) {
+          console.warn("Skipping unreadable credential ID.");
+        }
       }
     }
 
@@ -116,6 +132,7 @@ export const generateRegOptions = async (req, res) => {
       userID: new Uint8Array(Buffer.from(username)), 
       userName: username,
       userDisplayName: username,
+      challenge: crypto.randomBytes(32), // 🟢 Explicitly generate challenge to prevent undefined crashes
       excludeCredentials: safeExcludeCredentials,
       authenticatorSelection: {
         residentKey: 'preferred',
@@ -127,7 +144,7 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    res.status(500).json({ error: `Registration setup failed: ${err.message}` });
+    res.status(500).json({ error: `Backend Crash: ${err.message}` });
   }
 };
 
@@ -155,8 +172,8 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          Buffer.from(credentialID).toString('base64url'), 
-          Buffer.from(credentialPublicKey).toString('base64url'), 
+          uint8ArrayToBase64url(credentialID), 
+          uint8ArrayToBase64url(credentialPublicKey), 
           counter
         ]
       );
@@ -178,7 +195,7 @@ export const generateAuthOptions = async (req, res) => {
 
   try {
     await ensurePasskeyTable();
-    // This allows multiple devices! We fetch ALL passkeys registered to 'paras' or 'himanshu'
+    // Fetches ALL devices registered to this user
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     if (userKeys.rows.length === 0) {
         return res.status(404).json({ error: "No biometrics registered. Please login with password to register this device." });
@@ -187,15 +204,20 @@ export const generateAuthOptions = async (req, res) => {
     const safeAllowCredentials = [];
     for (const key of userKeys.rows) {
       if (key.credential_id) {
-        safeAllowCredentials.push({
-          id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
-          type: 'public-key',
-        });
+        try {
+          safeAllowCredentials.push({
+            id: base64urlToUint8Array(key.credential_id),
+            type: 'public-key',
+          });
+        } catch (e) {
+          // Skip corrupt keys safely
+        }
       }
     }
 
     const options = await generateAuthenticationOptions({
       rpID,
+      challenge: crypto.randomBytes(32), // 🟢 Explicitly generate challenge
       allowCredentials: safeAllowCredentials,
       userVerification: 'preferred',
     });
@@ -219,14 +241,9 @@ export const verifyAuth = async (req, res) => {
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     
-    // 🛡️ Bulletproof matching: Convert both IDs to hex to avoid base64 padding mismatches
-    const reqHex = Buffer.from(body.id, 'base64url').toString('hex');
-    const passkey = userKeys.rows.find(k => {
-        const dbHex = Buffer.from(k.credential_id, 'base64url').toString('hex');
-        return dbHex === reqHex;
-    });
+    // Find the specific device that answered the challenge
+    const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
-    // If the device isn't in the DB (e.g. wiped during testing), give a clear instruction!
     if (!passkey) {
         return res.status(400).json({ 
             error: "This device is no longer synced with our database. Please login with your password to re-register it." 
@@ -239,8 +256,8 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialPublicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')),
-        credentialID: new Uint8Array(Buffer.from(passkey.credential_id, 'base64url')),
+        credentialPublicKey: base64urlToUint8Array(passkey.public_key),
+        credentialID: base64urlToUint8Array(passkey.credential_id),
         counter: Number(passkey.counter),
       },
     });
