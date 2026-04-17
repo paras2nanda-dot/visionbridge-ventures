@@ -4,12 +4,13 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, LineChart, Line 
 } from 'recharts';
-import { AlertTriangle, PieChart as PieChartIcon, TrendingUp, Activity, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, PieChart as PieChartIcon, TrendingUp, Activity, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 const Charts = () => {
   const [charts, setCharts] = useState(null);
   const [upcomingClosures, setUpcomingClosures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showUpcoming, setShowUpcoming] = useState(true); // New state for toggling
 
   // Premium High-Contrast Palette
   const COLORS = ['#0284c7', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
@@ -108,48 +109,59 @@ const Charts = () => {
       <div style={{ marginBottom: '48px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
           {sectionHeader("Upcoming SIP Closures (Next 60 Days)", "#ef4444", AlertTriangle)}
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '8px 16px', borderRadius: '8px', fontWeight: '800', fontSize: '12px', border: '1px solid rgba(239, 68, 68, 0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {upcomingClosures.length} Maturities Tracked
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* View/Hide Toggle Button */}
+            <button 
+              onClick={() => setShowUpcoming(!showUpcoming)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontWeight: '700', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+            >
+              {showUpcoming ? <><EyeOff size={14} /> HIDE DETAILS</> : <><Eye size={14} /> VIEW DETAILS</>}
+            </button>
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '8px 16px', borderRadius: '8px', fontWeight: '800', fontSize: '12px', border: '1px solid rgba(239, 68, 68, 0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {upcomingClosures.length} Maturities Tracked
+            </div>
           </div>
         </div>
 
-        <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.3)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.05)' }}>
-          <div className="table-container" style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ background: 'rgba(239, 68, 68, 0.05)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Client name</th>
-                  <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fund name</th>
-                  <th style={{ padding: '16px', textAlign: 'center', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Closure date</th>
-                  <th style={{ padding: '16px', textAlign: 'right', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {upcomingClosures.length > 0 ? upcomingClosures.map((sip) => (
-                  <tr key={sip.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{sip.client_name}</td>
-                    <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{sip.scheme_name}</td>
-                    <td style={{ padding: '16px', textAlign: 'center' }}>
-                      <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '6px 12px', borderRadius: '8px', fontWeight: '800', fontSize: '12px' }}>
-                        {new Date(sip.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(sip.amount)}</td>
+        {showUpcoming && (
+          <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.3)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.05)', transition: 'all 0.3s ease' }}>
+            <div className="table-container" style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(239, 68, 68, 0.05)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                    <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Client name</th>
+                    <th style={{ padding: '16px', textAlign: 'left', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fund name</th>
+                    <th style={{ padding: '16px', textAlign: 'center', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Closure date</th>
+                    <th style={{ padding: '16px', textAlign: 'right', color: '#ef4444', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount</th>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="4" style={{ padding: '60px', textAlign: 'center', fontWeight: '600', color: 'var(--text-muted)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                        <CheckCircle2 size={32} color="#10b981" />
-                        No SIPs are set to close in the next 60 days.
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {upcomingClosures.length > 0 ? upcomingClosures.map((sip) => (
+                    <tr key={sip.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{sip.client_name}</td>
+                      <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{sip.scheme_name}</td>
+                      <td style={{ padding: '16px', textAlign: 'center' }}>
+                        <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '6px 12px', borderRadius: '8px', fontWeight: '800', fontSize: '12px' }}>
+                          {new Date(sip.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(sip.amount)}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan="4" style={{ padding: '60px', textAlign: 'center', fontWeight: '600', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                          <CheckCircle2 size={32} color="#10b981" />
+                          No SIPs are set to close in the next 60 days.
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 🟦 CATEGORY 1: DEMOGRAPHICS */}
@@ -178,7 +190,7 @@ const Charts = () => {
         <ResponsiveContainer width="100%" height={400}>
           <AreaChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="colorMarket" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="colorMarket" x1="0" x2="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2}/>
                 <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
               </linearGradient>
