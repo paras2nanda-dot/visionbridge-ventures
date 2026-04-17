@@ -25,13 +25,6 @@ const getWebAuthnConfig = (req) => {
 // Temporary memory store for cryptographic challenges
 const challengeStore = new Map();
 
-// 🛡️ NATIVE CONVERSION HELPER (Transforms DB Strings back to Binary for the Library)
-const toUint8Array = (base64urlString) => {
-  const padding = '='.repeat((4 - base64urlString.length % 4) % 4);
-  const base64 = (base64urlString + padding).replace(/\-/g, '+').replace(/_/g, '/');
-  return new Uint8Array(Buffer.from(base64, 'base64'));
-};
-
 // 🛡️ AUTO-HEALING DB FUNCTION
 const ensurePasskeyTable = async () => {
   try {
@@ -107,21 +100,16 @@ export const generateRegOptions = async (req, res) => {
     await ensurePasskeyTable(); 
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
-    const safeExcludeCredentials = [];
-    for (const key of userPasskeys.rows) {
-      if (key.credential_id) {
-        try {
-          safeExcludeCredentials.push({
-            id: toUint8Array(key.credential_id),
-            type: 'public-key',
-          });
-        } catch (e) {
-          console.warn("Skipping unreadable credential ID.");
-        }
-      }
-    }
+    // Format for v13: Must pass Uint8Array into the generator
+    const safeExcludeCredentials = userPasskeys.rows
+      .filter(key => key.credential_id)
+      .map(key => ({
+        id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
+        type: 'public-key',
+      }));
 
-    // 🟢 Let the library generate the challenge automatically so it formats correctly for the frontend
+    // We no longer manually override the challenge. The library generates it and 
+    // automatically formats it as a Base64URL string for the frontend response.
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
@@ -162,6 +150,7 @@ export const verifyReg = async (req, res) => {
     if (verification.verified && verification.registrationInfo) {
       const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
 
+      // Store as Base64URL strings in DB
       await ensurePasskeyTable();
       await pool.query(
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
@@ -196,21 +185,13 @@ export const generateAuthOptions = async (req, res) => {
         return res.status(404).json({ error: "No biometrics registered. Please login with password to register this device." });
     }
 
-    const safeAllowCredentials = [];
-    for (const key of userKeys.rows) {
-      if (key.credential_id) {
-        try {
-          safeAllowCredentials.push({
-            id: toUint8Array(key.credential_id),
-            type: 'public-key',
-          });
-        } catch (e) {
-          // Skip corrupt keys silently
-        }
-      }
-    }
+    const safeAllowCredentials = userKeys.rows
+      .filter(key => key.credential_id)
+      .map(key => ({
+        id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
+        type: 'public-key',
+      }));
 
-    // 🟢 Let the library generate the challenge automatically here as well
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: safeAllowCredentials,
@@ -227,7 +208,7 @@ export const generateAuthOptions = async (req, res) => {
 
 export const verifyAuth = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
-  const body = req.body.data;
+  const body = req.body.data; // body.id is passed from frontend as a base64url string
   const { rpID, origin } = getWebAuthnConfig(req);
   const expectedChallenge = challengeStore.get(`auth_${username}`);
 
@@ -236,12 +217,12 @@ export const verifyAuth = async (req, res) => {
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     
-    // Find the specific device that answered the challenge
+    // We can safely match string-to-string because we saved it as base64url in verifyReg
     const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
     if (!passkey) {
         return res.status(400).json({ 
-            error: "This device is no longer synced with our database. Please login with your password to re-register it." 
+            error: "This device is no longer synced. Please login with your password to re-register it." 
         });
     }
 
@@ -251,8 +232,9 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialPublicKey: toUint8Array(passkey.public_key),
-        credentialID: toUint8Array(passkey.credential_id),
+        // v13 expects these to be reconstructed as Uint8Array
+        credentialPublicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')),
+        credentialID: new Uint8Array(Buffer.from(passkey.credential_id, 'base64url')),
         counter: Number(passkey.counter),
       },
     });
