@@ -7,7 +7,6 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 const rpName = 'VisionBridge Ventures';
 
@@ -101,25 +100,19 @@ export const generateRegOptions = async (req, res) => {
     await ensurePasskeyTable(); 
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
-    // 🛡️ Bulletproof DB extraction: ensure it is strictly a string before buffer conversion
     const safeExcludeCredentials = [];
     for (const key of userPasskeys.rows) {
-      if (key.credential_id && typeof key.credential_id === 'string') {
-        try {
-          safeExcludeCredentials.push({
-            id: isoBase64URL.toBuffer(key.credential_id),
-            type: 'public-key',
-          });
-        } catch (e) {
-          console.warn("Skipping corrupted credential ID during exclusion mapping.");
-        }
+      if (key.credential_id) {
+        safeExcludeCredentials.push({
+          id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
+          type: 'public-key',
+        });
       }
     }
 
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      // 🟢 FIX: Strictly enforce Uint8Array as required by SimpleWebAuthn v10+
       userID: new Uint8Array(Buffer.from(username)), 
       userName: username,
       userDisplayName: username,
@@ -134,7 +127,7 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: `Registration setup failed: ${err.message}` });
   }
 };
 
@@ -162,14 +155,14 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
-          isoBase64URL.fromBuffer(credentialID), 
-          isoBase64URL.fromBuffer(credentialPublicKey), 
+          Buffer.from(credentialID).toString('base64url'), 
+          Buffer.from(credentialPublicKey).toString('base64url'), 
           counter
         ]
       );
 
       challengeStore.delete(`reg_${username}`);
-      return res.json({ verified: true, message: "Fingerprint registered successfully!" });
+      return res.json({ verified: true, message: "Device registered successfully!" });
     }
   } catch (error) {
     console.error("WebAuthn Reg Error:", error);
@@ -185,20 +178,19 @@ export const generateAuthOptions = async (req, res) => {
 
   try {
     await ensurePasskeyTable();
+    // This allows multiple devices! We fetch ALL passkeys registered to 'paras' or 'himanshu'
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
-    if (userKeys.rows.length === 0) return res.status(404).json({ error: "No biometrics registered for this user." });
+    if (userKeys.rows.length === 0) {
+        return res.status(404).json({ error: "No biometrics registered. Please login with password to register this device." });
+    }
 
     const safeAllowCredentials = [];
     for (const key of userKeys.rows) {
-      if (key.credential_id && typeof key.credential_id === 'string') {
-        try {
-          safeAllowCredentials.push({
-            id: isoBase64URL.toBuffer(key.credential_id),
-            type: 'public-key',
-          });
-        } catch (e) {
-          // Skip silently
-        }
+      if (key.credential_id) {
+        safeAllowCredentials.push({
+          id: new Uint8Array(Buffer.from(key.credential_id, 'base64url')),
+          type: 'public-key',
+        });
       }
     }
 
@@ -212,7 +204,7 @@ export const generateAuthOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Auth Options Error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: `Auth setup failed: ${err.message}` });
   }
 };
 
@@ -227,11 +219,18 @@ export const verifyAuth = async (req, res) => {
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     
-    // Exact string match on the credential ID
-    const passkey = userKeys.rows.find(k => k.credential_id === body.id);
+    // 🛡️ Bulletproof matching: Convert both IDs to hex to avoid base64 padding mismatches
+    const reqHex = Buffer.from(body.id, 'base64url').toString('hex');
+    const passkey = userKeys.rows.find(k => {
+        const dbHex = Buffer.from(k.credential_id, 'base64url').toString('hex');
+        return dbHex === reqHex;
+    });
 
-    if (!passkey || typeof passkey.public_key !== 'string') {
-      return res.status(400).json({ error: "Fingerprint device not recognized or invalid key format." });
+    // If the device isn't in the DB (e.g. wiped during testing), give a clear instruction!
+    if (!passkey) {
+        return res.status(400).json({ 
+            error: "This device is no longer synced with our database. Please login with your password to re-register it." 
+        });
     }
 
     const verification = await verifyAuthenticationResponse({
@@ -240,8 +239,8 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialPublicKey: isoBase64URL.toBuffer(passkey.public_key),
-        credentialID: isoBase64URL.toBuffer(passkey.credential_id),
+        credentialPublicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64url')),
+        credentialID: new Uint8Array(Buffer.from(passkey.credential_id, 'base64url')),
         counter: Number(passkey.counter),
       },
     });
