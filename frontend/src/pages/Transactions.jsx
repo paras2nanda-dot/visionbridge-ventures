@@ -118,8 +118,6 @@ const Transactions = () => {
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
       
-      {/* 🚀 Giant "Transactions" title removed to rely on clean breadcrumbs */}
-      
       {/* FORM CARD */}
       <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '40px', position: 'relative', overflow: 'hidden' }}>
         
@@ -141,10 +139,16 @@ const Transactions = () => {
               <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
                 <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select></div>
-            <div><label style={labelStyle}>Type</label>
+            <div>
+              <label style={labelStyle}>Type</label>
+              {/* 🟢 RESTORED ORIGINAL DROPDOWNS: Purchase, Redemption, Switch */}
               <select style={inputStyle} value={formData.transaction_type} disabled={isViewing} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
-                <option>Purchase</option><option>Redemption</option><option>Switch In</option><option>Switch Out</option>
-              </select></div>
+                <option value="Purchase">Purchase</option>
+                <option value="Redemption">Redemption</option>
+                <option value="Switch In">Switch In</option>
+                <option value="Switch Out">Switch Out</option>
+              </select>
+            </div>
             <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
             <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '80px', resize: 'vertical'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
           </div>
