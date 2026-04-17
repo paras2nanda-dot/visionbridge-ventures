@@ -15,7 +15,7 @@ const getWebAuthnConfig = (req) => {
   const origin = req.headers.origin || 'https://visionbridge-ventures.vercel.app';
   let rpID;
   try {
-    rpID = new URL(origin).hostname;
+    rpID = new URL(origin).hostname; 
   } catch (e) {
     rpID = 'visionbridge-ventures.vercel.app';
   }
@@ -26,7 +26,6 @@ const getWebAuthnConfig = (req) => {
 const challengeStore = new Map();
 
 // 🛡️ AUTO-HEALING DB FUNCTION
-// Ensures the table exists so queries don't crash the server!
 const ensurePasskeyTable = async () => {
   try {
     await pool.query(`
@@ -98,22 +97,20 @@ export const generateRegOptions = async (req, res) => {
   }
 
   try {
-    await ensurePasskeyTable(); // Prevent DB crashes
+    await ensurePasskeyTable(); 
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
-
-    // Use Native Node Buffers to avoid library version mismatches
-    const safeExcludeCredentials = userPasskeys.rows.map(key => ({
-      id: Buffer.from(key.credential_id, 'base64url'), 
-      type: 'public-key',
-    }));
 
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      userID: Buffer.from(username), // Standard Buffer format works across most versions
+      // 🟢 FIX: Encode as a pure Base64URL string to survive res.json() serialization perfectly!
+      userID: Buffer.from(username).toString('base64url'), 
       userName: username,
       userDisplayName: username,
-      excludeCredentials: safeExcludeCredentials,
+      excludeCredentials: userPasskeys.rows.map(key => ({
+        id: key.credential_id, // 🟢 FIX: Pass as pure string, preventing the input.replace crash
+        type: 'public-key',
+      })),
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'preferred',
@@ -152,6 +149,7 @@ export const verifyReg = async (req, res) => {
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
           username, 
+          // 🟢 Convert binary Uint8Arrays to pure strings before saving to database
           Buffer.from(credentialID).toString('base64url'), 
           Buffer.from(credentialPublicKey).toString('base64url'), 
           counter
@@ -178,14 +176,12 @@ export const generateAuthOptions = async (req, res) => {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     if (userKeys.rows.length === 0) return res.status(404).json({ error: "No biometrics registered for this user." });
 
-    const safeAllowCredentials = userKeys.rows.map(key => ({
-      id: Buffer.from(key.credential_id, 'base64url'),
-      type: 'public-key',
-    }));
-
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials: safeAllowCredentials,
+      allowCredentials: userKeys.rows.map(key => ({
+        id: key.credential_id, // 🟢 FIX: Pass pure string
+        type: 'public-key',
+      })),
       userVerification: 'preferred',
     });
 
@@ -207,8 +203,6 @@ export const verifyAuth = async (req, res) => {
 
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
-    
-    // Find matching key using base64url string comparison
     const passkey = userKeys.rows.find(k => k.credential_id === body.id);
 
     if (!passkey) return res.status(400).json({ error: "Fingerprint device not recognized." });
@@ -219,6 +213,7 @@ export const verifyAuth = async (req, res) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
+        // 🟢 Revert the pure strings from the database back into Buffers for verification
         credentialPublicKey: Buffer.from(passkey.public_key, 'base64url'),
         credentialID: Buffer.from(passkey.credential_id, 'base64url'),
         counter: Number(passkey.counter),
