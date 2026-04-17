@@ -41,30 +41,18 @@ export default function Login() {
   // 🛡️ SMART PASSKEY REGISTRATION PROMPT
   // ==============================================
   const promptFingerprintRegistration = async (authUsername) => {
-    // 1. Only prompt for specific admins
     if (!['paras', 'himanshu'].includes(authUsername.toLowerCase())) return;
 
     try {
-      // 2. CHECK: Does this user already have any passkeys?
       const { data: existingKeys } = await api.get('/auth/webauthn/passkeys');
-      
-      // 3. If they already have keys, don't nag them. 
-      if (existingKeys && existingKeys.length > 0) {
-        console.log("User already has biometrics registered. Skipping prompt.");
-        return;
-      }
+      if (existingKeys && existingKeys.length > 0) return;
 
-      // 4. Only show if no keys exist in the database
       const wantsToRegister = window.confirm("Would you like to register this device for Fingerprint/FaceID login?");
       if (!wantsToRegister) return;
 
-      // 5. Fetch options from backend
       const { data: options } = await api.post('/auth/webauthn/register/generate', { username: authUsername });
-      
-      // 6. Start browser registration flow
       const registrationResponse = await startRegistration({ optionsJSON: options });
       
-      // 7. Send the response back to verify and save
       await api.post('/auth/webauthn/register/verify', {
         username: authUsername,
         data: registrationResponse,
@@ -73,44 +61,43 @@ export default function Login() {
       toast.success("Device registered successfully!");
     } catch (err) {
       console.error("Biometric Check/Reg Error:", err);
-      // Only show error toast if the user didn't intentionally cancel the browser prompt
-      if (err.name !== 'NotAllowedError' && err.response) {
-         toast.error(err.response?.data?.error || "Registration failed.");
-      }
     }
   };
 
   // ==============================================
-  // 🛡️ PASSKEY: LOGIN WITH FINGERPRINT
+  // 🛡️ PASSKEY: LOGIN WITH FINGERPRINT (Passwordless)
   // ==============================================
   const handleBiometricLogin = async () => {
     const cleanUsername = username.trim().toLowerCase();
     
-    if (!cleanUsername) {
-      return toast.error("Please enter your username first to use fingerprint login.");
-    }
-
+    // 🟢 IMPROVED: Supports "Discoverable" login if username is empty
     triggerPop();
     setIsLoggingIn(true);
 
     try {
-      const { data: options } = await api.post('/auth/webauthn/login/generate', { username: cleanUsername });
+      // If username is empty, we send a request that allows the browser to discover credentials
+      const { data: options } = await api.post('/auth/webauthn/login/generate', { 
+        username: cleanUsername || undefined 
+      });
       
       const authenticationResponse = await startAuthentication({ optionsJSON: options });
       
       const res = await api.post('/auth/webauthn/login/verify', {
-        username: cleanUsername,
+        username: cleanUsername || "", 
         data: authenticationResponse
       });
 
-      sessionStorage.setItem("username", res.data.user?.username || cleanUsername); 
+      const finalUser = res.data.user?.username || cleanUsername;
+      sessionStorage.setItem("username", res.data.user?.full_name || finalUser); 
       sessionStorage.setItem("token", res.data.token); 
       toast.success(`Welcome back via Biometrics!`);
       navigate("/dashboard");
 
     } catch (err) {
       console.error("Biometric Login Error:", err);
-      toast.error(err.response?.data?.error || "Biometric login failed.");
+      if (err.name !== 'NotAllowedError') {
+        toast.error(err.response?.data?.error || "Biometric login failed.");
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -137,7 +124,6 @@ export default function Login() {
       sessionStorage.setItem("token", res.data.token); 
       toast.success(`Welcome back, ${res.data.user?.full_name || 'Advisor'}!`);
       
-      // Start the smart biometric check
       await promptFingerprintRegistration(cleanUsername);
 
       navigate("/dashboard");
@@ -198,10 +184,11 @@ export default function Login() {
             <input 
                 style={styles.input} 
                 className="login-field" 
-                placeholder="e.g. paras" 
+                placeholder="" 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
                 autoCapitalize="none"
+                autoComplete="username webauthn"
                 required 
             />
             
@@ -214,6 +201,7 @@ export default function Login() {
                 placeholder="••••••••" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
+                autoComplete="current-password"
                 required 
               />
               <span style={styles.eyeIcon} onClick={() => { triggerPop(); setShowPassword(!showPassword); }}>
@@ -244,8 +232,8 @@ export default function Login() {
                 type="button" 
                 onClick={handleBiometricLogin} 
                 style={styles.biometricBtn} 
-                disabled={isLoggingIn || !username.trim()}
-                title="Enter your username first, then click here to login with your fingerprint."
+                disabled={isLoggingIn}
+                title="Login with your fingerprint."
               >
                 <Fingerprint size={18} /> Login with Biometrics
              </button>
