@@ -8,10 +8,10 @@ import {
   verifyReg,
   generateAuthOptions,
   verifyAuth,
-  getPasskeys,    // 🟢 New Controller function
-  deletePasskey   // 🟢 New Controller function
+  getPasskeys,
+  deletePasskey 
 } from "../controllers/auth.controller.js";
-import authMiddleware from "../middleware/auth.middleware.js"; // 🔒 Needed for security
+import authMiddleware from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -50,7 +50,7 @@ router.post("/logout", logout);
 // 🛡️ BIOMETRIC (WEBAUTHN/PASSKEY) ROUTES
 // ==========================================
 
-// Phase 1: Registration
+// Phase 1: Registration (Username STILL REQUIRED here)
 router.post("/webauthn/register/generate", [
   body('username').trim().notEmpty().withMessage("Username required")
 ], validate, generateRegOptions);
@@ -60,13 +60,13 @@ router.post("/webauthn/register/verify", [
   body('data').notEmpty().withMessage("Biometric data required")
 ], validate, verifyReg);
 
-// Phase 2: Authentication
+// Phase 2: Authentication (Username is now OPTIONAL for Discoverable Login)
 router.post("/webauthn/login/generate", [
-  body('username').trim().notEmpty().withMessage("Username required")
+  body('username').optional().trim()
 ], validate, generateAuthOptions);
 
 router.post("/webauthn/login/verify", [
-  body('username').trim().notEmpty().withMessage("Username required"),
+  body('username').optional().trim(),
   body('data').notEmpty().withMessage("Biometric data required")
 ], validate, verifyAuth);
 
@@ -74,10 +74,7 @@ router.post("/webauthn/login/verify", [
 // ⚙️ PASSKEY MANAGEMENT ROUTES
 // ==========================================
 
-// Fetch all registered biometrics for the logged-in user
 router.get("/webauthn/passkeys", authMiddleware, getPasskeys);
-
-// Remove a specific biometric record
 router.delete("/webauthn/passkeys/:id", authMiddleware, deletePasskey);
 
 export default router;
