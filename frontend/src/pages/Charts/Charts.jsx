@@ -10,7 +10,7 @@ const Charts = () => {
   const [charts, setCharts] = useState(null);
   const [upcomingClosures, setUpcomingClosures] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showUpcoming, setShowUpcoming] = useState(true); // New state for toggling
+  const [showUpcoming, setShowUpcoming] = useState(false); // Set to false to hide by default
 
   // Premium High-Contrast Palette
   const COLORS = ['#0284c7', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
@@ -225,7 +225,7 @@ const Charts = () => {
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorSIP" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="colorSIP" x1="0" x2="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#0284c7" stopOpacity={0.2}/>
                   <stop offset="95%" stopColor="#0284c7" stopOpacity={0}/>
                 </linearGradient>
