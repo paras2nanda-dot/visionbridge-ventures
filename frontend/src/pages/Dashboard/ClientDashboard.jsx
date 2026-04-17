@@ -11,7 +11,16 @@ const AssetDonut = ({ data }) => {
     </div>
   );
   
-  const total = data.reduce((acc, item) => acc + item.value, 0);
+  // 🟢 FIX: Ensure total is never 0 or NaN to prevent division by zero crashes
+  const total = data.reduce((acc, item) => acc + (Number(item.value) || 0), 0);
+  if (total <= 0) return (
+    <div style={{ padding: '40px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', textAlign: 'center', width: '100%' }}>
+        <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><PieChartIcon size={32} color="var(--text-muted)" style={{ opacity: 0.5 }} /></div>
+        <div style={{ color: 'var(--text-main)', fontWeight: '800', fontSize: '14px' }}>Portfolio Value is ₹0</div>
+        <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '12px', marginTop: '6px' }}>Asset allocation cannot be calculated.</div>
+    </div>
+  );
+
   let cumulativePercent = 0;
 
   const getCoordinatesForPercent = (percent) => {
@@ -24,11 +33,18 @@ const AssetDonut = ({ data }) => {
     <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', justifyContent: 'center' }}>
       <svg viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)', width: '150px', height: '150px', filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.05))' }}>
         {data.map((item, i) => {
-          if (item.value <= 0) return null;
+          const val = Number(item.value) || 0;
+          if (val <= 0) return null;
           const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
-          cumulativePercent += item.value / total;
+          cumulativePercent += val / total;
           const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
-          const largeArcFlag = item.value / total > 0.5 ? 1 : 0;
+          const largeArcFlag = val / total > 0.5 ? 1 : 0;
+          
+          // 🟢 FIX: Handle 100% edge case where start and end coordinates are the same
+          if (val / total === 1) {
+             return <circle key={i} r="1" fill={item.color} cx="0" cy="0" />
+          }
+
           const pathData = [`M ${startX} ${startY}`, `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`, `L 0 0`].join(' ');
           return <path key={i} d={pathData} fill={item.color} style={{ transition: 'all 0.3s ease' }} />;
         })}
@@ -36,14 +52,18 @@ const AssetDonut = ({ data }) => {
       </svg>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 30px' }}>
-        {data.map((item, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}></div>
-            <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
-              {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '600'}}>{((item.value/total)*100).toFixed(1)}%</span>
-            </span>
-          </div>
-        ))}
+        {data.map((item, i) => {
+           const val = Number(item.value) || 0;
+           if (val <= 0) return null;
+           return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}></div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                {item.label}: <span style={{color: 'var(--text-muted)', fontWeight: '600'}}>{((val/total)*100).toFixed(1)}%</span>
+              </span>
+            </div>
+           )
+        })}
       </div>
     </div>
   );
@@ -80,7 +100,6 @@ const ClientDashboard = () => {
     setSearchTerm(`${client.full_name} (${client.client_code || 'C' + client.id})`);
     setIsLoading(true);
 
-    // Fetch Dashboard data and SIP list simultaneously to check for closures
     Promise.all([
       fetch(`https://visionbridge-backend.onrender.com/api/client-dashboard/${client.id}`, { headers }),
       fetch(`https://visionbridge-backend.onrender.com/api/sips`, { headers })
@@ -89,11 +108,10 @@ const ClientDashboard = () => {
         const dashData = await dashRes.json();
         const sipData = await sipRes.json();
 
-        setSelectedClient(dashData.profile);
+        setSelectedClient(dashData.profile || client); // 🟢 FIX: Fallback to basic profile if dashboard fails
         setPortfolio(dashData.portfolio || []);
         setSummary(dashData.summary || { totalAUM: 0, totalSipBook: 0, sipCount: 0 });
 
-        // Filter upcoming SIP closures for THIS SPECIFIC client
         if (Array.isArray(sipData)) {
             const today = new Date();
             const sixtyDaysFromNow = new Date();
@@ -112,21 +130,33 @@ const ClientDashboard = () => {
       })
       .catch(err => {
         console.error("Error loading profile:", err);
+        setSelectedClient(client); // 🟢 FIX: At least show the name if the data fetch fails completely
+        setPortfolio([]);
+        setSummary({ totalAUM: 0, totalSipBook: 0, sipCount: 0 });
         setIsLoading(false);
       });
   };
 
-  const safeNum = (val) => parseFloat(val) || 0;
+  const safeNum = (val) => {
+    const num = parseFloat(val);
+    return isNaN(num) ? 0 : num;
+  };
+  
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
   const getAssetAllocation = () => {
+    // 🟢 FIX: Return empty array if portfolio isn't loaded yet to prevent `.forEach` crashes
+    if (!Array.isArray(portfolio) || portfolio.length === 0) return [];
+
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
       const investedValue = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
-      const master = schemes.find(s => s.scheme_name.trim().toLowerCase() === item.scheme_name.trim().toLowerCase());
+      if (investedValue <= 0) return; // Skip if no value
+
+      const master = schemes.find(s => (s.scheme_name || '').trim().toLowerCase() === (item.scheme_name || '').trim().toLowerCase());
       
-      if (master && investedValue > 0) {
+      if (master) {
           const l = safeNum(master.large_percent || master.large_cap || master.large_allocation || master.large);
           const m = safeNum(master.mid_percent || master.mid_cap || master.mid_allocation || master.mid);
           const s = safeNum(master.small_percent || master.small_cap || master.small_allocation || master.small);
@@ -239,19 +269,19 @@ const ClientDashboard = () => {
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
                     <Wallet size={16} color="#0284c7" /> Client Invested AUM
                 </div>
-                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary.totalAUM)}</div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary?.totalAUM)}</div>
             </div>
             <div style={cardStyle}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
                     <TrendingUp size={16} color="#8b5cf6" /> Monthly SIP
                 </div>
-                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary.totalSipBook)} <span style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600'}}>/ mo</span></div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary?.totalSipBook)} <span style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600'}}>/ mo</span></div>
             </div>
             <div style={cardStyle}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
                     <Activity size={16} color="#10b981" /> Active SIPs
                 </div>
-                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>{summary.sipCount}</div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>{summary?.sipCount || 0}</div>
             </div>
             <div style={cardStyle}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
@@ -279,15 +309,17 @@ const ClientDashboard = () => {
                           <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '700' }}>{item.scheme_name}</td>
                           <td style={{ padding: '16px 24px', textAlign: 'center', color: '#10b981', fontWeight: '700' }}>{safeNum(item.sip_amount) > 0 ? `₹${formatINR(item.sip_amount)}` : '-'}</td>
                           <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(item.invested_amount)}</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>{summary.totalAUM > 0 ? ((safeNum(item.invested_amount) / summary.totalAUM) * 100).toFixed(1) : '0'}%</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>{summary?.totalAUM > 0 ? ((safeNum(item.invested_amount) / summary.totalAUM) * 100).toFixed(1) : '0'}%</td>
                         </tr>
                       ))}
-                      <tr style={{ background: 'rgba(2, 132, 199, 0.04)' }}>
-                        <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '800' }}>TOTAL PORTFOLIO</td>
-                        <td style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '800' }}>₹{formatINR(summary.totalSipBook)}</td>
-                        <td style={{ padding: '16px 24px', textAlign: 'right', color: '#0284c7', fontWeight: '900', fontSize: '15px' }}>₹{formatINR(summary.totalAUM)}</td>
-                        <td style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '800' }}>100%</td>
-                      </tr>
+                      {portfolio.length > 0 && (
+                        <tr style={{ background: 'rgba(2, 132, 199, 0.04)' }}>
+                          <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '800' }}>TOTAL PORTFOLIO</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '800' }}>₹{formatINR(summary?.totalSipBook)}</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'right', color: '#0284c7', fontWeight: '900', fontSize: '15px' }}>₹{formatINR(summary?.totalAUM)}</td>
+                          <td style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '800' }}>100%</td>
+                        </tr>
+                      )}
                     </tbody>
                  </table>
              </div>
