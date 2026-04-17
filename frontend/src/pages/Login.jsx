@@ -50,9 +50,8 @@ export default function Login() {
       // 1. Fetch options from backend
       const { data: options } = await api.post('/auth/webauthn/register/generate', { username: authUsername });
       
-      // 2. Start browser registration flow
-      // startRegistration handles the base64 conversions automatically
-      const registrationResponse = await startRegistration(options);
+      // 2. Start browser registration flow (Updated syntax for v10+)
+      const registrationResponse = await startRegistration({ optionsJSON: options });
       
       // 3. Send the response back to verify and save
       await api.post('/auth/webauthn/register/verify', {
@@ -84,7 +83,10 @@ export default function Login() {
 
     try {
       const { data: options } = await api.post('/auth/webauthn/login/generate', { username: cleanUsername });
-      const authenticationResponse = await startAuthentication(options);
+      
+      // Updated syntax for v10+
+      const authenticationResponse = await startAuthentication({ optionsJSON: options });
+      
       const res = await api.post('/auth/webauthn/login/verify', {
         username: cleanUsername,
         data: authenticationResponse
