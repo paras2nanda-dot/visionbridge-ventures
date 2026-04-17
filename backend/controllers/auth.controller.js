@@ -16,7 +16,7 @@ const getWebAuthnConfig = (req) => {
   const origin = req.headers.origin || 'https://visionbridge-ventures.vercel.app';
   let rpID;
   try {
-    rpID = new URL(origin).hostname;
+    rpID = new URL(origin).hostname; // Safely extracts just the domain/localhost
   } catch (e) {
     rpID = 'visionbridge-ventures.vercel.app';
   }
@@ -82,18 +82,28 @@ export const generateRegOptions = async (req, res) => {
   try {
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
+    // 🛡️ Bulletproof filter to skip any corrupted database rows from previous tests
+    const safeExcludeCredentials = [];
+    for (const key of userPasskeys.rows) {
+      try {
+        if (key.credential_id) {
+          safeExcludeCredentials.push({
+            id: isoBase64URL.toBuffer(key.credential_id),
+            type: 'public-key',
+          });
+        }
+      } catch (e) {
+        console.warn(`Skipping corrupted credential ID in DB: ${key.credential_id}`);
+      }
+    }
+
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      // 🟢 FIX: Generate a consistent binary User ID from the username
-      userID: Uint8Array.from(username, c => c.charCodeAt(0)), 
+      userID: new Uint8Array(Buffer.from(username)), // Universally supported Buffer format
       userName: username,
       userDisplayName: username,
-      excludeCredentials: userPasskeys.rows.map(key => ({
-        // 🟢 FIX: Ensure credential ID is converted from base64url to binary
-        id: isoBase64URL.toBuffer(key.credential_id), 
-        type: 'public-key',
-      })),
+      excludeCredentials: safeExcludeCredentials,
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'preferred',
@@ -104,7 +114,8 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    res.status(500).json({ error: "Internal Server Error during registration setup." });
+    // 🟢 Send the exact error message to the frontend so we can see it on screen!
+    res.status(500).json({ error: `Registration setup failed: ${err.message}` });
   }
 };
 
@@ -156,12 +167,24 @@ export const generateAuthOptions = async (req, res) => {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
     if (userKeys.rows.length === 0) return res.status(404).json({ error: "No biometrics registered for this user." });
 
+    // 🛡️ Apply the same bulletproof filter for logging in
+    const safeAllowCredentials = [];
+    for (const key of userKeys.rows) {
+      try {
+        if (key.credential_id) {
+          safeAllowCredentials.push({
+            id: isoBase64URL.toBuffer(key.credential_id),
+            type: 'public-key',
+          });
+        }
+      } catch (e) {
+        console.warn(`Skipping corrupted credential ID in DB: ${key.credential_id}`);
+      }
+    }
+
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials: userKeys.rows.map(key => ({
-        id: isoBase64URL.toBuffer(key.credential_id),
-        type: 'public-key',
-      })),
+      allowCredentials: safeAllowCredentials,
       userVerification: 'preferred',
     });
 
@@ -169,7 +192,7 @@ export const generateAuthOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Auth Options Error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: `Auth setup failed: ${err.message}` });
   }
 };
 
@@ -183,7 +206,13 @@ export const verifyAuth = async (req, res) => {
 
   try {
     const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
-    const passkey = userKeys.rows.find(k => k.credential_id === body.id);
+    const passkey = userKeys.rows.find(k => {
+      try {
+        return isoBase64URL.fromBuffer(isoBase64URL.toBuffer(k.credential_id)) === body.id;
+      } catch (e) {
+        return k.credential_id === body.id; // Fallback for pure string comparison
+      }
+    });
 
     if (!passkey) return res.status(400).json({ error: "Fingerprint device not recognized." });
 
