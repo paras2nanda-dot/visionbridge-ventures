@@ -12,8 +12,7 @@ export async function buildClientDashboard(clientId) {
     if (clientRes.rows.length === 0) throw new Error("Client not found");
 
     // 2. Fetch Merged Portfolio Logic
-    // FIXED: Added dynamic SIP accumulation. It calculates months elapsed since 'start_date' 
-    // and multiplies it by the SIP amount to get the true Invested AUM.
+    // 🟢 FIXED: Ensures exact matching for 'SWITCH IN' (addition) and 'SWITCH OUT' (deduction)
     const portfolioRes = await pool.query(`
       WITH all_client_schemes AS (
         SELECT scheme_id FROM transactions WHERE client_id::TEXT = $1
@@ -29,8 +28,8 @@ export async function buildClientDashboard(clientId) {
       LEFT JOIN (
         SELECT scheme_id, 
                SUM(CASE 
-                 WHEN UPPER(TRIM(transaction_type)) IN ('PURCHASE', 'SWITCH_IN', 'SWITCH IN') THEN amount 
-                 WHEN UPPER(TRIM(transaction_type)) IN ('REDEMPTION', 'SWITCH_OUT', 'SWITCH OUT') THEN -amount 
+                 WHEN UPPER(TRIM(transaction_type)) IN ('PURCHASE', 'SWITCH IN', 'SWITCH_IN') THEN amount 
+                 WHEN UPPER(TRIM(transaction_type)) IN ('REDEMPTION', 'SWITCH OUT', 'SWITCH_OUT') THEN -amount 
                  ELSE 0 END) as net_aum
         FROM transactions 
         WHERE client_id::TEXT = $1
