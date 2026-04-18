@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -12,7 +13,8 @@ import {
   Download, 
   Settings, 
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Handshake // 🟢 Added for Sub-Distributors
 } from 'lucide-react';
 
 const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
@@ -24,6 +26,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Clients Database', path: '/clients', icon: <Users size={20} /> },
+    { name: 'Sub-Distributors', path: '/sub-distributors', icon: <Handshake size={20} /> }, // 🟢 Added link
     { name: 'SIP Tracker', path: '/sips', icon: <Repeat size={20} /> },
     { name: 'Transactions', path: '/transactions', icon: <ArrowLeftRight size={20} /> },
     { name: 'MF Schemes', path: '/schemes', icon: <FolderOpen size={20} /> },
@@ -160,15 +163,12 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
 
         {/* BOTTOM ACTION AREA */}
         <div style={{ background: 'transparent' }}>
-          
           <button onClick={() => { setIsSettingsOpen(true); closeMobileMenu(); }} className="sidebar-action-btn btn-settings">
             <Settings size={20} /> Settings
           </button>
-
           <button onClick={handleLogout} disabled={isLoggingOut} className="sidebar-action-btn btn-logout">
             <LogOut size={20} /> {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
-
         </div>
       </div>
 

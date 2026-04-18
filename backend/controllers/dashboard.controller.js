@@ -149,7 +149,7 @@ export const getBusinessStats = async (req, res) => {
  */
 export const getLeaderboardsStats = async (req, res) => {
   try {
-    // 1. Get Total Invested AUM (for percentage math on the frontend)
+    // 1. Get Total Invested AUM
     const totalAumRes = await pool.query(`
       WITH txn_sum AS (
         SELECT COALESCE(SUM(CASE 
@@ -216,11 +216,11 @@ export const getLeaderboardsStats = async (req, res) => {
       LIMIT 10
     `);
 
-    // 4. Top 5 External Sources
+    // 4. 🟢 UPDATED: Top 5 Sub Distributors (JOIN with sub_distributors table)
     const topSourcesRes = await pool.query(`
       WITH source_exposure AS (
         SELECT 
-          c.external_source_name,
+          sd.name,
           COUNT(DISTINCT c.id) as client_count,
           SUM(
             COALESCE((
@@ -235,13 +235,11 @@ export const getLeaderboardsStats = async (req, res) => {
               FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
             ), 0)
           ) as invested_value
-        FROM clients c
-        WHERE LOWER(c.sourcing) = 'external' 
-          AND c.external_source_name IS NOT NULL 
-          AND TRIM(c.external_source_name) != ''
-        GROUP BY c.external_source_name
+        FROM sub_distributors sd
+        JOIN clients c ON c.sub_distributor_id = sd.id
+        GROUP BY sd.id, sd.name
       )
-      SELECT external_source_name, client_count, invested_value 
+      SELECT name, client_count, invested_value 
       FROM source_exposure 
       WHERE invested_value > 0 
       ORDER BY invested_value DESC 

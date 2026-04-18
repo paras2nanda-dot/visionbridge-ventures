@@ -15,6 +15,7 @@ import mfschemeRoutes from './routes/mfSchemes.routes.js';
 import transactionRoutes from './routes/transactions.routes.js'; 
 import reportRoutes from './routes/reports.routes.js'; 
 import activityRoutes from './routes/activity.routes.js'; 
+import subDistributorRoutes from './routes/subDistributor.routes.js'; // 🟢 NEW IMPORT
 
 import { pool } from './config/db.js'; 
 
@@ -63,6 +64,7 @@ app.use('/api/schemes', authMiddleware, mfschemeRoutes);
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
 app.use('/api/activities', authMiddleware, activityRoutes);
+app.use('/api/sub-distributors', authMiddleware, subDistributorRoutes); // 🟢 MOUNTED NEW ROUTE
 
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
 

@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api'; 
 import { toast } from 'react-toastify';
-// 🟢 THE FIX: Added 'Users' to the import list below!
-import { Award, Star, Share2, TrendingUp, Users } from 'lucide-react'; 
+// 🟢 THE FIX: Replaced 'Share2' with 'Handshake'
+import { Award, Star, Handshake, TrendingUp, Users } from 'lucide-react'; 
 
 const LeaderboardsDashboard = () => {
   const [data, setData] = useState(null);
@@ -91,10 +91,10 @@ const LeaderboardsDashboard = () => {
           </div>
         </div>
 
-        {/* 🤝 TOP 5 EXTERNAL SOURCES BY AUM */}
+        {/* 🤝 TOP 5 SUB DISTRIBUTORS BY AUM */}
         <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
           <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.5px' }}>
-            <Share2 size={22} color="#8b5cf6" /> Top 5 External Sources
+            <Handshake size={22} color="#8b5cf6" /> Top 5 Sub Distributors
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {data.topSources?.map((source, idx) => {
@@ -106,9 +106,9 @@ const LeaderboardsDashboard = () => {
                       {idx + 1}
                     </div>
                     <div>
-                      <div style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '14px' }}>{source.external_source_name}</div>
+                      {/* 🟢 Display the partner name from the Sub Distributor table */}
+                      <div style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '14px' }}>{source.name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {/* Here is the icon that was crashing it! */}
                         <Users size={12}/> {source.client_count} {source.client_count === 1 ? 'Client' : 'Clients'}
                       </div>
                     </div>
@@ -122,7 +122,7 @@ const LeaderboardsDashboard = () => {
             })}
             {(!data.topSources || data.topSources.length === 0) && (
               <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', fontWeight: '600' }}>
-                No external sources tracked yet.
+                No sub distributors tracked yet.
               </div>
             )}
           </div>

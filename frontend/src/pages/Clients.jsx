@@ -2,11 +2,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api'; 
 import { toast } from 'react-toastify'; 
-import { Search, Trash2, Edit, Eye, ClipboardList, FileText, UserPlus, Check, X } from 'lucide-react';
+import { Search, Trash2, Edit, Eye, ClipboardList, FileText, UserPlus, Check, X, Handshake } from 'lucide-react';
 
 const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
   const [clients, setClients] = useState([]);
+  const [subDistributors, setSubDistributors] = useState([]); // 🟢 NEW STATE
   const [searchTerm, setSearchTerm] = useState(''); 
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
@@ -60,18 +61,21 @@ const Clients = () => {
     return d.toLocaleDateString('en-GB').replace(/\//g, '-'); 
   };
 
-  // 🟢 Added external_source_name to initial state
+  // 🟢 Updated initialState to include sub_distributor_id
   const initialState = {
     client_code: '', full_name: '', date_of_birth: '', 
     onboarding_date: formatDateForInput(new Date()), 
-    added_by: 'Paras', sourcing: 'Internal', external_source_name: '', sourcing_type: 'Family / Relative', mobile_number: '',
+    added_by: 'Paras', sourcing: 'Internal', sub_distributor_id: '', sourcing_type: 'Family / Relative', mobile_number: '',
     monthly_income: '', risk_profile: 'Moderate', investment_experience: 'Beginner', 
     pan: '', aadhaar: '', nominee_name: '', nominee_relation: '', nominee_mobile: '', notes: '', email: ''
   };
 
   const [formData, setFormData] = useState(initialState);
 
-  useEffect(() => { fetchClients(); }, []);
+  useEffect(() => { 
+    fetchClients(); 
+    fetchSubDistributors(); // 🟢 FETCH PARTNERS ON LOAD
+  }, []);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -92,6 +96,13 @@ const Clients = () => {
     finally { setLoading(false); }
   };
 
+  const fetchSubDistributors = async () => {
+    try {
+      const res = await api.get('/sub-distributors');
+      setSubDistributors(Array.isArray(res.data) ? res.data : []);
+    } catch (err) { console.error("Could not fetch sub-distributors"); }
+  };
+
   const formatINR = (val) => val ? new Intl.NumberFormat('en-IN').format(val.toString().replace(/,/g, "")) : "";
 
   const handleSubmit = async (e) => {
@@ -102,9 +113,9 @@ const Clients = () => {
       return toast.error("❌ Mobile number must be exactly 10 digits.");
     }
     
-    // 🟢 Safe validation (handles nulls correctly)
-    if (formData.sourcing === 'External' && !(formData.external_source_name || '').trim()) {
-      return toast.warn("⚠️ Please provide the External Source Name.");
+    // 🟢 Validation for Sub-Distributor dropdown
+    if (formData.sourcing === 'External' && !formData.sub_distributor_id) {
+      return toast.warn("⚠️ Please select a Sub Distributor.");
     }
 
     setIsSaving(true); 
@@ -134,13 +145,12 @@ const Clients = () => {
     mode === 'view' ? (setIsViewing(true), setIsEditing(false)) : (setIsEditing(true), setIsViewing(false));
     setEditingId(client.id);
     setActiveSubTab('basic');
-    // 🟢 Ensure external_source_name doesn't become undefined/null when pulling from DB
     setFormData({ 
-      ...initialState, // Provides default empty strings
+      ...initialState, 
       ...client, 
       date_of_birth: formatDateForInput(client.dob || client.date_of_birth), 
       onboarding_date: formatDateForInput(client.onboarding_date),
-      external_source_name: client.external_source_name || '' 
+      sub_distributor_id: client.sub_distributor_id || '' 
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -170,10 +180,8 @@ const Clients = () => {
       {/* FORM MODULE */}
       <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '40px', position: 'relative', overflow: 'hidden' }}>
         
-        {/* State Indicator */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#0284c7' }}></div>
 
-        {/* Sleek Segmented Control */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'var(--bg-main)', padding: '6px', borderRadius: '12px', border: '1px solid var(--border)', maxWidth: '400px' }}>
           <button 
             type="button" 
@@ -223,7 +231,7 @@ const Clients = () => {
                       setFormData({
                         ...formData, 
                         sourcing: newSourcing, 
-                        external_source_name: newSourcing === 'Internal' ? '' : formData.external_source_name
+                        sub_distributor_id: newSourcing === 'Internal' ? '' : formData.sub_distributor_id
                       });
                     }}>
                       <option>Internal</option>
@@ -231,18 +239,22 @@ const Clients = () => {
                     </select>
                   </div>
 
+                  {/* 🟢 NEW SUB DISTRIBUTOR DROPDOWN */}
                   {formData.sourcing === 'External' && (
                     <div className="fade-in">
-                      <label style={labelStyle}>External Source Name *</label>
-                      <input 
+                      <label style={labelStyle}>Sub Distributor *</label>
+                      <select 
                         style={inputStyle} 
-                        type="text" 
-                        placeholder="Name of external source..."
-                        value={formData.external_source_name} 
-                        readOnly={isViewing} 
-                        onChange={e => setFormData({...formData, external_source_name: e.target.value})} 
+                        value={formData.sub_distributor_id} 
+                        disabled={isViewing} 
+                        onChange={e => setFormData({...formData, sub_distributor_id: e.target.value})} 
                         required={formData.sourcing === 'External'} 
-                      />
+                      >
+                        <option value="">Select Distributor...</option>
+                        {subDistributors.map(d => (
+                          <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
+                        ))}
+                      </select>
                     </div>
                   )}
 
@@ -263,7 +275,6 @@ const Clients = () => {
                 </div>
             </div>
             
-            {/* Action Buttons */}
             <div style={{marginTop: '40px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
                 <button 
                   type="submit" 
@@ -288,8 +299,6 @@ const Clients = () => {
                       border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', 
                       cursor: 'pointer', fontWeight: '800', letterSpacing: '0.5px', transition: 'all 0.2s'
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'var(--bg-main)'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     <X size={18} /> CANCEL
                   </button>
@@ -345,13 +354,13 @@ const Clients = () => {
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{c.added_by}</td>
                   <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View Details" onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-main)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
+                      <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View Details">
                         <Eye size={18} />
                       </button>
-                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit Client" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                      <button onClick={() => handleAction(c, 'edit')} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit Client">
                         <Edit size={18} />
                       </button>
-                      <button onClick={async () => { if(window.confirm("Permanently delete this client?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete Client" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                      <button onClick={async () => { if(window.confirm("Permanently delete this client?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete Client">
                         <Trash2 size={18} />
                       </button>
                   </td>

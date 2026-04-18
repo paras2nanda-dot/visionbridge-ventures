@@ -14,6 +14,7 @@ import MFSchemes from "./pages/MFSchemes";
 import Transactions from "./pages/Transactions";
 import Sips from "./pages/Sips";
 import Reports from "./pages/Reports";
+import SubDistributors from "./pages/SubDistributors"; // 🟢 NEW IMPORT
 import Login from "./pages/Login";
 
 const ProtectedRoute = ({ children }) => {
@@ -91,7 +92,7 @@ function App() {
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease', overflowX: 'hidden' }}>
       
-      {/* 🚀 EXECUTIVE TOAST CONTAINER - Moved to Bottom on Mobile to prevent Overlap */}
+      {/* 🚀 EXECUTIVE TOAST CONTAINER */}
       <ToastContainer 
         position={window.innerWidth < 768 ? "bottom-center" : "top-right"}
         autoClose={3000} 
@@ -119,6 +120,7 @@ function App() {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/sips" element={<Sips />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/sub-distributors" element={<SubDistributors />} /> {/* 🟢 NEW ROUTE */}
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

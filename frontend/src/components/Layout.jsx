@@ -19,7 +19,8 @@ const Layout = () => {
         transactions: 'Transactions', 
         schemes: 'MF Schemes', 
         charts: 'Charts & Analytics', 
-        reports: 'Download Reports' 
+        reports: 'Download Reports',
+        'sub-distributors': 'Sub-Distributors' // 🟢 Added mapping for the new section
     };
     return titles[path] || (path.charAt(0).toUpperCase() + path.slice(1));
   };
@@ -73,7 +74,6 @@ const Layout = () => {
             
                 {/* Breadcrumbs */}
                 <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.3px', flexWrap: 'wrap' }}>
-                    {/* ✅ Clean Lucide Home Icon */}
                     <Link to="/dashboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Home size={16} /> Home
                     </Link>
@@ -96,14 +96,13 @@ const Layout = () => {
                     style={{ 
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px', 
                         padding: '12px 20px', background: 'var(--bg-card)', 
-                        border: '1px solid var(--border)', borderRadius: '12px', /* ✅ Soft SaaS Border */
+                        border: '1px solid var(--border)', borderRadius: '12px', 
                         color: 'var(--text-muted)', fontSize: '15px', fontWeight: '600', 
-                        cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', /* ✅ Soft Drop Shadow */
+                        cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', 
                         transition: 'all 0.2s ease', outline: 'none'
                     }}
                 >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-main)' }}>
-                        {/* ✅ Clean Lucide Search Icon */}
                         <Search size={18} style={{ opacity: 0.7 }} /> Search...
                     </span>
                     <span style={{ background: 'var(--bg-main)', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', border: '1px solid var(--border)', letterSpacing: '0.5px' }}>
@@ -134,7 +133,7 @@ const Layout = () => {
             position: sticky; 
             top: 0; 
             background: var(--bg-card); 
-            border-bottom: 1px solid var(--border); /* ✅ Soft SaaS Border */
+            border-bottom: 1px solid var(--border); 
             padding: 12px 16px; 
             z-index: 1000; 
             align-items: center; 
