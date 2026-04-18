@@ -60,10 +60,11 @@ const Clients = () => {
     return d.toLocaleDateString('en-GB').replace(/\//g, '-'); 
   };
 
+  // 🟢 Added external_source_name to initial state
   const initialState = {
     client_code: '', full_name: '', date_of_birth: '', 
     onboarding_date: formatDateForInput(new Date()), 
-    added_by: 'Paras', sourcing: 'Internal', sourcing_type: 'Family / Relative', mobile_number: '',
+    added_by: 'Paras', sourcing: 'Internal', external_source_name: '', sourcing_type: 'Family / Relative', mobile_number: '',
     monthly_income: '', risk_profile: 'Moderate', investment_experience: 'Beginner', 
     pan: '', aadhaar: '', nominee_name: '', nominee_relation: '', nominee_mobile: '', notes: '', email: ''
   };
@@ -99,6 +100,11 @@ const Clients = () => {
     
     if (formData.mobile_number.length !== 10) {
       return toast.error("❌ Mobile number must be exactly 10 digits.");
+    }
+    
+    // 🟢 Extra validation to ensure the external source name is provided if External is selected
+    if (formData.sourcing === 'External' && !formData.external_source_name.trim()) {
+      return toast.warn("⚠️ Please provide the External Source Name.");
     }
 
     setIsSaving(true); 
@@ -155,8 +161,6 @@ const Clients = () => {
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
       
-      {/* 🚀 Giant "Clients Database" title removed to rely on clean breadcrumbs */}
-
       {/* FORM MODULE */}
       <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '40px', position: 'relative', overflow: 'hidden' }}>
         
@@ -205,7 +209,39 @@ const Clients = () => {
                           if (onlyNums.length <= 10) setFormData({...formData, mobile_number: onlyNums});
                       }} required />
                   </div>
-                  <div><label style={labelStyle}>Client Sourcing</label><select style={inputStyle} value={formData.sourcing} disabled={isViewing} onChange={e => setFormData({...formData, sourcing: e.target.value})}><option>Internal</option><option>External</option></select></div>
+                  
+                  {/* 🟢 Modified Sourcing Dropdown to clear external source name if 'Internal' is selected */}
+                  <div>
+                    <label style={labelStyle}>Client Sourcing</label>
+                    <select style={inputStyle} value={formData.sourcing} disabled={isViewing} onChange={e => {
+                      const newSourcing = e.target.value;
+                      setFormData({
+                        ...formData, 
+                        sourcing: newSourcing, 
+                        external_source_name: newSourcing === 'Internal' ? '' : formData.external_source_name
+                      });
+                    }}>
+                      <option>Internal</option>
+                      <option>External</option>
+                    </select>
+                  </div>
+
+                  {/* 🟢 Dynamic Field: Only visible if Sourcing is 'External' */}
+                  {formData.sourcing === 'External' && (
+                    <div className="fade-in">
+                      <label style={labelStyle}>External Source Name *</label>
+                      <input 
+                        style={inputStyle} 
+                        type="text" 
+                        placeholder="Name of external source..."
+                        value={formData.external_source_name} 
+                        readOnly={isViewing} 
+                        onChange={e => setFormData({...formData, external_source_name: e.target.value})} 
+                        required={formData.sourcing === 'External'} 
+                      />
+                    </div>
+                  )}
+
                   <div><label style={labelStyle}>Sourcing Type</label><select style={inputStyle} value={formData.sourcing_type} disabled={isViewing} onChange={e => setFormData({...formData, sourcing_type: e.target.value})}><option>Family / Relative</option><option>Colleague</option><option>Friend</option><option>Reference by Family</option><option>Reference by Colleague</option><option>Marketing</option><option>Others</option></select></div>
                 </div>
 
