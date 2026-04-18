@@ -135,6 +135,7 @@ export const getFullClientsDatabaseData = async () => {
       -- Check both sourcing columns to ensure data isn't missed
       COALESCE(client_sourcing, sourcing) AS sourcing_display, 
       sourcing_type,
+      external_source_name, -- 🟢 THE FIX: Now fetches the External Source Name
       monthly_income,
       investment_experience,
       risk_profile,
@@ -144,7 +145,7 @@ export const getFullClientsDatabaseData = async () => {
       nominee_name,
       nominee_relation,
       nominee_mobile,
-      client_notes
+      notes AS client_notes -- 🟢 THE FIX: Maps the actual 'notes' db column to 'client_notes'
     FROM clients
     ORDER BY client_code ASC;
   `;

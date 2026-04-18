@@ -155,12 +155,13 @@ export const downloadFullClientsDatabase = async (req, res) => {
     worksheet.columns = [
       { header: 'Client ID', key: 'formatted_id', width: 12 },
       { header: 'Full Name', key: 'full_name', width: 25 },
-      { header: 'DOB', key: 'dob_display', width: 15 },                 // Matches Service Alias
+      { header: 'DOB', key: 'dob_display', width: 15 },                // Matches Service Alias
       { header: 'Onboarding Date', key: 'onboarding_display', width: 18 }, // Matches Service Alias
       { header: 'Added By', key: 'added_by', width: 15 },
       { header: 'Mobile', key: 'mobile_number', width: 15 },
       { header: 'Sourcing', key: 'sourcing_display', width: 15 },       // Matches Service Alias
       { header: 'Sourcing Type', key: 'sourcing_type', width: 20 },
+      { header: 'External Source Name', key: 'external_source_name', width: 25 }, // 🟢 THE FIX: Added Column
       { header: 'Monthly Income', key: 'monthly_income', width: 15 },
       { header: 'Experience', key: 'investment_experience', width: 15 },
       { header: 'Risk Profile', key: 'risk_profile', width: 15 },
