@@ -1,20 +1,23 @@
 import React, { useState, useRef } from 'react';
 import BusinessDashboard from './BusinessDashboard';
 import ClientDashboard from './ClientDashboard';
+import LeaderboardsDashboard from './LeaderboardsDashboard'; // 🟢 NEW IMPORT
 
-import { Briefcase, Users } from 'lucide-react';
+import { Briefcase, Users, Trophy } from 'lucide-react'; // 🟢 Added Trophy icon
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
   
-  const tabOrder = ['business', 'client'];
+  // 🟢 Added 'leaderboards' to the swipe order
+  const tabOrder = ['business', 'client', 'leaderboards']; 
   
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const tabContainerRef = useRef(null);
   const tabRefs = {
     business: useRef(null),
-    client: useRef(null)
+    client: useRef(null),
+    leaderboards: useRef(null) // 🟢 Added ref for the new tab
   };
 
   const minSwipeDistance = 50;
@@ -28,7 +31,6 @@ const Dashboard = () => {
 
   const handleTabClick = (e, tabName) => switchTab(tabName);
 
-  // 🟢 FIXED: Using e.clientX which works for both Mouse and Touch pointers
   const onPointerDown = (e) => {
     touchEndX.current = null;
     touchStartX.current = e.clientX;
@@ -121,6 +123,10 @@ const Dashboard = () => {
         <button ref={tabRefs.client} style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
           <Users size={18} /> Client Insights
         </button>
+        {/* 🟢 NEW LEADERBOARDS TAB */}
+        <button ref={tabRefs.leaderboards} style={tabStyle('leaderboards')} onClick={(e) => handleTabClick(e, 'leaderboards')}>
+          <Trophy size={18} /> Leaderboards
+        </button>
       </div>
 
       <div 
@@ -131,6 +137,7 @@ const Dashboard = () => {
       >
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
+        {activeTab === 'leaderboards' && <LeaderboardsDashboard />} {/* 🟢 NEW COMPONENT RENDERED HERE */}
       </div>
     </div>
   );

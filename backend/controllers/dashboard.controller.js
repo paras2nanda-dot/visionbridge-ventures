@@ -22,7 +22,7 @@ const calculateAge = (dobString) => {
 };
 
 /**
- * 🏢 BUSINESS DASHBOARD LOGIC (Updated for 10-Card Precision & Switch Logic)
+ * 🏢 BUSINESS DASHBOARD LOGIC 
  */
 export const getBusinessStats = async (req, res) => {
   try {
@@ -108,8 +108,64 @@ export const getBusinessStats = async (req, res) => {
     });
     upcomingBirthdays.sort((a, b) => a.days_left - b.days_left);
 
-    // 4. Best Selling Funds (Top Funds by Exposure) 
-    // 🟢 FIXED: Now dynamically calculates Live AUM (Transactions + SIPs) including Switch effects
+    // 4. 🔔 SIP END ALERTS
+    const sipsEndingRes = await pool.query(`
+      SELECT c.full_name, m.scheme_name, s.end_date,
+        (s.end_date - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date)::INT as days_left
+      FROM sips s
+      JOIN clients c ON s.client_id::TEXT = c.id::TEXT
+      JOIN mf_schemes m ON s.scheme_id::TEXT = m.id::TEXT
+      WHERE LOWER(s.status) = 'active'
+        AND s.end_date IS NOT NULL
+        AND s.end_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date
+        AND s.end_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '60 days'
+      ORDER BY s.end_date ASC
+    `);
+
+    res.json({
+      total_clients: basic.total_clients,
+      total_active_clients: basic.total_active_clients,
+      total_invested_aum: aum.total_invested_aum,
+      market_value_aum: aum.market_value_aum,
+      monthly_sip_book: basic.monthly_sip_book,
+      expected_aum_12m: Number(aum.total_invested_aum) + (Number(basic.monthly_sip_book) * 12),
+      avg_assets_per_client: basic.total_active_clients > 0 ? (Number(aum.total_invested_aum) / basic.total_active_clients) : 0,
+      comm_inv_annual: aum.comm_inv_annual,
+      comm_inv_monthly: Number(aum.comm_inv_annual) / 12,
+      comm_mkt_annual: aum.comm_mkt_annual,
+      comm_mkt_monthly: Number(aum.comm_mkt_annual) / 12,
+      new_clients_30d: basic.new_clients_30d,
+      upcomingBirthdays: upcomingBirthdays,
+      sipsEndingSoon: sipsEndingRes.rows 
+    });
+  } catch (err) {
+    console.error("❌ Business Stats Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * 🏆 LEADERBOARDS DASHBOARD LOGIC
+ */
+export const getLeaderboardsStats = async (req, res) => {
+  try {
+    // 1. Get Total Invested AUM (for percentage math on the frontend)
+    const totalAumRes = await pool.query(`
+      WITH txn_sum AS (
+        SELECT COALESCE(SUM(CASE 
+          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+          ELSE 0 END), 0) as amt FROM transactions
+      ),
+      sip_sum AS (
+        SELECT COALESCE(SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)), 0) as amt 
+        FROM sips WHERE LOWER(status) = 'active'
+      )
+      SELECT (txn_sum.amt + sip_sum.amt) as total_invested_aum FROM txn_sum, sip_sum
+    `);
+    const total_invested_aum = Number(totalAumRes.rows[0].total_invested_aum) || 0;
+
+    // 2. Top 5 Funds
     const topFundsRes = await pool.query(`
       WITH fund_exposure AS (
         SELECT 
@@ -131,61 +187,81 @@ export const getBusinessStats = async (req, res) => {
       FROM fund_exposure 
       WHERE invested_value > 0 
       ORDER BY invested_value DESC 
-      LIMIT 3
+      LIMIT 5
     `);
 
-    // 5. 🔔 SIP END ALERTS
-    const sipsEndingRes = await pool.query(`
-      SELECT c.full_name, m.scheme_name, s.end_date,
-        (s.end_date - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date)::INT as days_left
-      FROM sips s
-      JOIN clients c ON s.client_id::TEXT = c.id::TEXT
-      JOIN mf_schemes m ON s.scheme_id::TEXT = m.id::TEXT
-      WHERE LOWER(s.status) = 'active'
-        AND s.end_date IS NOT NULL
-        AND s.end_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date
-        AND s.end_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '60 days'
-      ORDER BY s.end_date ASC
+    // 3. Top 10 Clients
+    const topClientsRes = await pool.query(`
+      WITH client_exposure AS (
+        SELECT 
+          c.full_name,
+          c.client_code,
+          COALESCE((
+            SELECT SUM(CASE 
+              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+              ELSE 0 END) 
+            FROM transactions WHERE client_id::TEXT = c.id::TEXT
+          ), 0) +
+          COALESCE((
+            SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
+            FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
+          ), 0) as invested_value
+        FROM clients c
+      )
+      SELECT full_name, client_code, invested_value 
+      FROM client_exposure 
+      WHERE invested_value > 0 
+      ORDER BY invested_value DESC 
+      LIMIT 10
+    `);
+
+    // 4. Top 5 External Sources
+    const topSourcesRes = await pool.query(`
+      WITH source_exposure AS (
+        SELECT 
+          c.external_source_name,
+          COUNT(DISTINCT c.id) as client_count,
+          SUM(
+            COALESCE((
+              SELECT SUM(CASE 
+                WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+                WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+                ELSE 0 END) 
+              FROM transactions WHERE client_id::TEXT = c.id::TEXT
+            ), 0) +
+            COALESCE((
+              SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
+              FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
+            ), 0)
+          ) as invested_value
+        FROM clients c
+        WHERE LOWER(c.sourcing) = 'external' 
+          AND c.external_source_name IS NOT NULL 
+          AND TRIM(c.external_source_name) != ''
+        GROUP BY c.external_source_name
+      )
+      SELECT external_source_name, client_count, invested_value 
+      FROM source_exposure 
+      WHERE invested_value > 0 
+      ORDER BY invested_value DESC 
+      LIMIT 5
     `);
 
     res.json({
-      // 📋 Cards 1-3
-      total_clients: basic.total_clients,
-      total_active_clients: basic.total_active_clients,
-      total_invested_aum: aum.total_invested_aum,
-      
-      // 📋 Cards 4-6
-      market_value_aum: aum.market_value_aum,
-      monthly_sip_book: basic.monthly_sip_book,
-      expected_aum_12m: Number(aum.total_invested_aum) + (Number(basic.monthly_sip_book) * 12),
-      
-      // 📋 Card 7
-      avg_assets_per_client: basic.total_active_clients > 0 ? (Number(aum.total_invested_aum) / basic.total_active_clients) : 0,
-      
-      // 📋 Card 8: Comm on Invested
-      comm_inv_annual: aum.comm_inv_annual,
-      comm_inv_monthly: Number(aum.comm_inv_annual) / 12,
-
-      // 📋 Card 9: Comm on Market Value
-      comm_mkt_annual: aum.comm_mkt_annual,
-      comm_mkt_monthly: Number(aum.comm_mkt_annual) / 12,
-
-      // 📋 Card 10
-      new_clients_30d: basic.new_clients_30d,
-
-      // 📋 Preserved Features
+      total_invested_aum,
       topFunds: topFundsRes.rows,
-      upcomingBirthdays: upcomingBirthdays,
-      sipsEndingSoon: sipsEndingRes.rows 
+      topClients: topClientsRes.rows,
+      topSources: topSourcesRes.rows
     });
   } catch (err) {
-    console.error("❌ Business Stats Error:", err.message);
+    console.error("❌ Leaderboards Stats Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
 /**
- * 👤 CLIENT DASHBOARD LOGIC (Remains unchanged as requested)
+ * 👤 CLIENT DASHBOARD LOGIC
  */
 export const getClientDashboardStats = async (req, res) => {
   const { id } = req.params;

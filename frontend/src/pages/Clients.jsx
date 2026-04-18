@@ -102,8 +102,8 @@ const Clients = () => {
       return toast.error("❌ Mobile number must be exactly 10 digits.");
     }
     
-    // 🟢 Extra validation to ensure the external source name is provided if External is selected
-    if (formData.sourcing === 'External' && !formData.external_source_name.trim()) {
+    // 🟢 Safe validation (handles nulls correctly)
+    if (formData.sourcing === 'External' && !(formData.external_source_name || '').trim()) {
       return toast.warn("⚠️ Please provide the External Source Name.");
     }
 
@@ -134,7 +134,14 @@ const Clients = () => {
     mode === 'view' ? (setIsViewing(true), setIsEditing(false)) : (setIsEditing(true), setIsViewing(false));
     setEditingId(client.id);
     setActiveSubTab('basic');
-    setFormData({ ...client, date_of_birth: formatDateForInput(client.dob || client.date_of_birth), onboarding_date: formatDateForInput(client.onboarding_date) });
+    // 🟢 Ensure external_source_name doesn't become undefined/null when pulling from DB
+    setFormData({ 
+      ...initialState, // Provides default empty strings
+      ...client, 
+      date_of_birth: formatDateForInput(client.dob || client.date_of_birth), 
+      onboarding_date: formatDateForInput(client.onboarding_date),
+      external_source_name: client.external_source_name || '' 
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -146,7 +153,6 @@ const Clients = () => {
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '0.3px' };
   const inputStyle = { width: '100%', padding: '14px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' };
   
-  // 🏛️ RECTIFIED TABLE HEADER STYLE
   const thStyle = { 
     color: 'var(--text-muted)', 
     textAlign: 'left', 
@@ -210,7 +216,6 @@ const Clients = () => {
                       }} required />
                   </div>
                   
-                  {/* 🟢 Modified Sourcing Dropdown to clear external source name if 'Internal' is selected */}
                   <div>
                     <label style={labelStyle}>Client Sourcing</label>
                     <select style={inputStyle} value={formData.sourcing} disabled={isViewing} onChange={e => {
@@ -226,7 +231,6 @@ const Clients = () => {
                     </select>
                   </div>
 
-                  {/* 🟢 Dynamic Field: Only visible if Sourcing is 'External' */}
                   {formData.sourcing === 'External' && (
                     <div className="fade-in">
                       <label style={labelStyle}>External Source Name *</label>

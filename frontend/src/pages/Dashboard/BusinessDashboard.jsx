@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api'; 
 import { toast } from 'react-toastify';
-import { Users, Wallet, TrendingUp, BarChart3, CircleDollarSign, Award, Cake } from 'lucide-react';
+import { Users, Wallet, TrendingUp, BarChart3, CircleDollarSign, Cake } from 'lucide-react';
 
 const BusinessDashboard = () => {
   const [data, setData] = useState(null);
@@ -79,27 +79,6 @@ const BusinessDashboard = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
         
-        {/* Top Funds Section */}
-        <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.5px' }}>
-            <Award size={22} color="#0284c7" /> Top Funds by Exposure
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {data.topFunds?.map((fund, idx) => {
-              const percentage = data.total_invested_aum > 0 ? ((Number(fund.invested_value) / Number(data.total_invested_aum)) * 100).toFixed(1) : 0;
-              return (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '12px' }}>
-                  <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '14px', maxWidth: '60%', lineHeight: '1.4' }}>{fund.scheme_name}</span>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontWeight: '800', color: '#10b981', fontSize: '16px' }}>₹{formatINR(fund.invested_value)}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{percentage}% of Total</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Birthdays Section */}
         <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
           <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.5px' }}>
