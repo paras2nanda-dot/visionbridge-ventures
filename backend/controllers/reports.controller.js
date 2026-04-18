@@ -5,8 +5,50 @@ import {
   getMonthlySipBookData,
   getMonthlyCommissionData,
   getFullClientsDatabaseData,
-  getFullSchemeDatabaseData
+  getFullSchemeDatabaseData,
+  getPartnerClientReportData // 🟢 NEW Service function
 } from '../services/reports.service.js';
+import { pool } from '../config/db.js';
+
+// --- NEW REPORT: INDIVIDUAL SUB-DISTRIBUTOR CLIENT LIST ---
+// Use this when a partner asks for their specific client performance data
+export const downloadSubDistributorReport = async (req, res) => {
+  const { id } = req.params; 
+  try {
+    const partnerRes = await pool.query('SELECT name FROM sub_distributors WHERE id = $1', [id]);
+    if (partnerRes.rows.length === 0) return res.status(404).json({ error: "Partner not found" });
+    const partnerName = partnerRes.rows[0].name;
+
+    const data = await getPartnerClientReportData(id);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Partner Client Report');
+
+    worksheet.columns = [
+      { header: 'Client Name', key: 'full_name', width: 25 },
+      { header: 'Client Code', key: 'client_code', width: 15 },
+      { header: 'Mobile Number', key: 'mobile_number', width: 15 },
+      { header: 'Scheme Name', key: 'scheme_name', width: 35 },
+      { header: 'Invested AUM (₹)', key: 'invested_aum', width: 20 },
+      { header: 'Monthly SIP (₹)', key: 'monthly_sip', width: 20 },
+      { header: 'Onboarding Date', key: 'onboarding_date', width: 15 }
+    ];
+
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0284C7' } };
+
+    data.forEach(row => worksheet.addRow(row));
+
+    const filename = `${partnerName.replace(/\s+/g, '_')}_Report.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Partner Report Error:", error);
+    res.status(500).json({ success: false, message: "Failed to generate partner report" });
+  }
+};
 
 // --- REPORT 1: CLIENT-WISE AUM ---
 export const downloadClientAumReport = async (req, res) => {
@@ -18,6 +60,7 @@ export const downloadClientAumReport = async (req, res) => {
     worksheet.columns = [
       { header: 'Client ID', key: 'client_id', width: 15 },
       { header: 'Client Name', key: 'client_name', width: 30 },
+      { header: 'Sub Distributor', key: 'sub_distributor_name', width: 25 }, // 🟢 Added
       { header: 'Invested AUM (₹)', key: 'invested_aum', width: 20 },
       { header: 'Monthly Active SIP (₹)', key: 'monthly_active_sip', width: 22 },
       { header: 'Monthly Income (₹)', key: 'monthly_income', width: 20 },
@@ -155,13 +198,14 @@ export const downloadFullClientsDatabase = async (req, res) => {
     worksheet.columns = [
       { header: 'Client ID', key: 'formatted_id', width: 12 },
       { header: 'Full Name', key: 'full_name', width: 25 },
-      { header: 'DOB', key: 'dob_display', width: 15 },                // Matches Service Alias
-      { header: 'Onboarding Date', key: 'onboarding_display', width: 18 }, // Matches Service Alias
+      { header: 'DOB', key: 'dob_display', width: 15 },
+      { header: 'Onboarding Date', key: 'onboarding_display', width: 18 },
       { header: 'Added By', key: 'added_by', width: 15 },
       { header: 'Mobile', key: 'mobile_number', width: 15 },
-      { header: 'Sourcing', key: 'sourcing_display', width: 15 },       // Matches Service Alias
+      { header: 'Sourcing', key: 'sourcing_display', width: 15 },
       { header: 'Sourcing Type', key: 'sourcing_type', width: 20 },
-      { header: 'External Source Name', key: 'external_source_name', width: 25 }, // 🟢 THE FIX: Added Column
+      { header: 'Sub Distributor', key: 'sub_distributor_name', width: 25 }, // 🟢 Added
+      { header: 'Ext Source (Legacy)', key: 'external_source_name', width: 25 }, // Kept for history
       { header: 'Monthly Income', key: 'monthly_income', width: 15 },
       { header: 'Experience', key: 'investment_experience', width: 15 },
       { header: 'Risk Profile', key: 'risk_profile', width: 15 },

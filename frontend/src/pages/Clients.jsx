@@ -7,7 +7,7 @@ import { Search, Trash2, Edit, Eye, ClipboardList, FileText, UserPlus, Check, X,
 const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
   const [clients, setClients] = useState([]);
-  const [subDistributors, setSubDistributors] = useState([]); // 🟢 NEW STATE
+  const [subDistributors, setSubDistributors] = useState([]); 
   const [searchTerm, setSearchTerm] = useState(''); 
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
@@ -61,7 +61,6 @@ const Clients = () => {
     return d.toLocaleDateString('en-GB').replace(/\//g, '-'); 
   };
 
-  // 🟢 Updated initialState to include sub_distributor_id
   const initialState = {
     client_code: '', full_name: '', date_of_birth: '', 
     onboarding_date: formatDateForInput(new Date()), 
@@ -74,7 +73,7 @@ const Clients = () => {
 
   useEffect(() => { 
     fetchClients(); 
-    fetchSubDistributors(); // 🟢 FETCH PARTNERS ON LOAD
+    fetchSubDistributors(); 
   }, []);
 
   const fetchClients = async () => {
@@ -113,7 +112,6 @@ const Clients = () => {
       return toast.error("❌ Mobile number must be exactly 10 digits.");
     }
     
-    // 🟢 Validation for Sub-Distributor dropdown
     if (formData.sourcing === 'External' && !formData.sub_distributor_id) {
       return toast.warn("⚠️ Please select a Sub Distributor.");
     }
@@ -239,7 +237,6 @@ const Clients = () => {
                     </select>
                   </div>
 
-                  {/* 🟢 NEW SUB DISTRIBUTOR DROPDOWN */}
                   {formData.sourcing === 'External' && (
                     <div className="fade-in">
                       <label style={labelStyle}>Sub Distributor *</label>
@@ -339,6 +336,8 @@ const Clients = () => {
                 <th style={{ padding: '16px', width: '40px', borderBottom: '1px solid var(--border)' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></th>
                 <th style={thStyle}>ID</th>
                 <th style={thStyle}>Client Name</th>
+                {/* 🟢 Sub Distributor Column Header */}
+                <th style={thStyle}>Sub Distributor</th>
                 <th style={thStyle}>Mobile</th>
                 <th style={thStyle}>Onboarded On</th>
                 <th style={thStyle}>Added By</th>
@@ -350,6 +349,12 @@ const Clients = () => {
                   <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></td>
                   <td style={{ padding: '16px', fontWeight: '800', color: '#0284c7' }}>{c.client_code}</td>
                   <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{c.full_name}</td>
+                  
+                  {/* 🟢 Displays Partner Name instead of ID */}
+                  <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                    {subDistributors.find(d => d.id === c.sub_distributor_id)?.name || '-'}
+                  </td>
+
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{c.mobile_number}</td>
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{formatDateForDisplay(c.onboarding_date)}</td>
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>{c.added_by}</td>
@@ -368,7 +373,7 @@ const Clients = () => {
               ))}
               {filteredClients.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
                     No clients found matching your search.
                   </td>
                 </tr>

@@ -5,10 +5,15 @@ import {
   downloadMonthlySipBookReport,
   downloadMonthlyCommissionReport,
   downloadFullClientsDatabase,
-  downloadFullSchemeDatabase
+  downloadFullSchemeDatabase,
+  downloadSubDistributorReport // 🟢 NEW: INDIVIDUAL PARTNER REPORT
 } from '../controllers/reports.controller.js';
 
 const router = express.Router();
+
+// --- NEW: PARTNER-SPECIFIC CLIENT REPORT ---
+// Route: /api/reports/sub-distributor/:id
+router.get('/sub-distributor/:id', downloadSubDistributorReport);
 
 // --- REPORT 1: CLIENT-WISE AUM ---
 router.get('/client-aum', downloadClientAumReport);

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api'; 
 import { toast } from 'react-toastify'; 
-import { Search, Trash2, Edit, Handshake, MapPin, IndianRupee, X, Check, BarChart3, Users, TrendingUp } from 'lucide-react';
+// 🟢 NEW: Added 'FileText' to imports
+import { Search, Trash2, Edit, Handshake, MapPin, IndianRupee, X, Check, BarChart3, Users, TrendingUp, FileText } from 'lucide-react';
 
 const SubDistributors = () => {
   const [distributors, setDistributors] = useState([]);
@@ -44,6 +45,25 @@ const SubDistributors = () => {
       setShowPerf(false);
     } finally {
       setLoadingPerf(false);
+    }
+  };
+
+  // 🟢 NEW: Download Handler
+  const handleDownloadPartnerReport = async (id, name) => {
+    try {
+      const response = await api.get(`/reports/sub-distributor/${id}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${name.replace(/\s+/g, '_')}_Report.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("📊 Report Generated Successfully");
+    } catch (err) {
+      toast.error("Failed to generate partner report");
     }
   };
 
@@ -170,6 +190,29 @@ const SubDistributors = () => {
                                 <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', marginTop: '8px' }}>Annualized: ₹{formatINR((perfData?.stats?.monthly_payout || 0) * 12)}</div>
                             </div>
                         </div>
+
+                        {/* 🟢 NEW: Automated Partner Report Button */}
+                        <button 
+                          onClick={() => handleDownloadPartnerReport(activePartner.id, activePartner.name)}
+                          style={{ 
+                            marginBottom: '40px', 
+                            width: '100%', 
+                            padding: '14px', 
+                            borderRadius: '12px', 
+                            background: '#0F172A', 
+                            color: 'white', 
+                            fontWeight: '800', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '10px', 
+                            cursor: 'pointer',
+                            border: 'none',
+                            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)'
+                          }}
+                        >
+                          <FileText size={18} /> Download Partner Client Report
+                        </button>
 
                         {/* Client List */}
                         <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-main)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}><Users size={18} color="#0284c7" /> Associated Clients ({perfData?.clients?.length || 0})</h4>

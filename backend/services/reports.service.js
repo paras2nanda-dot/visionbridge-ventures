@@ -5,20 +5,22 @@ export const getClientAumReportData = async () => {
   const query = `
     WITH client_investments AS (
       SELECT 
-        c.client_code AS client_id, -- 💡 THE FIX: Uses actual UI client_code
+        c.client_code AS client_id, 
         c.full_name AS client_name,
+        sd.name AS sub_distributor_name, -- 🟢 FETCHING PARTNER NAME
         COALESCE(c.monthly_income, 0) AS monthly_income,
-        -- Check both potential dob columns for age calculation
         EXTRACT(YEAR FROM AGE(CURRENT_DATE, COALESCE(c.dob, c.date_of_birth))) AS age, 
         c.risk_profile,
-        COALESCE((SELECT SUM(CASE WHEN LOWER(transaction_type) IN ('purchase', 'switch in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE client_id::TEXT = c.id::TEXT), 0) + 
-        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE client_id::TEXT = c.id::TEXT), 0) AS invested_aum,
-        COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = c.id::TEXT), 0) AS monthly_active_sip
+        COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE client_id::TEXT = c.id::TEXT), 0) + 
+        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'), 0) AS invested_aum,
+        COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'), 0) AS monthly_active_sip
       FROM clients c
+      LEFT JOIN sub_distributors sd ON c.sub_distributor_id = sd.id -- 🟢 LINKING TO PARTNER TABLE
     )
     SELECT 
       client_id,
       client_name,
+      sub_distributor_name,
       invested_aum,
       monthly_active_sip,
       monthly_income,
@@ -51,12 +53,12 @@ export const getSchemeAumReportData = async () => {
           FROM (
             SELECT client_id FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
             UNION
-            SELECT client_id FROM sips WHERE scheme_id::TEXT = m.id::TEXT
+            SELECT client_id FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
           ) AS unique_clients
         ) AS client_count,
-        COALESCE((SELECT SUM(CASE WHEN LOWER(transaction_type) IN ('purchase', 'switch in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) + 
-        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT), 0) AS invested_aum,
-        COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE scheme_id::TEXT = m.id::TEXT), 0) AS active_sip_book,
+        COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) + 
+        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) AS invested_aum,
+        COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) AS active_sip_book,
         COALESCE(m.total_current_value, 0) AS total_market_value, 
         COALESCE(m.large_cap, 0) AS largecap_pct,
         COALESCE(m.mid_cap, 0) AS midcap_pct,
@@ -101,8 +103,8 @@ export const getMonthlyCommissionData = async () => {
         m.scheme_name,
         COALESCE(m.commission_rate, 0) AS commission_pct,
         COALESCE(m.total_current_value, 0) AS total_market_value,
-        COALESCE((SELECT SUM(CASE WHEN LOWER(transaction_type) IN ('purchase', 'switch in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) + 
-        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT), 0) AS invested_aum
+        COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) + 
+        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) AS invested_aum
       FROM mf_schemes m
     )
     SELECT 
@@ -125,29 +127,29 @@ export const getMonthlyCommissionData = async () => {
 export const getFullClientsDatabaseData = async () => {
   const query = `
     SELECT 
-      client_code AS formatted_id, -- 💡 THE FIX: Uses actual UI client_code here too
-      full_name,
-      -- Use COALESCE to try 'dob' first, then 'date_of_birth'
-      TO_CHAR(COALESCE(dob, date_of_birth), 'DD-MM-YYYY') AS dob_display,
-      TO_CHAR(onboarding_date, 'DD-MM-YYYY') AS onboarding_display,
-      added_by,
-      mobile_number,
-      -- Check both sourcing columns to ensure data isn't missed
-      COALESCE(client_sourcing, sourcing) AS sourcing_display, 
-      sourcing_type,
-      external_source_name, -- 🟢 THE FIX: Now fetches the External Source Name
-      monthly_income,
-      investment_experience,
-      risk_profile,
-      pan,
-      aadhaar,
-      email,
-      nominee_name,
-      nominee_relation,
-      nominee_mobile,
-      notes AS client_notes -- 🟢 THE FIX: Maps the actual 'notes' db column to 'client_notes'
-    FROM clients
-    ORDER BY client_code ASC;
+      c.client_code AS formatted_id,
+      c.full_name,
+      sd.name AS sub_distributor_name, -- 🟢 FETCHING PARTNER NAME
+      TO_CHAR(COALESCE(c.dob, c.date_of_birth), 'DD-MM-YYYY') AS dob_display,
+      TO_CHAR(c.onboarding_date, 'DD-MM-YYYY') AS onboarding_display,
+      c.added_by,
+      c.mobile_number,
+      COALESCE(c.client_sourcing, c.sourcing) AS sourcing_display, 
+      c.sourcing_type,
+      c.external_source_name, 
+      c.monthly_income,
+      c.investment_experience,
+      c.risk_profile,
+      c.pan,
+      c.aadhaar,
+      c.email,
+      c.nominee_name,
+      c.nominee_relation,
+      c.nominee_mobile,
+      c.notes AS client_notes
+    FROM clients c
+    LEFT JOIN sub_distributors sd ON c.sub_distributor_id = sd.id -- 🟢 LINKING TO PARTNER TABLE
+    ORDER BY c.client_code ASC;
   `;
   const result = await pool.query(query);
   return result.rows;
@@ -172,5 +174,39 @@ export const getFullSchemeDatabaseData = async () => {
     ORDER BY amc_name ASC, scheme_name ASC;
   `;
   const result = await pool.query(query);
+  return result.rows;
+};
+
+// --- NEW: PARTNER-SPECIFIC CLIENT REPORT DATA ---
+export const getPartnerClientReportData = async (partnerId) => {
+  const query = `
+    SELECT
+      c.full_name,
+      c.client_code,
+      c.mobile_number,
+      m.scheme_name,
+      COALESCE((
+        SELECT SUM(CASE 
+          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+          ELSE 0 END) 
+        FROM transactions WHERE client_id::TEXT = c.id::TEXT AND scheme_id::TEXT = m.id::TEXT
+      ), 0) AS invested_aum,
+      COALESCE((
+        SELECT SUM(amount::NUMERIC) 
+        FROM sips 
+        WHERE client_id::TEXT = c.id::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
+      ), 0) AS monthly_sip,
+      TO_CHAR(c.onboarding_date, 'DD-MM-YYYY') AS onboarding_date
+    FROM clients c
+    CROSS JOIN mf_schemes m
+    WHERE c.sub_distributor_id = $1
+    AND (
+      EXISTS (SELECT 1 FROM transactions WHERE client_id::TEXT = c.id::TEXT AND scheme_id::TEXT = m.id::TEXT)
+      OR EXISTS (SELECT 1 FROM sips WHERE client_id::TEXT = c.id::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active')
+    )
+    ORDER BY c.full_name ASC;
+  `;
+  const result = await pool.query(query, [partnerId]);
   return result.rows;
 };
