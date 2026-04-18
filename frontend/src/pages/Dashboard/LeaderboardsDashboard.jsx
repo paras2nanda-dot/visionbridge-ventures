@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api'; 
 import { toast } from 'react-toastify';
-import { Award, Star, Share2, TrendingUp } from 'lucide-react';
+// 🟢 THE FIX: Added 'Users' to the import list below!
+import { Award, Star, Share2, TrendingUp, Users } from 'lucide-react'; 
 
 const LeaderboardsDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // We will build this endpoint in the backend next!
     api.get('/dashboard/leaderboards')
       .then(res => { 
         setData(res.data); 
@@ -108,6 +108,7 @@ const LeaderboardsDashboard = () => {
                     <div>
                       <div style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '14px' }}>{source.external_source_name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {/* Here is the icon that was crashing it! */}
                         <Users size={12}/> {source.client_count} {source.client_count === 1 ? 'Client' : 'Clients'}
                       </div>
                     </div>
