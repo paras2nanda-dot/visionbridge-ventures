@@ -16,13 +16,14 @@ export const createClient = async (req, res) => {
   try {
     const dobValue = c.date_of_birth || c.dob || null;
     
+    // 🟢 Added external_source_name to the INSERT query
     const query = `
       INSERT INTO clients (
         client_code, full_name, dob, onboarding_date, added_by, 
         sourcing, sourcing_type, mobile_number, monthly_income, risk_profile, 
         investment_experience, pan, aadhaar, nominee_name, nominee_relation, 
-        nominee_mobile, notes, email, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, true) 
+        nominee_mobile, notes, email, external_source_name, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, true) 
       RETURNING *`;
     
     const values = [
@@ -30,7 +31,8 @@ export const createClient = async (req, res) => {
       c.sourcing, c.sourcing_type, c.mobile_number, 
       c.monthly_income ? c.monthly_income.toString().replace(/,/g, '') : null, 
       c.risk_profile, c.investment_experience, c.pan, c.aadhaar, 
-      c.nominee_name, c.nominee_relation, c.nominee_mobile, c.notes, c.email
+      c.nominee_name, c.nominee_relation, c.nominee_mobile, c.notes, c.email,
+      c.external_source_name || null // 🟢 Mapping the new field
     ];
 
     const result = await pool.query(query, values);
@@ -64,8 +66,17 @@ export const updateClient = async (req, res) => {
     const dobValue = c.date_of_birth || c.dob || null;
     const cleanIncome = c.monthly_income?.toString().replace(/,/g, '') || null;
 
-    const query = `UPDATE clients SET client_code=$1, full_name=$2, dob=$3, onboarding_date=$4, added_by=$5, sourcing=$6, sourcing_type=$7, mobile_number=$8, monthly_income=$9, risk_profile=$10, investment_experience=$11, pan=$12, aadhaar=$13, nominee_name=$14, nominee_relation=$15, nominee_mobile=$16, notes=$17, email=$18, is_active=true WHERE id=$19 RETURNING *`;
-    const values = [c.client_code, c.full_name, dobValue, c.onboarding_date, c.added_by, c.sourcing, c.sourcing_type, c.mobile_number, cleanIncome, c.risk_profile, c.investment_experience, c.pan, c.aadhaar, c.nominee_name, c.nominee_relation, c.nominee_mobile, c.notes, c.email, id];
+    // 🟢 Added external_source_name to the UPDATE query ($19)
+    const query = `UPDATE clients SET client_code=$1, full_name=$2, dob=$3, onboarding_date=$4, added_by=$5, sourcing=$6, sourcing_type=$7, mobile_number=$8, monthly_income=$9, risk_profile=$10, investment_experience=$11, pan=$12, aadhaar=$13, nominee_name=$14, nominee_relation=$15, nominee_mobile=$16, notes=$17, email=$18, external_source_name=$19, is_active=true WHERE id=$20 RETURNING *`;
+    
+    const values = [
+      c.client_code, c.full_name, dobValue, c.onboarding_date, c.added_by, 
+      c.sourcing, c.sourcing_type, c.mobile_number, cleanIncome, 
+      c.risk_profile, c.investment_experience, c.pan, c.aadhaar, 
+      c.nominee_name, c.nominee_relation, c.nominee_mobile, c.notes, c.email, 
+      c.external_source_name || null, // 🟢 Mapping the new field
+      id
+    ];
     
     const result = await pool.query(query, values);
     const newData = result.rows[0];
