@@ -14,8 +14,7 @@ import {
   Settings, 
   LogOut,
   TrendingUp,
-  Handshake,
-  FileText // 🟢 Added for Invoices
+  Handshake
 } from 'lucide-react';
 
 const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
@@ -28,7 +27,6 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Clients Database', path: '/clients', icon: <Users size={20} /> },
     { name: 'Sub-Distributors', path: '/sub-distributors', icon: <Handshake size={20} /> },
-    { name: 'Commission Invoices', path: '/invoices', icon: <FileText size={20} /> }, // 🟢 NEW: Invoice Link
     { name: 'SIP Tracker', path: '/sips', icon: <Repeat size={20} /> },
     { name: 'Transactions', path: '/transactions', icon: <ArrowLeftRight size={20} /> },
     { name: 'MF Schemes', path: '/schemes', icon: <FolderOpen size={20} /> },
