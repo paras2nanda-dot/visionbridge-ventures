@@ -103,13 +103,16 @@ const InvoiceManager = () => {
   };
 
   const calculateTotals = () => {
+    // 🟢 ROUNDING LOGIC: round to nearest whole month as per requirements
+    const roundedMonths = Math.round(formData.duration_months || 1);
+    
     const platformDeduction = formData.platform_applicable ? (formData.txn_count * formData.txn_rate) : 0;
-    const opsDeduction = formData.ops_applicable ? (formData.client_count * formData.ops_rate_pm * formData.duration_months) : 0;
+    const opsDeduction = formData.ops_applicable ? (formData.client_count * formData.ops_rate_pm * roundedMonths) : 0;
     const netCommission = formData.gross_commission - platformDeduction - opsDeduction;
     const tdsDeduction = formData.tds_applicable ? (netCommission * (formData.tds_rate_percent / 100)) : 0;
     const netPayout = netCommission - tdsDeduction + formData.previous_balance;
 
-    return { platformDeduction, opsDeduction, netCommission, tdsDeduction, netPayout };
+    return { platformDeduction, opsDeduction, netCommission, tdsDeduction, netPayout, roundedMonths };
   };
 
   const totals = calculateTotals();
@@ -288,7 +291,6 @@ const InvoiceManager = () => {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
         
-        {/* LEFT: CONFIGURATION FORM */}
         <div style={{ flex: '1 1 350px' }} className="no-print">
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
             <button onClick={() => setShowLedger(true)} style={{ flex: 1, background: '#0284c7', color: 'white', padding: '12px', borderRadius: '10px', border: 'none', fontWeight: '800', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(2, 132, 199, 0.2)' }}>
@@ -354,7 +356,6 @@ const InvoiceManager = () => {
           </div>
         </div>
 
-        {/* RIGHT: PROFESSIONAL INVOICE PREVIEW */}
         <div style={{ flex: '2 1 600px' }} className="print-main-column">
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }} className="no-print">
@@ -365,9 +366,9 @@ const InvoiceManager = () => {
 
           <div id="invoice-printable" style={paperStyle}>
             
-            {/* BRAND HEADER: PROFESSIONAL BLUE */}
+            {/* BRAND HEADER: PROFESSIONAL BLUE & SINGLE LINE */}
             <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '20px', marginBottom: '30px' }}>
-              <h1 style={{ fontSize: '46px', fontWeight: '900', color: '#1e40af', margin: '0 0 5px 0', letterSpacing: '-1px', textTransform: 'uppercase' }}>VisionBridge Ventures</h1>
+              <h1 style={{ fontSize: '42px', fontWeight: '900', color: '#1e40af', margin: '0 0 5px 0', letterSpacing: '-1px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>VisionBridge Ventures</h1>
               <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#475569', margin: 0, textTransform: 'uppercase', letterSpacing: '3px' }}>Commission Report</h3>
               <p style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', margin: '5px 0 0 0' }}>MUTUAL FUND DISTRIBUTION</p>
             </div>
@@ -413,7 +414,7 @@ const InvoiceManager = () => {
                   {formData.ops_applicable && (
                     <tr>
                       <td style={{ padding: '16px 10px', fontWeight: '700', color: '#475569', fontSize: '14px', borderBottom: '1px solid #e2e8f0' }}>(-) Operational Expenses</td>
-                      <td style={{ padding: '16px 10px', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '12px', borderBottom: '1px solid #e2e8f0' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
+                      <td style={{ padding: '16px 10px', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '12px', borderBottom: '1px solid #e2e8f0' }}>{formData.client_count} clients ({totals.roundedMonths} mo)</td>
                       <td style={{ padding: '16px 10px', textAlign: 'right', fontWeight: '900', color: '#475569', fontSize: '15px', borderBottom: '1px solid #e2e8f0' }}>- {formatINR(totals.opsDeduction)}</td>
                     </tr>
                   )}
