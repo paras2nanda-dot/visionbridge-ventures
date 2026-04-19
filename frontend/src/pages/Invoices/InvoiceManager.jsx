@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, CheckCircle, RefreshCw, Save, Printer 
+  FileText, CheckCircle, RefreshCw, Save, Printer, Trash2, Edit 
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -15,7 +15,10 @@ const InvoiceManager = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const [formData, setFormData] = useState({
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  const initialFormState = {
     sub_distributor_id: '',
     invoice_no: `VBV/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
     start_date: '',
@@ -32,8 +35,9 @@ const InvoiceManager = () => {
     txn_count: 0,
     client_count: 0,
     duration_months: 1
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormState);
   const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
@@ -59,11 +63,12 @@ const InvoiceManager = () => {
     }
   };
 
+  // Only auto-fetch preview if we are NOT currently editing an existing invoice
   useEffect(() => {
-    if (formData.sub_distributor_id && formData.start_date && formData.end_date) {
+    if (!isEditing && formData.sub_distributor_id && formData.start_date && formData.end_date) {
       fetchPreview();
     }
-  }, [formData.sub_distributor_id, formData.start_date, formData.end_date]);
+  }, [formData.sub_distributor_id, formData.start_date, formData.end_date, isEditing]);
 
   const fetchPreview = async () => {
     setPreviewLoading(true);
@@ -105,18 +110,69 @@ const InvoiceManager = () => {
   const handleSave = async () => {
     const token = sessionStorage.getItem("token");
     try {
-      const res = await fetch('https://visionbridge-backend.onrender.com/api/sub-distributors/invoices', {
-        method: 'POST',
+      const method = isEditing ? 'PUT' : 'POST';
+      const url = isEditing 
+        ? `https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${editingId}`
+        : 'https://visionbridge-backend.onrender.com/api/sub-distributors/invoices';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, net_payout: totals.netPayout })
       });
       const json = await res.json();
+      
       if (json.success) {
-        toast.success("Invoice Generated Successfully!");
+        toast.success(isEditing ? "Invoice Updated!" : "Invoice Generated!");
+        setIsEditing(false);
+        setEditingId(null);
+        setFormData(initialFormState);
         fetchInitialData();
       }
     } catch (err) {
       toast.error("Save failed");
+    }
+  };
+
+  const handleEdit = (inv) => {
+    setIsEditing(true);
+    setEditingId(inv.id);
+    
+    // Format dates correctly for the <input type="date"> fields
+    const start = new Date(inv.start_date).toISOString().split('T')[0];
+    const end = new Date(inv.end_date).toISOString().split('T')[0];
+
+    setFormData({
+      ...inv,
+      start_date: start,
+      end_date: end,
+      gross_commission: parseFloat(inv.gross_commission),
+      txn_rate: parseFloat(inv.txn_rate),
+      ops_rate_pm: parseFloat(inv.ops_rate_pm),
+      tds_rate_percent: parseFloat(inv.tds_rate_percent),
+      previous_balance: parseFloat(inv.previous_balance),
+      txn_count: parseInt(inv.txn_count),
+      client_count: parseInt(inv.client_count),
+      duration_months: parseFloat(inv.duration_months)
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this invoice? This cannot be undone.")) return;
+    
+    const token = sessionStorage.getItem("token");
+    try {
+      const res = await fetch(`https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success("Invoice Deleted");
+        fetchInitialData();
+      }
+    } catch (err) {
+      toast.error("Delete failed");
     }
   };
 
@@ -144,7 +200,7 @@ const InvoiceManager = () => {
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' };
   const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600' };
   
-  // Invoice Paper Style (Always White/Light for printing)
+  // Invoice Paper Style
   const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '40px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', minHeight: '600px' };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)' }}>SYNCHRONIZING INVOICE ENGINE...</div>;
@@ -158,26 +214,27 @@ const InvoiceManager = () => {
         <div style={{ flex: '1 1 350px' }}>
           <div style={cardStyle}>
             <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-main)', fontWeight: '800', fontSize: '16px' }}>
-              <RefreshCw size={18} className={previewLoading ? "spin" : ""} color="#8b5cf6" /> Configuration
+              <RefreshCw size={18} className={previewLoading ? "spin" : ""} color="#8b5cf6" /> 
+              {isEditing ? 'Edit Invoice' : 'Configuration'}
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>Sub-Distributor</label>
-                <select style={inputStyle} value={formData.sub_distributor_id} onChange={(e) => setFormData({...formData, sub_distributor_id: e.target.value})}>
+                <select style={inputStyle} value={formData.sub_distributor_id} onChange={(e) => setFormData({...formData, sub_distributor_id: e.target.value})} disabled={isEditing}>
                   <option value="">Select Distributor</option>
                   {subDistributors.map(sd => <option key={sd.id} value={sd.id}>{sd.name} ({sd.code})</option>)}
                 </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div><label style={labelStyle}>Start Date</label><input type="date" style={inputStyle} onChange={(e) => setFormData({...formData, start_date: e.target.value})} /></div>
-                <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} onChange={(e) => setFormData({...formData, end_date: e.target.value})} /></div>
+                <div><label style={labelStyle}>Start Date</label><input type="date" style={inputStyle} value={formData.start_date} onChange={(e) => setFormData({...formData, start_date: e.target.value})} disabled={isEditing} /></div>
+                <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} value={formData.end_date} onChange={(e) => setFormData({...formData, end_date: e.target.value})} disabled={isEditing} /></div>
               </div>
 
               <div>
                 <label style={labelStyle}>Slab Category</label>
-                <select style={inputStyle} onChange={(e) => setFormData({...formData, slab_name: e.target.value})}>
+                <select style={inputStyle} value={formData.slab_name} onChange={(e) => setFormData({...formData, slab_name: e.target.value})}>
                   {SLABS.map(s => <option key={s.id} value={s.name}>{s.name} - {s.desc}</option>)}
                 </select>
               </div>
@@ -208,13 +265,24 @@ const InvoiceManager = () => {
                 </div>
               </div>
 
-              <button 
-                onClick={handleSave}
-                disabled={!formData.sub_distributor_id || !formData.gross_commission}
-                style={{ marginTop: '16px', background: '#8b5cf6', color: 'white', padding: '14px', borderRadius: '10px', border: 'none', fontWeight: '800', cursor: (!formData.sub_distributor_id || !formData.gross_commission) ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: (!formData.sub_distributor_id || !formData.gross_commission) ? 0.5 : 1 }}
-              >
-                <Save size={18} /> GENERATE INVOICE
-              </button>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                <button 
+                  onClick={handleSave}
+                  disabled={!formData.sub_distributor_id || !formData.gross_commission}
+                  style={{ flex: 1, background: '#8b5cf6', color: 'white', padding: '14px', borderRadius: '10px', border: 'none', fontWeight: '800', cursor: (!formData.sub_distributor_id || !formData.gross_commission) ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: (!formData.sub_distributor_id || !formData.gross_commission) ? 0.5 : 1 }}
+                >
+                  <Save size={18} /> {isEditing ? "UPDATE INVOICE" : "GENERATE"}
+                </button>
+
+                {isEditing && (
+                  <button 
+                    onClick={() => { setIsEditing(false); setEditingId(null); setFormData(initialFormState); }}
+                    style={{ flex: 0.5, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '14px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}
+                  >
+                    CANCEL
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -231,7 +299,7 @@ const InvoiceManager = () => {
             </button>
           </div>
 
-          <div id="invoice-printable" style={paperStyle}>
+          <div id="invoice-printable" className="invoice-container" style={paperStyle}>
             
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #f1f5f9', paddingBottom: '24px', marginBottom: '32px' }}>
@@ -348,7 +416,7 @@ const InvoiceManager = () => {
                   <td style={{ padding: '16px', fontWeight: '800', color: 'var(--text-main)' }}>{inv.invoice_no}</td>
                   <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-muted)' }}>{inv.sd_name}</td>
                   <td style={{ padding: '16px', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>
-                    {new Date(inv.start_date).toLocaleDateString()} - {new Date(inv.end_date).toLocaleDateString()}
+                    {new Date(inv.start_date).toLocaleDateString('en-GB')} - {new Date(inv.end_date).toLocaleDateString('en-GB')}
                   </td>
                   <td style={{ padding: '16px', fontWeight: '900', color: '#8b5cf6' }}>{formatINR(inv.net_payout)}</td>
                   <td style={{ padding: '16px', textAlign: 'center' }}>
@@ -361,11 +429,19 @@ const InvoiceManager = () => {
                     </span>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
-                    {inv.status !== 'Paid' && (
-                      <button onClick={() => handleMarkPaid(inv.id)} style={{ background: 'transparent', border: 'none', color: '#10b981', fontWeight: '800', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginLeft: 'auto' }}>
-                        <CheckCircle size={14} /> MARK AS PAID
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                      {inv.status !== 'Paid' && (
+                        <button onClick={() => handleMarkPaid(inv.id)} style={{ background: 'transparent', border: 'none', color: '#10b981', fontWeight: '800', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <CheckCircle size={14} /> MARK AS PAID
+                        </button>
+                      )}
+                      <button onClick={() => handleEdit(inv)} style={{ background: 'transparent', border: 'none', color: '#0284c7', cursor: 'pointer' }} title="Edit Invoice">
+                        <Edit size={16} />
                       </button>
-                    )}
+                      <button onClick={() => handleDelete(inv.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }} title="Delete Invoice">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -374,12 +450,16 @@ const InvoiceManager = () => {
         </div>
       </div>
 
-      {/* 🖨️ CSS FOR PDF PRINTING */}
+      {/* 🖨️ STRICT CSS FOR PDF PRINTING */}
       <style>{`
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0.5cm;
+          }
           body * {
             visibility: hidden;
           }
@@ -391,9 +471,13 @@ const InvoiceManager = () => {
             left: 0;
             top: 0;
             width: 100%;
+            height: auto;
+            transform: scale(0.95);
+            transform-origin: top left;
             box-shadow: none !important;
             border: none !important;
             padding: 0 !important;
+            margin: 0 !important;
           }
           .no-print {
             display: none !important;

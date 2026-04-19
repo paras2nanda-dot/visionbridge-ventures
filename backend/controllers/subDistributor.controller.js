@@ -17,27 +17,27 @@ export const getInvoicePreview = async (req, res) => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const monthFactor = parseFloat((diffDays / 30).toFixed(2));
 
-        // 2. Count Total Active Clients for this SD
+        // 2. Count Total Active Clients for this SD (Added ::TEXT casting to prevent type mismatch zeros)
         const clientCountRes = await pool.query(
-            'SELECT COUNT(*) FROM clients WHERE sub_distributor_id = $1',
+            'SELECT COUNT(*) FROM clients WHERE sub_distributor_id::TEXT = $1::TEXT',
             [id]
         );
 
         // 3. Count Transactions in this period for this SD's clients
-        // Counts SIP installments + Lumpsums + Switches
+        // Changed t.date to t.transaction_date and added explicit ::DATE casting
         const txnCountRes = await pool.query(`
             SELECT COUNT(*) FROM transactions t
             JOIN clients c ON t.client_id::TEXT = c.id::TEXT
-            WHERE c.sub_distributor_id = $1 
-            AND t.date BETWEEN $2 AND $3`,
+            WHERE c.sub_distributor_id::TEXT = $1::TEXT 
+            AND t.transaction_date::DATE BETWEEN $2::DATE AND $3::DATE`,
             [id, startDate, endDate]
         );
 
-        // 4. Carryforward Logic: Find total unpaid balance from previous invoices
+        // 4. Carryforward Logic: Find total unpaid balance from previous invoices (Case insensitive)
         const balanceRes = await pool.query(`
             SELECT COALESCE(SUM(net_payout), 0) as balance 
             FROM sub_distributor_invoices 
-            WHERE sub_distributor_id = $1 AND status != 'Paid'`,
+            WHERE sub_distributor_id::TEXT = $1::TEXT AND LOWER(status) != 'paid'`,
             [id]
         );
 
@@ -96,18 +96,85 @@ export const createInvoice = async (req, res) => {
 };
 
 /**
+ * 🧾 NEW: UPDATE EXISTING INVOICE (EDIT)
+ */
+export const updateInvoice = async (req, res) => {
+    const { id } = req.params;
+    const { 
+        start_date, end_date, slab_name, gross_commission, 
+        platform_applicable, txn_count, txn_rate,
+        ops_applicable, client_count, ops_rate_pm, duration_months,
+        tds_applicable, tds_rate_percent, previous_balance, net_payout 
+    } = req.body;
+    
+    const username = req.user?.username || "System";
+
+    try {
+        const query = `
+            UPDATE sub_distributor_invoices SET
+                start_date = $1, end_date = $2, slab_name = $3,
+                gross_commission = $4, platform_applicable = $5, txn_count = $6, txn_rate = $7,
+                ops_applicable = $8, client_count = $9, ops_rate_pm = $10, duration_months = $11,
+                tds_applicable = $12, tds_rate_percent = $13, previous_balance = $14, net_payout = $15
+            WHERE id = $16 RETURNING *`;
+        
+        const values = [
+            start_date, end_date, slab_name, gross_commission, 
+            platform_applicable, txn_count, txn_rate,
+            ops_applicable, client_count, ops_rate_pm, duration_months,
+            tds_applicable, tds_rate_percent, previous_balance, net_payout, id
+        ];
+
+        const result = await pool.query(query, values);
+        
+        await logActivity(username, 'UPDATE', result.rows[0].invoice_no, `📄 Updated invoice ${result.rows[0].invoice_no}`);
+
+        res.json({ success: true, data: result.rows[0] });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+/**
+ * 🧾 NEW: DELETE INVOICE
+ */
+export const deleteInvoice = async (req, res) => {
+    const { id } = req.params;
+    const username = req.user?.username || "System";
+
+    try {
+        // Get invoice details for logging before deleting
+        const check = await pool.query('SELECT invoice_no FROM sub_distributor_invoices WHERE id = $1', [id]);
+        if (check.rows.length === 0) return res.status(404).json({ success: false, error: "Invoice not found" });
+
+        await pool.query('DELETE FROM sub_distributor_invoices WHERE id = $1', [id]);
+        
+        await logActivity(username, 'DELETE', check.rows[0].invoice_no, `🗑️ Deleted invoice ${check.rows[0].invoice_no}`);
+
+        res.json({ success: true, message: 'Invoice deleted' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+/**
  * 🧾 NEW: UPDATE INVOICE STATUS (Mark as Paid)
  */
 export const updateInvoiceStatus = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body; // 'Paid' or 'Unpaid'
+    const { status } = req.body; 
     const username = req.user?.username || "System";
 
     try {
+        // Removed updated_at to prevent schema mismatch errors
         const result = await pool.query(
-            'UPDATE sub_distributor_invoices SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+            'UPDATE sub_distributor_invoices SET status = $1 WHERE id = $2 RETURNING *',
             [status, id]
         );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: "Invoice not found" });
+        }
 
         await logActivity(username, 'UPDATE', result.rows[0].invoice_no, `💰 Invoice ${result.rows[0].invoice_no} marked as ${status}`);
 

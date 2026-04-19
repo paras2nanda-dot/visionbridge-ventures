@@ -5,10 +5,12 @@ import {
     updateSubDistributor, 
     deleteSubDistributor,
     getSubDistributorPerformance,
-    getInvoicePreview,    // 🧾 NEW
-    createInvoice,       // 🧾 NEW
-    updateInvoiceStatus, // 🧾 NEW
-    getInvoices          // 🧾 NEW
+    getInvoicePreview,    
+    createInvoice,       
+    updateInvoiceStatus, 
+    getInvoices,
+    updateInvoice,       // 🧾 NEW: Added for Edit functionality
+    deleteInvoice        // 🧾 NEW: Added for Delete functionality
 } from '../controllers/subDistributor.controller.js';
 
 const router = express.Router();
@@ -17,7 +19,11 @@ const router = express.Router();
 // (Note: These are placed before /:id to avoid route conflicts)
 router.get('/invoices', getInvoices);
 router.post('/invoices', createInvoice);
+router.put('/invoices/:id', updateInvoice);          // 🟢 NEW
+router.delete('/invoices/:id', deleteInvoice);       // 🟢 NEW
 router.patch('/invoices/:id/status', updateInvoiceStatus);
+
+// 🟢 Invoice Preview Route 
 router.get('/:id/invoice-preview', getInvoicePreview);
 
 // 🟢 Performance & Analytics Route
