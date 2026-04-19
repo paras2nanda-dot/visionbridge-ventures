@@ -60,10 +60,11 @@ const Charts = () => {
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)' }}>SYNCING EXECUTIVE ANALYTICS...</div>;
   if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: '#ef4444' }}>Session Expired. Please log in again.</div>;
 
-  // 🟢 IMPROVED LABEL LOGIC: Renders outside with lines for clarity
+  // 🟢 ZOOM-SAFE LABEL LOGIC
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
     const RADIAN = Math.PI / 180;
-    const radius = outerRadius + 25;
+    // Lowered offset from 25 to 15 to keep it inside the view during zoom
+    const radius = outerRadius + 15; 
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -74,8 +75,7 @@ const Charts = () => {
         fill="var(--text-main)" 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central" 
-        fontSize="11px" 
-        fontWeight="800"
+        style={{ fontSize: '11px', fontWeight: '800' }}
       >
         {`${(percent * 100).toFixed(1)}%`}
       </text>
@@ -84,17 +84,20 @@ const Charts = () => {
 
   const renderDonut = (data = []) => {
     return (
-      <ResponsiveContainer width="100%" height={320}>
-        <PieChart>
+      <ResponsiveContainer width="100%" height={350}>
+        {/* 🟢 ADDED MARGIN: Prevents labels from hitting the edges of the box */}
+        <PieChart margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
           <Pie 
             data={data} 
-            innerRadius={60} 
-            outerRadius={80} 
+            innerRadius={55} 
+            outerRadius={75} // 🟢 SLIGHTLY SMALLER: Creates more white space for labels
             paddingAngle={5} 
             dataKey="value"
             labelLine={{ stroke: 'var(--text-muted)', strokeWidth: 1 }}
             stroke="none"
             label={renderCustomizedLabel}
+            animationBegin={0}
+            animationDuration={800}
           >
             {data.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
           </Pie>
@@ -108,20 +111,21 @@ const Charts = () => {
     );
   };
 
-  // ... (Keep sectionHeader, chartCardStyle, chartLabel exactly as they were)
   const sectionHeader = (title, color, Icon) => (
     <h2 style={{ fontWeight: '800', color: 'var(--text-main)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', letterSpacing: '0.5px' }}>
       {Icon && <Icon size={22} color={color} />}
       {title}
     </h2>
   );
-  const chartCardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
+
+  const chartCardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflow: 'visible' };
   const chartLabel = { textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px', letterSpacing: '0.3px' };
   const tooltipStyle = { borderRadius: '12px', fontWeight: '700', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' };
 
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
-      {/* 🔴 ALERT: UPCOMING SIP CLOSURES (Keep as is) */}
+      
+      {/* 🔴 ALERT: UPCOMING SIP CLOSURES */}
       <div style={{ marginBottom: '48px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
           {sectionHeader("Upcoming SIP Closures (Next 60 Days)", "#ef4444", AlertTriangle)}
@@ -197,7 +201,7 @@ const Charts = () => {
         <div style={chartCardStyle}><p style={chartLabel}>Age Buckets (AUM %)</p>{renderDonut(charts.category2?.ageBucketsAum)}</div>
       </div>
 
-      {/* 📈 GROWTH PERFORMANCE TRENDS (Keep exactly as is) */}
+      {/* 📈 GROWTH PERFORMANCE TRENDS */}
       {sectionHeader("Growth Performance Trends", "#8b5cf6", TrendingUp)}
       <div style={{ ...chartCardStyle, marginBottom: '24px' }}>
         <p style={chartLabel}>Invested AUM vs Market Value AUM</p>
