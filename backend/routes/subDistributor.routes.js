@@ -4,10 +4,21 @@ import {
     createSubDistributor, 
     updateSubDistributor, 
     deleteSubDistributor,
-    getSubDistributorPerformance // 🟢 NEW: PERFORMANCE LOGIC
+    getSubDistributorPerformance,
+    getInvoicePreview,    // 🧾 NEW
+    createInvoice,       // 🧾 NEW
+    updateInvoiceStatus, // 🧾 NEW
+    getInvoices          // 🧾 NEW
 } from '../controllers/subDistributor.controller.js';
 
 const router = express.Router();
+
+// 🧾 Invoice Management Routes
+// (Note: These are placed before /:id to avoid route conflicts)
+router.get('/invoices', getInvoices);
+router.post('/invoices', createInvoice);
+router.patch('/invoices/:id/status', updateInvoiceStatus);
+router.get('/:id/invoice-preview', getInvoicePreview);
 
 // 🟢 Performance & Analytics Route
 router.get('/:id/performance', getSubDistributorPerformance);
