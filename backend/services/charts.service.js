@@ -18,7 +18,7 @@ export const getChartsData = async () => {
        FROM transactions) as trans_aum
   `);
 
-  // 3. 🟢 FIXED: Age Buckets for AUM (Handles COALESCE age and Active SIPs)
+  // 3. Age Buckets for AUM (Handles COALESCE age and Active SIPs)
   const ageAumData = await pool.query(`
     WITH client_total_aum AS (
       SELECT 
@@ -52,17 +52,17 @@ export const getChartsData = async () => {
     ORDER BY name ASC
   `);
 
-  // 📈 4. Historical Trends
+  // 📈 4. STOCK-STYLE TREND DATA
+  // Removed LIMIT 12 and TO_CHAR so we get the full history with raw dates
   const trendData = await pool.query(`
     SELECT 
-      TO_CHAR(snapshot_date, 'Mon') as month,
+      snapshot_date as raw_date,
       total_invested as invested_aum,
       total_market_value as market_value_aum,
       sip_book_amount as sip_growth,
       actual_commission as commission
     FROM monthly_analytics
     ORDER BY snapshot_date ASC
-    LIMIT 12
   `);
 
   // --- HELPERS ---
@@ -106,8 +106,9 @@ export const getChartsData = async () => {
       ],
       ageBucketsAum: ageAumData.rows.map(r => ({ name: r.name, value: parseFloat(r.value) }))
     },
+    // 🟢 TRANSFORMED FOR FRONTEND: Converts date to numeric timestamp (ms)
     trends: trendData.rows.map(r => ({
-      month: r.month,
+      timestamp: new Date(r.raw_date).getTime(),
       invested_aum: parseFloat(r.invested_aum),
       market_value_aum: parseFloat(r.market_value_aum),
       sip_growth: parseFloat(r.sip_growth),

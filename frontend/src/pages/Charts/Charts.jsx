@@ -12,7 +12,7 @@ const Charts = () => {
   const [upcomingClosures, setUpcomingClosures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(false);
-  const [isSnapshotting, setIsSnapshotting] = useState(false); // 🟢 NEW STATE
+  const [isSnapshotting, setIsSnapshotting] = useState(false);
 
   const COLORS = ['#0284c7', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
 
@@ -63,10 +63,9 @@ const Charts = () => {
     fetchData();
   }, []);
 
-  // 🟢 NEW: SNAPSHOT TRIGGER LOGIC
   const handleCaptureSnapshot = async () => {
     const token = sessionStorage.getItem("token");
-    if (!window.confirm("Capture current AUM & SIP data for monthly trends? This will create a data point for today.")) return;
+    if (!window.confirm("Capture current AUM & SIP data for history trends? This will create a data point for today.")) return;
     
     setIsSnapshotting(true);
     try {
@@ -80,7 +79,7 @@ const Charts = () => {
       const json = await res.json();
       if (json.success) {
         toast.success("✅ History Snapshot Captured!");
-        fetchData(); // Refresh charts to show the new point
+        fetchData(); 
       } else {
         toast.error("Failed to capture snapshot");
       }
@@ -88,6 +87,24 @@ const Charts = () => {
       toast.error("Connection Error");
     } finally {
       setIsSnapshotting(false);
+    }
+  };
+
+  // 📈 SMART X-AXIS FORMATTER (Stock Chart Logic)
+  const formatXAxis = (tickItem) => {
+    if (!charts?.trends || charts.trends.length === 0) return '';
+    const date = new Date(tickItem);
+    
+    const firstDate = new Date(charts.trends[0].timestamp);
+    const lastDate = new Date(charts.trends[charts.trends.length - 1].timestamp);
+    const diffYears = lastDate.getFullYear() - firstDate.getFullYear();
+
+    if (diffYears >= 3) {
+      return date.getFullYear().toString(); // Show years only for long range
+    } else if (diffYears >= 1) {
+      return date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }); // "Apr '26"
+    } else {
+      return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); // "19 Apr"
     }
   };
 
@@ -232,35 +249,21 @@ const Charts = () => {
         <div style={chartCardStyle}><p style={chartLabel}>Age Buckets (AUM %)</p>{renderDonut(charts.category2?.ageBucketsAum)}</div>
       </div>
 
-      {/* 📈 GROWTH PERFORMANCE TRENDS */}
+      {/* 📈 GROWTH PERFORMANCE TRENDS (Time-Series / Stock Chart Style) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
         {sectionHeader("Growth Performance Trends", "#8b5cf6", TrendingUp)}
         
-        {/* 🟢 NEW: Capture Snapshot Button */}
         <button 
           onClick={handleCaptureSnapshot}
           disabled={isSnapshotting}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            background: '#0F172A',
-            color: 'white',
-            borderRadius: '10px',
-            fontWeight: '700',
-            fontSize: '13px',
-            cursor: isSnapshotting ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            border: 'none',
-            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+            display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+            background: '#0F172A', color: 'white', borderRadius: '10px',
+            fontWeight: '700', fontSize: '13px', cursor: isSnapshotting ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
           }}
         >
-          {isSnapshotting ? (
-            <RefreshCw size={16} className="spin" />
-          ) : (
-            <Activity size={16} />
-          )}
+          {isSnapshotting ? <RefreshCw size={16} className="spin" /> : <Activity size={16} />}
           {isSnapshotting ? "CAPTURING..." : "CAPTURE MONTHLY SNAPSHOT"}
         </button>
       </div>
@@ -276,12 +279,23 @@ const Charts = () => {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
-            <XAxis dataKey="month" tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
-            <YAxis tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={{fontWeight: '800'}} />
+            <XAxis 
+              dataKey="timestamp" 
+              type="number" 
+              domain={['dataMin', 'dataMax']} 
+              tickFormatter={formatXAxis} 
+              tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}}
+              minTickGap={30}
+            />
+            <YAxis tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+            <Tooltip 
+              labelFormatter={(val) => new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+              contentStyle={tooltipStyle} 
+              itemStyle={{fontWeight: '800'}} 
+            />
             <Legend verticalAlign="top" height={40} iconType="circle" wrapperStyle={{fontWeight: '700', fontSize: '13px', color: 'var(--text-muted)'}} />
             <Area name="Market Value" type="monotone" dataKey="market_value_aum" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorMarket)" />
-            <Line name="Invested Value" type="monotone" dataKey="invested_aum" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: 'var(--bg-card)' }} activeDot={{ r: 6 }} />
+            <Line name="Invested Value" type="monotone" dataKey="invested_aum" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -292,10 +306,14 @@ const Charts = () => {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
-              <XAxis dataKey="month" tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
-              <Tooltip contentStyle={tooltipStyle} itemStyle={{fontWeight: '800'}} />
-              <Line type="stepAfter" name="Commission" dataKey="commission" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b', stroke: 'var(--bg-card)', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+              <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} tickFormatter={formatXAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} />
+              <YAxis tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+              <Tooltip 
+                labelFormatter={(val) => new Date(val).toLocaleDateString('en-GB')}
+                contentStyle={tooltipStyle} 
+                itemStyle={{fontWeight: '800'}} 
+              />
+              <Line type="stepAfter" name="Commission" dataKey="commission" stroke="#f59e0b" strokeWidth={3} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -311,9 +329,13 @@ const Charts = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
-              <XAxis dataKey="month" tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontWeight: 700, fontSize: 12, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
-              <Tooltip contentStyle={tooltipStyle} itemStyle={{fontWeight: '800'}} />
+              <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} tickFormatter={formatXAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} />
+              <YAxis tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+              <Tooltip 
+                labelFormatter={(val) => new Date(val).toLocaleDateString('en-GB')}
+                contentStyle={tooltipStyle} 
+                itemStyle={{fontWeight: '800'}} 
+              />
               <Area type="monotone" name="SIP Book" dataKey="sip_growth" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#colorSIP)" />
             </AreaChart>
           </ResponsiveContainer>
