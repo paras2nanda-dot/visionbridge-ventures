@@ -21,6 +21,14 @@ const Charts = () => {
     return new Intl.NumberFormat('en-IN').format(val);
   };
 
+  // 💰 SMART Y-AXIS FORMATTER (Indian Financial System)
+  const formatYAxis = (val) => {
+    if (val >= 10000000) return (val / 10000000).toFixed(1) + ' Cr';
+    if (val >= 100000) return (val / 100000).toFixed(1) + ' L';
+    if (val >= 1000) return (val / 1000).toFixed(1) + ' K';
+    return val;
+  };
+
   const fetchData = () => {
     const token = sessionStorage.getItem("token");
     const headers = {
@@ -100,11 +108,11 @@ const Charts = () => {
     const diffYears = lastDate.getFullYear() - firstDate.getFullYear();
 
     if (diffYears >= 3) {
-      return date.getFullYear().toString(); // Show years only for long range
+      return date.getFullYear().toString(); 
     } else if (diffYears >= 1) {
-      return date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }); // "Apr '26"
+      return date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
     } else {
-      return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); // "19 Apr"
+      return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); 
     }
   };
 
@@ -287,7 +295,7 @@ const Charts = () => {
               tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}}
               minTickGap={30}
             />
-            <YAxis tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+            <YAxis tickFormatter={formatYAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
             <Tooltip 
               labelFormatter={(val) => new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
               contentStyle={tooltipStyle} 
@@ -307,7 +315,7 @@ const Charts = () => {
             <LineChart data={charts.trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
               <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} tickFormatter={formatXAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} />
-              <YAxis tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+              <YAxis tickFormatter={formatYAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
               <Tooltip 
                 labelFormatter={(val) => new Date(val).toLocaleDateString('en-GB')}
                 contentStyle={tooltipStyle} 
@@ -330,7 +338,7 @@ const Charts = () => {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
               <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} tickFormatter={formatXAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} />
-              <YAxis tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
+              <YAxis tickFormatter={formatYAxis} tick={{fontWeight: 700, fontSize: 11, fill: 'var(--text-muted)'}} axisLine={false} tickLine={false} dx={-10} />
               <Tooltip 
                 labelFormatter={(val) => new Date(val).toLocaleDateString('en-GB')}
                 contentStyle={tooltipStyle} 
