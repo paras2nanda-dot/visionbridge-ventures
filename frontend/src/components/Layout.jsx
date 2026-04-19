@@ -26,7 +26,7 @@ const Layout = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main)', transition: 'background 0.3s ease' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main)', transition: 'background 0.3s ease' }} className="app-root-wrapper">
       <AutoLogout timeoutMinutes={15} />
       <CommandPalette />
 
@@ -39,6 +39,7 @@ const Layout = () => {
             background: 'rgba(0,0,0,0.85)', zIndex: 10000001, 
             backdropFilter: 'blur(8px)', transition: 'all 0.3s ease' 
           }} 
+          className="no-print"
         />
       )}
 
@@ -48,7 +49,7 @@ const Layout = () => {
         zIndex: 10000002, transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
         transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
         boxShadow: isSidebarOpen ? '20px 0 25px -5px rgba(0,0,0,0.2)' : 'none'
-      }} className="sidebar-wrapper">
+      }} className="sidebar-wrapper no-print">
         <Sidebar closeMobileMenu={() => setIsSidebarOpen(false)} isMobileOpen={isSidebarOpen} />
       </div>
 
@@ -56,7 +57,7 @@ const Layout = () => {
       <main style={{ flex: 1, minHeight: '100vh', width: '100%', transition: 'all 0.3s ease', position: 'relative', zIndex: 1 }} className="main-content-layout">
         
         {/* 📱 STICKY MOBILE HEADER BAR (Solves Overlap) */}
-        <div className="mobile-top-nav">
+        <div className="mobile-top-nav no-print">
             <button onClick={toggleSidebar} className="mobile-nav-toggle">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -70,7 +71,7 @@ const Layout = () => {
 
         <div className="content-padding-wrapper">
             {/* 🔝 Top Header Bar (Breadcrumbs & Search) */}
-            <div className="top-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
+            <div className="top-header-bar no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
             
                 {/* Breadcrumbs */}
                 <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.3px', flexWrap: 'wrap' }}>
@@ -152,6 +153,18 @@ const Layout = () => {
           .content-padding-wrapper { padding: 24px 16px 40px 16px !important; }
           .top-header-bar { flex-direction: column; align-items: flex-start !important; gap: 16px !important; margin-bottom: 24px !important; }
           .search-cmd-btn { width: 100% !important; padding: 14px 20px !important; }
+        }
+
+        /* 🖨️ AGGRESSIVE PRINT RESET */
+        @media print {
+          .app-root-wrapper { background: white !important; display: block !important; }
+          .main-content-layout { 
+            margin-left: 0 !important; 
+            width: 100% !important; 
+            padding: 0 !important; 
+          }
+          .content-padding-wrapper { padding: 0 !important; }
+          .no-print { display: none !important; }
         }
       `}</style>
     </div>
