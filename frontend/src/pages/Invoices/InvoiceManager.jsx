@@ -183,26 +183,29 @@ const InvoiceManager = () => {
   const handleMarkPaid = async (id) => {
     const token = sessionStorage.getItem("token");
     try {
-      // 🟢 SWAPPED TO PUT TO AVOID CORS ERRORS
       const res = await fetch(`https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${id}/status`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Paid' })
       });
-      if (res.ok) {
+      
+      const responseData = await res.json();
+      
+      if (res.ok && responseData.success) {
         toast.success("Payment Recorded!");
         fetchInitialData();
       } else {
-        toast.error("Status update failed - Server rejected request.");
+        console.error("Backend Rejected Status Update:", responseData);
+        toast.error("Update failed. Check console.");
       }
     } catch (err) {
-      toast.error("Status update failed - Network Error");
+      console.error("Network/CORS Error on Mark Paid:", err);
+      toast.error("Network Error. Is backend deployed?");
     }
   };
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
 
-  // 🟢 LEDGER CALCULATION LOGIC
   const getLedgerData = () => {
     if (!ledgerConfig.sd_id || !ledgerConfig.start_date || !ledgerConfig.end_date) return null;
 
@@ -210,17 +213,14 @@ const InvoiceManager = () => {
     const ledgerStart = new Date(ledgerConfig.start_date);
     const ledgerEnd = new Date(ledgerConfig.end_date);
 
-    // Calculate Opening Balance (Unpaid invoices BEFORE the start date)
     const priorUnpaid = sdInvoices.filter(inv => new Date(inv.start_date) < ledgerStart && inv.status !== 'Paid');
     const openingBalance = priorUnpaid.reduce((sum, inv) => sum + parseFloat(inv.net_payout), 0);
 
-    // Get Invoices IN the selected period
     const periodInvoices = sdInvoices.filter(inv => {
       const invStart = new Date(inv.start_date);
       return invStart >= ledgerStart && invStart <= ledgerEnd;
     }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
-    // Calculate Total Payable in period
     const totalUnpaidInPeriod = periodInvoices
         .filter(inv => inv.status !== 'Paid')
         .reduce((sum, inv) => sum + parseFloat(inv.net_payout), 0);
@@ -231,20 +231,17 @@ const InvoiceManager = () => {
 
   const ledgerData = showLedger ? getLedgerData() : null;
 
-  // Styling Variables
   const cardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' };
   const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600' };
   
-  // 🟢 UPDATED PAPER STYLE FOR PDF
-  const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '40px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', minHeight: 'auto', position: 'relative' };
+  const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '50px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', position: 'relative' };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)' }}>SYNCHRONIZING INVOICE ENGINE...</div>;
 
   return (
-    <div className="fade-in">
+    <div className="fade-in print-container">
       
-      {/* 🟢 LEDGER MODAL */}
       {showLedger && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-card)', width: '100%', maxWidth: '800px', borderRadius: '20px', border: '1px solid var(--border)', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -309,8 +306,8 @@ const InvoiceManager = () => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
         
         {/* LEFT: CONFIGURATION FORM */}
-        <div style={{ flex: '1 1 350px' }}>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }} className="no-print">
+        <div style={{ flex: '1 1 350px' }} className="no-print">
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
             <button onClick={() => setShowLedger(true)} style={{ flex: 1, background: '#0284c7', color: 'white', padding: '12px', borderRadius: '10px', border: 'none', fontWeight: '800', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(2, 132, 199, 0.2)' }}>
               <BookOpen size={18} /> View Ledger
             </button>
@@ -375,7 +372,7 @@ const InvoiceManager = () => {
         </div>
 
         {/* RIGHT: PROFESSIONAL INVOICE PREVIEW */}
-        <div style={{ flex: '2 1 600px' }}>
+        <div style={{ flex: '2 1 600px' }} className="print-full-width">
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }} className="no-print">
             <button onClick={() => window.print()} style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
@@ -383,87 +380,85 @@ const InvoiceManager = () => {
             </button>
           </div>
 
-          {/* 🟢 REDESIGNED FOR PERFECT PRINTING */}
           <div id="invoice-printable" style={paperStyle}>
             
-            <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '24px', marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '38px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>VisionBridge Ventures</h1>
-              <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#64748b', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>(MF Distribution) — Commission Report</h3>
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '24px', marginBottom: '40px' }}>
+              <h1 style={{ fontSize: '48px', fontWeight: '900', color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-1px' }}>VisionBridge Ventures</h1>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#64748b', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>(MF Distribution) — Commission Report</h3>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Invoiced To:</p>
-                <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.name || "---"}</h2>
-                <p style={{ fontSize: '14px', fontWeight: '700', color: '#64748b', margin: 0 }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.location || "Location Not Set"}</p>
+            {/* STRICT FLEX ROW ALIGNMENT */}
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
+              <div style={{ flex: '0 0 45%', textAlign: 'left' }}>
+                <p style={{ fontSize: '11px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Invoiced To:</p>
+                <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.name || "---"}</h2>
+                <p style={{ fontSize: '15px', fontWeight: '700', color: '#64748b', margin: 0 }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.location || "Location Not Set"}</p>
               </div>
-              <div style={{ flex: 1, textAlign: 'right' }}>
-                <p style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Invoice Detail:</p>
-                <p style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>ID: #{formData.invoice_no}</p>
-                <p style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>Period: {formData.start_date || 'N/A'} <span style={{ color: '#cbd5e1', margin: '0 4px' }}>to</span> {formData.end_date || 'N/A'}</p>
-                <p style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Slab: {formData.slab_name}</p>
+              <div style={{ flex: '0 0 45%', textAlign: 'right' }}>
+                <p style={{ fontSize: '11px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Invoice Detail:</p>
+                <p style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>ID: #{formData.invoice_no}</p>
+                <p style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>Period: {formData.start_date || 'N/A'} <span style={{ color: '#cbd5e1', margin: '0 4px' }}>to</span> {formData.end_date || 'N/A'}</p>
+                <p style={{ fontSize: '13px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Slab: {formData.slab_name}</p>
               </div>
             </div>
 
-            {/* Tightened Table Width */}
-            <div style={{ width: '90%', margin: '0 auto', marginBottom: '40px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={{ textAlign: 'left', padding: '10px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Description</th>
-                    <th style={{ textAlign: 'center', padding: '10px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Metric</th>
-                    <th style={{ textAlign: 'right', padding: '10px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
+            {/* TIGHTENED TABLE 80% WIDTH */}
+            <table style={{ width: '80%', margin: '0 auto', borderCollapse: 'collapse', marginBottom: '50px' }} className="print-table">
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ textAlign: 'left', padding: '12px 0', fontSize: '12px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '12px 0', fontSize: '12px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Metric</th>
+                  <th style={{ textAlign: 'right', padding: '12px 0', fontSize: '12px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '16px 0', fontWeight: '800', color: '#0f172a', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>Gross Commission Received</td>
+                  <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>Self Declared</td>
+                  <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>{formatINR(formData.gross_commission)}</td>
+                </tr>
+                {formData.platform_applicable && (
                   <tr>
-                    <td style={{ padding: '14px 0', fontWeight: '800', color: '#0f172a', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>Gross Commission Received</td>
-                    <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>Self Declared</td>
-                    <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>{formatINR(formData.gross_commission)}</td>
+                    <td style={{ padding: '16px 0', fontWeight: '700', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>(-) Platform Transaction Charges</td>
+                    <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>{formData.txn_count} txns @ ₹{formData.txn_rate}</td>
+                    <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.platformDeduction)}</td>
                   </tr>
-                  {formData.platform_applicable && (
-                    <tr>
-                      <td style={{ padding: '14px 0', fontWeight: '700', color: '#ef4444', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>(-) Platform Transaction Charges</td>
-                      <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>{formData.txn_count} txns @ ₹{formData.txn_rate}</td>
-                      <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.platformDeduction)}</td>
-                    </tr>
-                  )}
-                  {formData.ops_applicable && (
-                    <tr>
-                      <td style={{ padding: '14px 0', fontWeight: '700', color: '#ef4444', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>(-) Operational Expenses</td>
-                      <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
-                      <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.opsDeduction)}</td>
-                    </tr>
-                  )}
-                  <tr style={{ background: '#f8fafc' }}>
-                    <td style={{ padding: '14px 12px', fontWeight: '900', color: '#0f172a', fontSize: '13px' }}>Net Commission (Before TDS)</td>
-                    <td style={{ padding: '14px 12px' }}></td>
-                    <td style={{ padding: '14px 12px', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '14px' }}>{formatINR(totals.netCommission)}</td>
-                  </tr>
-                  {formData.tds_applicable && (
-                    <tr>
-                      <td style={{ padding: '14px 0', fontStyle: 'italic', fontWeight: '700', color: '#64748b', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>(-) TDS Deduction</td>
-                      <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#64748b', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>{formData.tds_rate_percent}% on Net</td>
-                      <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#64748b', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.tdsDeduction)}</td>
-                    </tr>
-                  )}
+                )}
+                {formData.ops_applicable && (
                   <tr>
-                    <td style={{ padding: '14px 0', fontStyle: 'italic', fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>Previous Balance Carryforward</td>
-                    <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '11px' }}>Pending Invoices</td>
-                    <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '14px' }}>+ {formatINR(formData.previous_balance)}</td>
+                    <td style={{ padding: '16px 0', fontWeight: '700', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>(-) Operational Expenses</td>
+                    <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
+                    <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.opsDeduction)}</td>
                   </tr>
-                </tbody>
-              </table>
-            </div>
+                )}
+                <tr style={{ background: '#f8fafc' }}>
+                  <td style={{ padding: '16px 12px', fontWeight: '900', color: '#0f172a', fontSize: '14px' }}>Net Commission (Before TDS)</td>
+                  <td style={{ padding: '16px 12px' }}></td>
+                  <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '15px' }}>{formatINR(totals.netCommission)}</td>
+                </tr>
+                {formData.tds_applicable && (
+                  <tr>
+                    <td style={{ padding: '16px 0', fontStyle: 'italic', fontWeight: '700', color: '#64748b', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>(-) TDS Deduction</td>
+                    <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#64748b', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>{formData.tds_rate_percent}% on Net</td>
+                    <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#64748b', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.tdsDeduction)}</td>
+                  </tr>
+                )}
+                <tr>
+                  <td style={{ padding: '16px 0', fontStyle: 'italic', fontWeight: '700', color: '#0f172a', fontSize: '14px' }}>Previous Balance Carryforward</td>
+                  <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '12px' }}>Pending Invoices</td>
+                  <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '15px' }}>+ {formatINR(formData.previous_balance)}</td>
+                </tr>
+              </tbody>
+            </table>
 
-            <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '24px', display: 'flex', justifyContent: 'center' }}>
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '20px 40px', borderRadius: '12px', textAlign: 'center', minWidth: '300px' }}>
-                <p style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Final Net Payout</p>
-                <h2 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{formatINR(totals.netPayout)}</h2>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+              <div style={{ border: '2px solid #e2e8f0', background: '#f8fafc', padding: '24px 60px', borderRadius: '16px', textAlign: 'center', minWidth: '350px' }}>
+                <p style={{ fontSize: '12px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 10px 0' }}>Final Net Payout</p>
+                <h2 style={{ fontSize: '40px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{formatINR(totals.netPayout)}</h2>
               </div>
             </div>
 
-            <div style={{ marginTop: '50px', textAlign: 'center', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: '1.6' }}>
+            <div style={{ marginTop: '70px', textAlign: 'center', fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: '1.8' }}>
               This is a computer generated document and does not require a signature. <br />
               VisionBridge Ventures © {new Date().getFullYear()}
             </div>
@@ -516,25 +511,51 @@ const InvoiceManager = () => {
         </div>
       </div>
 
-      {/* 🖨️ STRICT CSS FOR PDF PRINTING */}
+      {/* 🖨️ STRICT CSS FOR ONE-PAGE PDF PRINTING */}
       <style>{`
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
         @media print {
-          @page {
-            size: A4 portrait;
-            margin: 15mm;
+          /* Strict Page Setup */
+          @page { size: A4 portrait; margin: 15mm; }
+          
+          /* CRITICAL: Collapse the heights of hidden containers to prevent blank pages */
+          html, body {
+            height: 100vh !important;
+            overflow: hidden !important;
+            background: white !important;
           }
-          body * { visibility: hidden; }
-          #invoice-printable, #invoice-printable * { visibility: visible; }
+
+          body * {
+            visibility: hidden;
+          }
+
+          /* Force exact positioning and unhide only the invoice */
+          #invoice-printable, #invoice-printable * {
+            visibility: visible;
+          }
+
           #invoice-printable {
-            position: absolute; left: 0; top: 0;
-            width: 100%; max-width: 190mm;
-            padding: 0 !important; margin: 0 auto !important;
-            box-shadow: none !important; border: none !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
           }
-          .no-print { display: none !important; }
+
+          .print-table {
+            width: 80% !important;
+            margin: 0 auto !important;
+          }
+
+          .no-print {
+            display: none !important;
+          }
         }
       `}</style>
     </div>
