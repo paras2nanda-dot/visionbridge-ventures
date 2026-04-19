@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, CheckCircle, RefreshCw, Save, Printer, Trash2, Edit 
+  FileText, CheckCircle, RefreshCw, Save, Printer, Trash2, Edit, BookOpen, X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -17,6 +17,14 @@ const InvoiceManager = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
+  // 🟢 LEDGER MODAL STATE
+  const [showLedger, setShowLedger] = useState(false);
+  const [ledgerConfig, setLedgerConfig] = useState({
+    sd_id: '',
+    start_date: '',
+    end_date: ''
+  });
 
   const initialFormState = {
     sub_distributor_id: '',
@@ -63,7 +71,6 @@ const InvoiceManager = () => {
     }
   };
 
-  // Only auto-fetch preview if we are NOT currently editing an existing invoice
   useEffect(() => {
     if (!isEditing && formData.sub_distributor_id && formData.start_date && formData.end_date) {
       fetchPreview();
@@ -137,8 +144,6 @@ const InvoiceManager = () => {
   const handleEdit = (inv) => {
     setIsEditing(true);
     setEditingId(inv.id);
-    
-    // Format dates correctly for the <input type="date"> fields
     const start = new Date(inv.start_date).toISOString().split('T')[0];
     const end = new Date(inv.end_date).toISOString().split('T')[0];
 
@@ -160,7 +165,6 @@ const InvoiceManager = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this invoice? This cannot be undone.")) return;
-    
     const token = sessionStorage.getItem("token");
     try {
       const res = await fetch(`https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${id}`, {
@@ -179,39 +183,139 @@ const InvoiceManager = () => {
   const handleMarkPaid = async (id) => {
     const token = sessionStorage.getItem("token");
     try {
+      // 🟢 SWAPPED TO PUT TO AVOID CORS ERRORS
       const res = await fetch(`https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${id}/status`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Paid' })
       });
       if (res.ok) {
         toast.success("Payment Recorded!");
         fetchInitialData();
+      } else {
+        toast.error("Status update failed - Server rejected request.");
       }
     } catch (err) {
-      toast.error("Status update failed");
+      toast.error("Status update failed - Network Error");
     }
   };
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+
+  // 🟢 LEDGER CALCULATION LOGIC
+  const getLedgerData = () => {
+    if (!ledgerConfig.sd_id || !ledgerConfig.start_date || !ledgerConfig.end_date) return null;
+
+    const sdInvoices = invoices.filter(inv => inv.sub_distributor_id == ledgerConfig.sd_id);
+    const ledgerStart = new Date(ledgerConfig.start_date);
+    const ledgerEnd = new Date(ledgerConfig.end_date);
+
+    // Calculate Opening Balance (Unpaid invoices BEFORE the start date)
+    const priorUnpaid = sdInvoices.filter(inv => new Date(inv.start_date) < ledgerStart && inv.status !== 'Paid');
+    const openingBalance = priorUnpaid.reduce((sum, inv) => sum + parseFloat(inv.net_payout), 0);
+
+    // Get Invoices IN the selected period
+    const periodInvoices = sdInvoices.filter(inv => {
+      const invStart = new Date(inv.start_date);
+      return invStart >= ledgerStart && invStart <= ledgerEnd;
+    }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+    // Calculate Total Payable in period
+    const totalUnpaidInPeriod = periodInvoices
+        .filter(inv => inv.status !== 'Paid')
+        .reduce((sum, inv) => sum + parseFloat(inv.net_payout), 0);
+    const totalPayable = openingBalance + totalUnpaidInPeriod;
+
+    return { openingBalance, periodInvoices, totalPayable };
+  };
+
+  const ledgerData = showLedger ? getLedgerData() : null;
 
   // Styling Variables
   const cardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' };
   const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600' };
   
-  // Invoice Paper Style
-  const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '40px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', minHeight: '600px' };
+  // 🟢 UPDATED PAPER STYLE FOR PDF
+  const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '40px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', minHeight: 'auto', position: 'relative' };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)' }}>SYNCHRONIZING INVOICE ENGINE...</div>;
 
   return (
     <div className="fade-in">
       
+      {/* 🟢 LEDGER MODAL */}
+      {showLedger && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-card)', width: '100%', maxWidth: '800px', borderRadius: '20px', border: '1px solid var(--border)', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}><BookOpen color="#0284c7" /> Partner Statement of Account (Ledger)</h2>
+              <button onClick={() => setShowLedger(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={labelStyle}>Select Partner</label>
+                <select style={inputStyle} value={ledgerConfig.sd_id} onChange={(e) => setLedgerConfig({...ledgerConfig, sd_id: e.target.value})}>
+                  <option value="">Select...</option>
+                  {subDistributors.map(sd => <option key={sd.id} value={sd.id}>{sd.name}</option>)}
+                </select>
+              </div>
+              <div><label style={labelStyle}>From Date</label><input type="date" style={inputStyle} value={ledgerConfig.start_date} onChange={(e) => setLedgerConfig({...ledgerConfig, start_date: e.target.value})} /></div>
+              <div><label style={labelStyle}>To Date</label><input type="date" style={inputStyle} value={ledgerConfig.end_date} onChange={(e) => setLedgerConfig({...ledgerConfig, end_date: e.target.value})} /></div>
+            </div>
+
+            {ledgerData && (
+              <div style={{ background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', background: 'rgba(2, 132, 199, 0.1)' }}>
+                  <span style={{ fontWeight: '800', color: '#0284c7' }}>Opening Balance (Before Selected Period)</span>
+                  <span style={{ fontWeight: '900', color: '#0284c7' }}>{formatINR(ledgerData.openingBalance)}</span>
+                </div>
+                
+                <table style={{ width: '100%', textAlign: 'left', fontSize: '14px' }}>
+                  <thead style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <tr>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '12px' }}>Invoice Period</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '12px' }}>Invoice #</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'right' }}>Amount</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledgerData.periodInvoices.map(inv => (
+                      <tr key={inv.id} style={{ borderTop: '1px solid var(--border)' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--text-main)' }}>{new Date(inv.start_date).toLocaleDateString('en-GB')} - {new Date(inv.end_date).toLocaleDateString('en-GB')}</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{inv.invoice_no}</td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>{formatINR(inv.net_payout)}</td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: '800', background: inv.status === 'Paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: inv.status === 'Paid' ? '#10b981' : '#ef4444' }}>{inv.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {ledgerData.periodInvoices.length === 0 && <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No invoices generated in this period.</td></tr>}
+                  </tbody>
+                </table>
+
+                <div style={{ padding: '20px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', background: 'var(--bg-card)' }}>
+                  <span style={{ fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Outstanding Payable</span>
+                  <span style={{ fontWeight: '900', color: '#ef4444', fontSize: '18px' }}>{formatINR(ledgerData.totalPayable)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
         
         {/* LEFT: CONFIGURATION FORM */}
         <div style={{ flex: '1 1 350px' }}>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }} className="no-print">
+            <button onClick={() => setShowLedger(true)} style={{ flex: 1, background: '#0284c7', color: 'white', padding: '12px', borderRadius: '10px', border: 'none', fontWeight: '800', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(2, 132, 199, 0.2)' }}>
+              <BookOpen size={18} /> View Ledger
+            </button>
+          </div>
+
           <div style={cardStyle}>
             <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-main)', fontWeight: '800', fontSize: '16px' }}>
               <RefreshCw size={18} className={previewLoading ? "spin" : ""} color="#8b5cf6" /> 
@@ -241,12 +345,7 @@ const InvoiceManager = () => {
 
               <div>
                 <label style={labelStyle}>Gross Commission (₹)</label>
-                <input 
-                  type="number" 
-                  style={inputStyle}
-                  value={formData.gross_commission}
-                  onChange={(e) => setFormData({...formData, gross_commission: parseFloat(e.target.value) || 0})}
-                />
+                <input type="number" style={inputStyle} value={formData.gross_commission} onChange={(e) => setFormData({...formData, gross_commission: parseFloat(e.target.value) || 0})} />
               </div>
 
               {/* TOGGLES */}
@@ -266,22 +365,10 @@ const InvoiceManager = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button 
-                  onClick={handleSave}
-                  disabled={!formData.sub_distributor_id || !formData.gross_commission}
-                  style={{ flex: 1, background: '#8b5cf6', color: 'white', padding: '14px', borderRadius: '10px', border: 'none', fontWeight: '800', cursor: (!formData.sub_distributor_id || !formData.gross_commission) ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: (!formData.sub_distributor_id || !formData.gross_commission) ? 0.5 : 1 }}
-                >
+                <button onClick={handleSave} disabled={!formData.sub_distributor_id || !formData.gross_commission} style={{ flex: 1, background: '#8b5cf6', color: 'white', padding: '14px', borderRadius: '10px', border: 'none', fontWeight: '800', cursor: (!formData.sub_distributor_id || !formData.gross_commission) ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: (!formData.sub_distributor_id || !formData.gross_commission) ? 0.5 : 1 }}>
                   <Save size={18} /> {isEditing ? "UPDATE INVOICE" : "GENERATE"}
                 </button>
-
-                {isEditing && (
-                  <button 
-                    onClick={() => { setIsEditing(false); setEditingId(null); setFormData(initialFormState); }}
-                    style={{ flex: 0.5, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '14px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}
-                  >
-                    CANCEL
-                  </button>
-                )}
+                {isEditing && <button onClick={() => { setIsEditing(false); setEditingId(null); setFormData(initialFormState); }} style={{ flex: 0.5, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '14px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}>CANCEL</button>}
               </div>
             </div>
           </div>
@@ -291,103 +378,93 @@ const InvoiceManager = () => {
         <div style={{ flex: '2 1 600px' }}>
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }} className="no-print">
-            <button 
-              onClick={() => window.print()}
-              style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}
-            >
+            <button onClick={() => window.print()} style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
               <Printer size={18} /> Download / Print PDF
             </button>
           </div>
 
-          <div id="invoice-printable" className="invoice-container" style={paperStyle}>
+          {/* 🟢 REDESIGNED FOR PERFECT PRINTING */}
+          <div id="invoice-printable" style={paperStyle}>
             
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #f1f5f9', paddingBottom: '24px', marginBottom: '32px' }}>
-              <div>
-                <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#4f46e5', margin: 0, letterSpacing: '-0.5px' }}>VisionBridge Ventures</h2>
-                <p style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '4px 0 0 0' }}>(MF Distribution)</p>
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '24px', marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '38px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>VisionBridge Ventures</h1>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#64748b', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>(MF Distribution) — Commission Report</h3>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Invoiced To:</p>
+                <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.name || "---"}</h2>
+                <p style={{ fontSize: '14px', fontWeight: '700', color: '#64748b', margin: 0 }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.location || "Location Not Set"}</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>Invoice</h1>
-                <p style={{ fontSize: '14px', fontWeight: '700', color: '#64748b', margin: '4px 0 0 0' }}>#{formData.invoice_no}</p>
+              <div style={{ flex: 1, textAlign: 'right' }}>
+                <p style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Invoice Detail:</p>
+                <p style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>ID: #{formData.invoice_no}</p>
+                <p style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>Period: {formData.start_date || 'N/A'} <span style={{ color: '#cbd5e1', margin: '0 4px' }}>to</span> {formData.end_date || 'N/A'}</p>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Slab: {formData.slab_name}</p>
               </div>
             </div>
 
-            {/* Info Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '40px' }}>
-              <div>
-                <h4 style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' }}>Invoiced To:</h4>
-                <p style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.name || "---"}</p>
-                <p style={{ fontSize: '14px', fontWeight: '700', color: '#64748b', margin: '4px 0 0 0' }}>{subDistributors.find(sd => sd.id == formData.sub_distributor_id)?.location || "Location Not Set"}</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' }}>Period:</h4>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  {formData.start_date || 'N/A'} <span style={{ color: '#cbd5e1', margin: '0 8px' }}>to</span> {formData.end_date || 'N/A'}
-                </p>
-                <p style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', margin: '4px 0 0 0' }}>Slab: {formData.slab_name}</p>
+            {/* Tightened Table Width */}
+            <div style={{ width: '90%', margin: '0 auto', marginBottom: '40px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ textAlign: 'left', padding: '10px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Description</th>
+                    <th style={{ textAlign: 'center', padding: '10px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Metric</th>
+                    <th style={{ textAlign: 'right', padding: '10px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '14px 0', fontWeight: '800', color: '#0f172a', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>Gross Commission Received</td>
+                    <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>Self Declared</td>
+                    <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>{formatINR(formData.gross_commission)}</td>
+                  </tr>
+                  {formData.platform_applicable && (
+                    <tr>
+                      <td style={{ padding: '14px 0', fontWeight: '700', color: '#ef4444', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>(-) Platform Transaction Charges</td>
+                      <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>{formData.txn_count} txns @ ₹{formData.txn_rate}</td>
+                      <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.platformDeduction)}</td>
+                    </tr>
+                  )}
+                  {formData.ops_applicable && (
+                    <tr>
+                      <td style={{ padding: '14px 0', fontWeight: '700', color: '#ef4444', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>(-) Operational Expenses</td>
+                      <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
+                      <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.opsDeduction)}</td>
+                    </tr>
+                  )}
+                  <tr style={{ background: '#f8fafc' }}>
+                    <td style={{ padding: '14px 12px', fontWeight: '900', color: '#0f172a', fontSize: '13px' }}>Net Commission (Before TDS)</td>
+                    <td style={{ padding: '14px 12px' }}></td>
+                    <td style={{ padding: '14px 12px', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '14px' }}>{formatINR(totals.netCommission)}</td>
+                  </tr>
+                  {formData.tds_applicable && (
+                    <tr>
+                      <td style={{ padding: '14px 0', fontStyle: 'italic', fontWeight: '700', color: '#64748b', fontSize: '13px', borderBottom: '1px solid #f1f5f9' }}>(-) TDS Deduction</td>
+                      <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#64748b', fontSize: '11px', borderBottom: '1px solid #f1f5f9' }}>{formData.tds_rate_percent}% on Net</td>
+                      <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#64748b', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.tdsDeduction)}</td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td style={{ padding: '14px 0', fontStyle: 'italic', fontWeight: '700', color: '#0f172a', fontSize: '13px' }}>Previous Balance Carryforward</td>
+                    <td style={{ padding: '14px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '11px' }}>Pending Invoices</td>
+                    <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '14px' }}>+ {formatINR(formData.previous_balance)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '24px', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '20px 40px', borderRadius: '12px', textAlign: 'center', minWidth: '300px' }}>
+                <p style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px 0' }}>Final Net Payout</p>
+                <h2 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{formatINR(totals.netPayout)}</h2>
               </div>
             </div>
 
-            {/* Math Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '40px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ textAlign: 'left', padding: '12px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '12px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Metric</th>
-                  <th style={{ textAlign: 'right', padding: '12px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={{ padding: '16px 0', fontWeight: '800', color: '#0f172a', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>Gross Commission Received</td>
-                  <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>Self Declared</td>
-                  <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>{formatINR(formData.gross_commission)}</td>
-                </tr>
-                {formData.platform_applicable && (
-                  <tr>
-                    <td style={{ padding: '16px 0', fontWeight: '700', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>(-) Platform Transaction Charges</td>
-                    <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>{formData.txn_count} txns @ ₹{formData.txn_rate}</td>
-                    <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.platformDeduction)}</td>
-                  </tr>
-                )}
-                {formData.ops_applicable && (
-                  <tr>
-                    <td style={{ padding: '16px 0', fontWeight: '700', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>(-) Operational Expenses</td>
-                    <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
-                    <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.opsDeduction)}</td>
-                  </tr>
-                )}
-                <tr style={{ background: '#f8fafc' }}>
-                  <td style={{ padding: '16px 12px', fontWeight: '900', color: '#0f172a', fontSize: '14px' }}>Net Commission (Before TDS)</td>
-                  <td style={{ padding: '16px 12px' }}></td>
-                  <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '15px' }}>{formatINR(totals.netCommission)}</td>
-                </tr>
-                {formData.tds_applicable && (
-                  <tr>
-                    <td style={{ padding: '16px 0', fontStyle: 'italic', fontWeight: '700', color: '#64748b', fontSize: '14px', borderBottom: '1px solid #f1f5f9' }}>(-) TDS Deduction</td>
-                    <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#64748b', fontSize: '12px', borderBottom: '1px solid #f1f5f9' }}>{formData.tds_rate_percent}% on Net</td>
-                    <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#64748b', fontSize: '15px', borderBottom: '1px solid #f1f5f9' }}>- {formatINR(totals.tdsDeduction)}</td>
-                  </tr>
-                )}
-                <tr>
-                  <td style={{ padding: '16px 0', fontStyle: 'italic', fontWeight: '700', color: '#0f172a', fontSize: '14px' }}>Previous Balance Carryforward</td>
-                  <td style={{ padding: '16px 0', textAlign: 'center', fontWeight: '700', color: '#94a3b8', fontSize: '12px' }}>Pending Invoices</td>
-                  <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: '900', color: '#0f172a', fontSize: '15px' }}>+ {formatINR(formData.previous_balance)}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Final Amount */}
-            <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ background: '#4f46e5', color: 'white', padding: '24px 32px', borderRadius: '16px', minWidth: '300px', boxShadow: '0 10px 25px rgba(79, 70, 229, 0.2)' }}>
-                <p style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1.5px', opacity: 0.8, margin: '0 0 8px 0' }}>Final Net Payout</p>
-                <h2 style={{ fontSize: '36px', fontWeight: '900', margin: 0 }}>{formatINR(totals.netPayout)}</h2>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '60px', textAlign: 'center', fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: '1.6' }}>
-              This is a computer generated invoice and doesn't require signature. <br />
+            <div style={{ marginTop: '50px', textAlign: 'center', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: '1.6' }}>
+              This is a computer generated document and does not require a signature. <br />
               VisionBridge Ventures © {new Date().getFullYear()}
             </div>
           </div>
@@ -397,7 +474,6 @@ const InvoiceManager = () => {
       {/* RECENT INVOICES LIST */}
       <div className="no-print" style={{ ...cardStyle, marginTop: '40px' }}>
         <h3 style={{ marginBottom: '24px', color: 'var(--text-main)', fontWeight: '800', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recent Settlement History</h3>
-        
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
@@ -420,13 +496,7 @@ const InvoiceManager = () => {
                   </td>
                   <td style={{ padding: '16px', fontWeight: '900', color: '#8b5cf6' }}>{formatINR(inv.net_payout)}</td>
                   <td style={{ padding: '16px', textAlign: 'center' }}>
-                    <span style={{ 
-                      padding: '6px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px',
-                      background: inv.status === 'Paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                      color: inv.status === 'Paid' ? '#10b981' : '#ef4444'
-                    }}>
-                      {inv.status}
-                    </span>
+                    <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', background: inv.status === 'Paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: inv.status === 'Paid' ? '#10b981' : '#ef4444' }}>{inv.status}</span>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -435,12 +505,8 @@ const InvoiceManager = () => {
                           <CheckCircle size={14} /> MARK AS PAID
                         </button>
                       )}
-                      <button onClick={() => handleEdit(inv)} style={{ background: 'transparent', border: 'none', color: '#0284c7', cursor: 'pointer' }} title="Edit Invoice">
-                        <Edit size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(inv.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }} title="Delete Invoice">
-                        <Trash2 size={16} />
-                      </button>
+                      <button onClick={() => handleEdit(inv)} style={{ background: 'transparent', border: 'none', color: '#0284c7', cursor: 'pointer' }} title="Edit Invoice"><Edit size={16} /></button>
+                      <button onClick={() => handleDelete(inv.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }} title="Delete Invoice"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -458,30 +524,17 @@ const InvoiceManager = () => {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 0.5cm;
+            margin: 15mm;
           }
-          body * {
-            visibility: hidden;
-          }
-          #invoice-printable, #invoice-printable * {
-            visibility: visible;
-          }
+          body * { visibility: hidden; }
+          #invoice-printable, #invoice-printable * { visibility: visible; }
           #invoice-printable {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: auto;
-            transform: scale(0.95);
-            transform-origin: top left;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            position: absolute; left: 0; top: 0;
+            width: 100%; max-width: 190mm;
+            padding: 0 !important; margin: 0 auto !important;
+            box-shadow: none !important; border: none !important;
           }
-          .no-print {
-            display: none !important;
-          }
+          .no-print { display: none !important; }
         }
       `}</style>
     </div>

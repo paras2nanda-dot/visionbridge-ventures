@@ -21,7 +21,9 @@ router.get('/invoices', getInvoices);
 router.post('/invoices', createInvoice);
 router.put('/invoices/:id', updateInvoice);          // 🟢 NEW
 router.delete('/invoices/:id', deleteInvoice);       // 🟢 NEW
-router.patch('/invoices/:id/status', updateInvoiceStatus);
+
+// 🟢 CHANGED: Swapped PATCH to PUT to bypass your server's CORS restrictions
+router.put('/invoices/:id/status', updateInvoiceStatus);
 
 // 🟢 Invoice Preview Route 
 router.get('/:id/invoice-preview', getInvoicePreview);
