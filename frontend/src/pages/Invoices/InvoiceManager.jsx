@@ -365,9 +365,10 @@ const InvoiceManager = () => {
 
           <div id="invoice-printable" style={paperStyle}>
             
+            {/* BRAND HEADER: PROFESSIONAL BLUE */}
             <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '20px', marginBottom: '30px' }}>
-              <h1 style={{ fontSize: '42px', fontWeight: '900', color: '#0f172a', margin: '0 0 5px 0', letterSpacing: '-1px', textTransform: 'uppercase' }}>VisionBridge Ventures</h1>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#64748b', margin: 0, textTransform: 'uppercase', letterSpacing: '3px' }}>Commission Report</h3>
+              <h1 style={{ fontSize: '46px', fontWeight: '900', color: '#1e40af', margin: '0 0 5px 0', letterSpacing: '-1px', textTransform: 'uppercase' }}>VisionBridge Ventures</h1>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#475569', margin: 0, textTransform: 'uppercase', letterSpacing: '3px' }}>Commission Report</h3>
               <p style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', margin: '5px 0 0 0' }}>MUTUAL FUND DISTRIBUTION</p>
             </div>
 
@@ -386,10 +387,11 @@ const InvoiceManager = () => {
               </div>
             </div>
 
-            <div style={{ width: '85%', margin: '0 auto 40px auto' }}>
+            {/* FULL WIDTH TABLE (100%) */}
+            <div style={{ width: '100%', margin: '0 auto 40px auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid #0f172a' }}>
+                  <tr style={{ borderBottom: '2px solid #1e40af' }}>
                     <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase' }}>Description</th>
                     <th style={{ textAlign: 'center', padding: '12px 10px', fontSize: '12px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase' }}>Metric</th>
                     <th style={{ textAlign: 'right', padding: '12px 10px', fontSize: '12px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase' }}>Amount</th>
@@ -403,16 +405,16 @@ const InvoiceManager = () => {
                   </tr>
                   {formData.platform_applicable && (
                     <tr>
-                      <td style={{ padding: '16px 10px', fontWeight: '700', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #e2e8f0' }}>(-) Platform Transaction Charges</td>
-                      <td style={{ padding: '16px 10px', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '12px', borderBottom: '1px solid #e2e8f0' }}>{formData.txn_count} txns @ ₹{formData.txn_rate}</td>
-                      <td style={{ padding: '16px 10px', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '15px', borderBottom: '1px solid #e2e8f0' }}>- {formatINR(totals.platformDeduction)}</td>
+                      <td style={{ padding: '16px 10px', fontWeight: '700', color: '#475569', fontSize: '14px', borderBottom: '1px solid #e2e8f0' }}>(-) Platform Transaction Charges</td>
+                      <td style={{ padding: '16px 10px', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '12px', borderBottom: '1px solid #e2e8f0' }}>{formData.txn_count} txns @ ₹{formData.txn_rate}</td>
+                      <td style={{ padding: '16px 10px', textAlign: 'right', fontWeight: '900', color: '#475569', fontSize: '15px', borderBottom: '1px solid #e2e8f0' }}>- {formatINR(totals.platformDeduction)}</td>
                     </tr>
                   )}
                   {formData.ops_applicable && (
                     <tr>
-                      <td style={{ padding: '16px 10px', fontWeight: '700', color: '#ef4444', fontSize: '14px', borderBottom: '1px solid #e2e8f0' }}>(-) Operational Expenses</td>
-                      <td style={{ padding: '16px 10px', textAlign: 'center', fontWeight: '700', color: '#ef4444', fontSize: '12px', borderBottom: '1px solid #e2e8f0' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
-                      <td style={{ padding: '16px 10px', textAlign: 'right', fontWeight: '900', color: '#ef4444', fontSize: '15px', borderBottom: '1px solid #e2e8f0' }}>- {formatINR(totals.opsDeduction)}</td>
+                      <td style={{ padding: '16px 10px', fontWeight: '700', color: '#475569', fontSize: '14px', borderBottom: '1px solid #e2e8f0' }}>(-) Operational Expenses</td>
+                      <td style={{ padding: '16px 10px', textAlign: 'center', fontWeight: '700', color: '#475569', fontSize: '12px', borderBottom: '1px solid #e2e8f0' }}>{formData.client_count} clients ({formData.duration_months} mo)</td>
+                      <td style={{ padding: '16px 10px', textAlign: 'right', fontWeight: '900', color: '#475569', fontSize: '15px', borderBottom: '1px solid #e2e8f0' }}>- {formatINR(totals.opsDeduction)}</td>
                     </tr>
                   )}
                   <tr style={{ background: '#f8fafc' }}>
@@ -436,14 +438,15 @@ const InvoiceManager = () => {
               </table>
             </div>
 
+            {/* PAYOUT BOX: PROFESSIONAL GREEN */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-              <div style={{ border: '2px solid #e2e8f0', background: '#f8fafc', padding: '24px 60px', borderRadius: '12px', textAlign: 'center', minWidth: '350px' }}>
-                <p style={{ fontSize: '12px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 10px 0' }}>Final Net Payout</p>
-                <h2 style={{ fontSize: '38px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{formatINR(totals.netPayout)}</h2>
+              <div style={{ border: '2px solid #e2e8f0', background: '#f0fdf4', padding: '24px 60px', borderRadius: '16px', textAlign: 'center', minWidth: '350px' }}>
+                <p style={{ fontSize: '12px', fontWeight: '900', color: '#15803d', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 10px 0' }}>Final Net Payout</p>
+                <h2 style={{ fontSize: '42px', fontWeight: '900', color: '#15803d', margin: 0 }}>{formatINR(totals.netPayout)}</h2>
               </div>
             </div>
 
-            <div style={{ marginTop: '60px', textAlign: 'center', fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: '1.8' }}>
+            <div style={{ marginTop: '70px', textAlign: 'center', fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: '1.8' }}>
               This is a computer generated document and does not require a signature. <br />
               VisionBridge Ventures © {new Date().getFullYear()}
             </div>
@@ -494,7 +497,6 @@ const InvoiceManager = () => {
             margin: 0;
           }
           
-          /* CRITICAL: Force the browser to reset layout and ignore sidebar width */
           body, html, #root, .print-root {
             margin: 0 !important;
             padding: 0 !important;
@@ -502,24 +504,21 @@ const InvoiceManager = () => {
             background: white !important;
           }
 
-          /* Hide ALL navigation and non-invoice elements */
           body * {
             visibility: hidden;
             margin-left: 0 !important;
           }
 
-          /* Unhide ONLY the invoice printable area */
           #invoice-printable, #invoice-printable * {
             visibility: visible;
           }
 
-          /* Lock the invoice to the TOP LEFT corner to prevent clipping */
           #invoice-printable {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 210mm !important; /* Exact A4 Width */
-            height: 297mm !important; /* Exact A4 Height */
+            width: 210mm !important; 
+            height: 297mm !important;
             padding: 20mm !important;
             margin: 0 !important;
             box-shadow: none !important;
