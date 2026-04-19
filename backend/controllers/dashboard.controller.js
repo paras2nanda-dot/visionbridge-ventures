@@ -301,3 +301,55 @@ export const getClientDashboardStats = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * 📸 SNAPSHOT ENGINE: CAPTURING HISTORY FOR TREND CHARTS
+ */
+export const triggerMonthlySnapshot = async (req, res) => {
+  try {
+    const statsQuery = `
+      SELECT 
+        (SELECT COALESCE(SUM(amount::NUMERIC), 0) FROM sips WHERE LOWER(status) = 'active') as sip_book,
+        (SELECT COALESCE(SUM(total_current_value), 0) FROM mf_schemes) as market_value,
+        (
+          WITH scheme_invested AS (
+            SELECT 
+              COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) +
+              COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as inv
+            FROM mf_schemes m
+          )
+          SELECT SUM(inv) FROM scheme_invested
+        ) as invested_aum,
+        (
+          SELECT SUM(total_current_value * (COALESCE(commission_rate, 0.8) / 100) / 12) FROM mf_schemes
+        ) as monthly_comm
+    `;
+    
+    const result = await pool.query(statsQuery);
+    const { sip_book, market_value, invested_aum, monthly_comm } = result.rows[0];
+
+    // Check if a snapshot for today already exists to prevent duplicates
+    const checkDup = await pool.query("SELECT id FROM monthly_analytics WHERE snapshot_date = CURRENT_DATE");
+    
+    if (checkDup.rows.length > 0) {
+      // Update existing snapshot for today
+      await pool.query(`
+        UPDATE monthly_analytics 
+        SET total_invested = $1, total_market_value = $2, sip_book_amount = $3, actual_commission = $4
+        WHERE snapshot_date = CURRENT_DATE
+      `, [invested_aum, market_value, sip_book, monthly_comm]);
+    } else {
+      // Insert new snapshot
+      await pool.query(`
+        INSERT INTO monthly_analytics 
+        (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
+        VALUES (CURRENT_DATE, $1, $2, $3, $4)
+      `, [invested_aum, market_value, sip_book, monthly_comm]);
+    }
+
+    res.json({ success: true, message: "Snapshot captured successfully!" });
+  } catch (err) {
+    console.error("Snapshot Error:", err.message);
+    res.status(500).json({ error: "Failed to capture snapshot" });
+  }
+};

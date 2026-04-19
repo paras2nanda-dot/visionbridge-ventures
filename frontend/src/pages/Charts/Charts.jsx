@@ -4,13 +4,15 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, LineChart, Line 
 } from 'recharts';
-import { AlertTriangle, PieChart as PieChartIcon, TrendingUp, Activity, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, PieChart as PieChartIcon, TrendingUp, Activity, CheckCircle2, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const Charts = () => {
   const [charts, setCharts] = useState(null);
   const [upcomingClosures, setUpcomingClosures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [isSnapshotting, setIsSnapshotting] = useState(false); // 🟢 NEW STATE
 
   const COLORS = ['#0284c7', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
 
@@ -19,7 +21,7 @@ const Charts = () => {
     return new Intl.NumberFormat('en-IN').format(val);
   };
 
-  useEffect(() => {
+  const fetchData = () => {
     const token = sessionStorage.getItem("token");
     const headers = {
       'Authorization': `Bearer ${token}`,
@@ -55,15 +57,45 @@ const Charts = () => {
       console.error("Data Fetch Error:", err);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
+
+  // 🟢 NEW: SNAPSHOT TRIGGER LOGIC
+  const handleCaptureSnapshot = async () => {
+    const token = sessionStorage.getItem("token");
+    if (!window.confirm("Capture current AUM & SIP data for monthly trends? This will create a data point for today.")) return;
+    
+    setIsSnapshotting(true);
+    try {
+      const res = await fetch('https://visionbridge-backend.onrender.com/api/dashboard/snapshot', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("✅ History Snapshot Captured!");
+        fetchData(); // Refresh charts to show the new point
+      } else {
+        toast.error("Failed to capture snapshot");
+      }
+    } catch (err) {
+      toast.error("Connection Error");
+    } finally {
+      setIsSnapshotting(false);
+    }
+  };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)' }}>SYNCING EXECUTIVE ANALYTICS...</div>;
   if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: '#ef4444' }}>Session Expired. Please log in again.</div>;
 
-  // 🟢 ZOOM-SAFE LABEL LOGIC
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
     const RADIAN = Math.PI / 180;
-    // Lowered offset from 25 to 15 to keep it inside the view during zoom
     const radius = outerRadius + 15; 
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -85,12 +117,11 @@ const Charts = () => {
   const renderDonut = (data = []) => {
     return (
       <ResponsiveContainer width="100%" height={350}>
-        {/* 🟢 ADDED MARGIN: Prevents labels from hitting the edges of the box */}
         <PieChart margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
           <Pie 
             data={data} 
             innerRadius={55} 
-            outerRadius={75} // 🟢 SLIGHTLY SMALLER: Creates more white space for labels
+            outerRadius={75} 
             paddingAngle={5} 
             dataKey="value"
             labelLine={{ stroke: 'var(--text-muted)', strokeWidth: 1 }}
@@ -125,7 +156,7 @@ const Charts = () => {
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
       
-      {/* 🔴 ALERT: UPCOMING SIP CLOSURES */}
+      {/* UPCOMING SIP CLOSURES */}
       <div style={{ marginBottom: '48px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
           {sectionHeader("Upcoming SIP Closures (Next 60 Days)", "#ef4444", AlertTriangle)}
@@ -183,7 +214,7 @@ const Charts = () => {
         )}
       </div>
 
-      {/* 🟦 CATEGORY 1: DEMOGRAPHICS */}
+      {/* CATEGORY 1: DEMOGRAPHICS */}
       {sectionHeader("Client Demographics", "#0284c7", PieChartIcon)}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '48px' }}>
         <div style={chartCardStyle}><p style={chartLabel}>Added By</p>{renderDonut(charts.category1?.addedBy)}</div>
@@ -194,7 +225,7 @@ const Charts = () => {
         <div style={chartCardStyle}><p style={chartLabel}>Age Buckets</p>{renderDonut(charts.category1?.ageBucketsCount)}</div>
       </div>
 
-      {/* 🟩 CATEGORY 2: AUM SPLITS */}
+      {/* CATEGORY 2: AUM SPLITS */}
       {sectionHeader("AUM-Based Analytics", "#10b981", Activity)}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', marginBottom: '48px' }}>
         <div style={chartCardStyle}><p style={chartLabel}>SIP AUM vs Transaction AUM</p>{renderDonut(charts.category2?.sipVsTrans)}</div>
@@ -202,7 +233,38 @@ const Charts = () => {
       </div>
 
       {/* 📈 GROWTH PERFORMANCE TRENDS */}
-      {sectionHeader("Growth Performance Trends", "#8b5cf6", TrendingUp)}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
+        {sectionHeader("Growth Performance Trends", "#8b5cf6", TrendingUp)}
+        
+        {/* 🟢 NEW: Capture Snapshot Button */}
+        <button 
+          onClick={handleCaptureSnapshot}
+          disabled={isSnapshotting}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: '#0F172A',
+            color: 'white',
+            borderRadius: '10px',
+            fontWeight: '700',
+            fontSize: '13px',
+            cursor: isSnapshotting ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+            border: 'none',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+          }}
+        >
+          {isSnapshotting ? (
+            <RefreshCw size={16} className="spin" />
+          ) : (
+            <Activity size={16} />
+          )}
+          {isSnapshotting ? "CAPTURING..." : "CAPTURE MONTHLY SNAPSHOT"}
+        </button>
+      </div>
+
       <div style={{ ...chartCardStyle, marginBottom: '24px' }}>
         <p style={chartLabel}>Invested AUM vs Market Value AUM</p>
         <ResponsiveContainer width="100%" height={400}>
@@ -259,6 +321,8 @@ const Charts = () => {
       </div>
 
       <style>{`
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
       `}</style>
