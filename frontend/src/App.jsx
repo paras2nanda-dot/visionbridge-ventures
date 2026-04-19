@@ -14,7 +14,8 @@ import MFSchemes from "./pages/MFSchemes";
 import Transactions from "./pages/Transactions";
 import Sips from "./pages/Sips";
 import Reports from "./pages/Reports";
-import SubDistributors from "./pages/SubDistributors"; // 🟢 NEW IMPORT
+import SubDistributors from "./pages/SubDistributors"; 
+import InvoiceManager from "./pages/Invoices/InvoiceManager"; // 🟢 NEW IMPORT
 import Login from "./pages/Login";
 
 const ProtectedRoute = ({ children }) => {
@@ -120,7 +121,8 @@ function App() {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/sips" element={<Sips />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/sub-distributors" element={<SubDistributors />} /> {/* 🟢 NEW ROUTE */}
+          <Route path="/sub-distributors" element={<SubDistributors />} />
+          <Route path="/invoices" element={<InvoiceManager />} /> {/* 🟢 NEW ROUTE */}
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
