@@ -334,7 +334,7 @@ const ClientDashboard = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '24px', alignItems: 'start' }}>
                     
-                    {/* Expandable Table (Requirement 7-8) */}
+                    {/* 🟢 RESTORED: Expandable Table (Requirement 7-8) */}
                     <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                             <thead style={{ background: 'var(--bg-main)' }}>
@@ -342,6 +342,7 @@ const ClientDashboard = () => {
                                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Member</th>
                                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Role</th>
                                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Age</th>
+                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Monthly SIP</th> {/* 🟢 Restored Header */}
                                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Invested AUM</th>
                                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>% Share</th>
                                 </tr>
@@ -364,6 +365,7 @@ const ClientDashboard = () => {
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '16px', textAlign: 'center', fontWeight: '700' }}>{member.age || '-'}</td>
+                                                <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>₹{formatINR(member.summary?.totalSIP)}</td> {/* 🟢 Restored Body Cell */}
                                                 <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800' }}>₹{formatINR(member.summary?.totalAUM)}</td>
                                                 <td style={{ padding: '16px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>
                                                     {familyTotalAUM > 0 ? ((member.summary?.totalAUM / familyTotalAUM) * 100).toFixed(1) : '0'}%
@@ -373,6 +375,7 @@ const ClientDashboard = () => {
                                             {isExpanded && member.portfolio?.map((scheme, sidx) => (
                                                 <tr key={`scheme-${sidx}`} style={{ background: 'var(--bg-main)', fontSize: '12px' }}>
                                                     <td colSpan="3" style={{ padding: '10px 16px 10px 40px', color: 'var(--text-muted)', fontWeight: '600' }}>{scheme.scheme_name}</td>
+                                                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>₹{formatINR(scheme.sip_amount)}</td> {/* 🟢 Restored Scheme SIP */}
                                                     <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700' }}>₹{formatINR(scheme.invested_amount)}</td>
                                                     <td style={{ padding: '10px 16px', textAlign: 'right', color: 'var(--text-muted)' }}>
                                                         {familyTotalAUM > 0 ? ((safeNum(scheme.invested_amount) / familyTotalAUM) * 100).toFixed(1) : '0'}%
