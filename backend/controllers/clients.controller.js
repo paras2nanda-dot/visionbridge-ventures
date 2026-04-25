@@ -80,13 +80,44 @@ export const createClient = async (req, res) => {
     const result = await dbClient.query(query, values);
     const newClient = result.rows[0];
 
+    // --- 🟢 REVIEW MODULE INTEGRATION (PHASE-1) ---
+
+    // 1. Auto-schedule Client Review: 30 days after onboarding date
+    const clientReviewDate = new Date(newClient.onboarding_date || new Date());
+    clientReviewDate.setDate(clientReviewDate.getDate() + 30);
+
+    await dbClient.query(
+        `INSERT INTO review_schedules (entity_type, client_id, next_review_date) 
+         VALUES ('CLIENT', $1, $2)`,
+        [newClient.id, clientReviewDate]
+    );
+
+    // 2. Auto-schedule Family Review: Triggered when the 2nd member is added
+    if (finalFamilyId) {
+        const countRes = await dbClient.query("SELECT COUNT(*) FROM clients WHERE family_id = $1", [finalFamilyId]);
+        const memberCount = parseInt(countRes.rows[0].count);
+
+        if (memberCount === 2) {
+            const familyReviewDate = new Date();
+            familyReviewDate.setDate(familyReviewDate.getDate() + 30);
+            
+            // We use ON CONFLICT to prevent duplicate schedules for the same family
+            await dbClient.query(
+                `INSERT INTO review_schedules (entity_type, family_id, next_review_date) 
+                 VALUES ('FAMILY', $1, $2)
+                 ON CONFLICT (family_id) DO NOTHING`,
+                [finalFamilyId, familyReviewDate]
+            );
+        }
+    }
+
     await dbClient.query('COMMIT');
 
     await logActivity(
         username, 
         'CREATE', 
         newClient.full_name, 
-        `✨ New client record established for ${newClient.full_name} (${newClient.client_code}). Joined Family ID: ${finalFamilyId}`,
+        `✨ New client record established for ${newClient.full_name} (${newClient.client_code}). Review cycle initialized.`,
         null, 
         newClient
     );
@@ -115,7 +146,7 @@ export const updateClient = async (req, res) => {
     const dobValue = c.date_of_birth || c.dob || null;
     const cleanIncome = c.monthly_income?.toString().replace(/,/g, '') || null;
 
-    // 🟢 Requirement: If user is HEAD, they can rename the family master record
+    // Requirement: If user is HEAD, they can rename the family master record
     if (c.family_role === 'HEAD' && c.family_name && c.family_id) {
         await dbClient.query(
           'UPDATE families SET family_name = $1 WHERE id = $2',
@@ -154,6 +185,25 @@ export const updateClient = async (req, res) => {
     const result = await dbClient.query(query, values);
     const newData = result.rows[0];
 
+    // --- 🟢 REVIEW MODULE INTEGRATION (PHASE-1) ---
+    // If family was changed and user is now the 2nd member, trigger family review scheduling
+    if (newData.family_id && oldData.family_id !== newData.family_id) {
+        const countRes = await dbClient.query("SELECT COUNT(*) FROM clients WHERE family_id = $1", [newData.family_id]);
+        const memberCount = parseInt(countRes.rows[0].count);
+
+        if (memberCount === 2) {
+            const familyReviewDate = new Date();
+            familyReviewDate.setDate(familyReviewDate.getDate() + 30);
+            
+            await dbClient.query(
+                `INSERT INTO review_schedules (entity_type, family_id, next_review_date) 
+                 VALUES ('FAMILY', $1, $2)
+                 ON CONFLICT (family_id) DO NOTHING`,
+                [newData.family_id, familyReviewDate]
+            );
+        }
+    }
+
     await dbClient.query('COMMIT');
     const detailMsg = `Updated profile and family role (${newData.family_role}) for ${newData.full_name}.`;
     await logActivity(username, 'UPDATE', newData.full_name, detailMsg, oldData, newData);
@@ -189,7 +239,7 @@ export const deleteClient = async (req, res) => {
     );
 
     if (remainingRes.rows.length > 0) {
-      // 🟢 Requirement: Promote oldest member if Head was deleted
+      // Requirement: Promote oldest member if Head was deleted
       if (family_role === 'HEAD') {
         const oldestMemberId = remainingRes.rows[0].id;
         await dbClient.query(
@@ -198,7 +248,7 @@ export const deleteClient = async (req, res) => {
         );
       }
     } else {
-      // 🟢 Requirement: No members left, delete the family master record
+      // Requirement: No members left, delete the family master record
       await dbClient.query('DELETE FROM families WHERE id = $1', [family_id]);
     }
 

@@ -22,7 +22,7 @@ const calculateAge = (dobString) => {
 };
 
 /**
- * 🟢 NEW: TOTAL BUSINESS AUM (Fixes the Export Error)
+ * 🟢 TOTAL BUSINESS AUM
  * Provides the global denominator for "Family % of Total Business" calculation
  */
 export const getBusinessTotalAUM = async (req, res) => {
@@ -78,7 +78,7 @@ export const getBusinessStats = async (req, res) => {
     const basicRes = await pool.query(statsQuery);
     const basic = basicRes.rows[0];
 
-    // 2. AUM & Commission Calculations (Cost-Basis vs Market-Value Basis)
+    // 2. AUM & Commission Calculations
     const aumQuery = `
       WITH scheme_calc AS (
         SELECT 
@@ -116,8 +116,8 @@ export const getBusinessStats = async (req, res) => {
          OR (date_of_birth IS NOT NULL AND TRIM(date_of_birth::text) != '')
     `);
     
-    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    today.setHours(0, 0, 0, 0);
+    const todayRes = await pool.query("SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today");
+    const today = new Date(todayRes.rows[0].today);
 
     let upcomingBirthdays = [];
     clientsRes.rows.forEach(client => {
@@ -147,6 +147,23 @@ export const getBusinessStats = async (req, res) => {
       ORDER BY s.end_date ASC
     `);
 
+    // 🟢 5. 🔍 REVIEW MODULE STATS (Requirement: Overdue & Due in 7 days)
+    const reviewStatsRes = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE next_review_date < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date) as overdue,
+        COUNT(*) FILTER (WHERE next_review_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date 
+                         AND next_review_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '7 days') as due_7d
+      FROM review_schedules rs
+      WHERE rs.status = 'PENDING'
+      AND (
+        rs.entity_type = 'CLIENT' 
+        OR (
+          rs.entity_type = 'FAMILY' 
+          AND (SELECT COUNT(*) FROM clients WHERE family_id = rs.family_id AND is_active = true) >= 2
+        )
+      )
+    `);
+
     res.json({
       total_clients: basic.total_clients,
       total_active_clients: basic.total_active_clients,
@@ -161,7 +178,8 @@ export const getBusinessStats = async (req, res) => {
       comm_mkt_monthly: Number(aum.comm_mkt_annual) / 12,
       new_clients_30d: basic.new_clients_30d,
       upcomingBirthdays: upcomingBirthdays,
-      sipsEndingSoon: sipsEndingRes.rows 
+      sipsEndingSoon: sipsEndingRes.rows,
+      review_stats: reviewStatsRes.rows[0] // 🟢 RESTORED/ADDED
     });
   } catch (err) {
     console.error("❌ Business Stats Error:", err.message);
@@ -174,7 +192,6 @@ export const getBusinessStats = async (req, res) => {
  */
 export const getLeaderboardsStats = async (req, res) => {
   try {
-    // 1. Get Total Invested AUM
     const totalAumRes = await pool.query(`
       WITH txn_sum AS (
         SELECT COALESCE(SUM(CASE 
@@ -190,7 +207,6 @@ export const getLeaderboardsStats = async (req, res) => {
     `);
     const total_invested_aum = Number(totalAumRes.rows[0].total_invested_aum) || 0;
 
-    // 2. Top 5 Funds
     const topFundsRes = await pool.query(`
       WITH fund_exposure AS (
         SELECT 
@@ -215,7 +231,6 @@ export const getLeaderboardsStats = async (req, res) => {
       LIMIT 5
     `);
 
-    // 3. Top 10 Clients
     const topClientsRes = await pool.query(`
       WITH client_exposure AS (
         SELECT 
@@ -241,7 +256,6 @@ export const getLeaderboardsStats = async (req, res) => {
       LIMIT 10
     `);
 
-    // 4. Top 5 Sub Distributors (JOIN with sub_distributors table)
     const topSourcesRes = await pool.query(`
       WITH source_exposure AS (
         SELECT 
@@ -284,7 +298,7 @@ export const getLeaderboardsStats = async (req, res) => {
 };
 
 /**
- * 👤 CLIENT DASHBOARD LOGIC (Augmented with Family aggregation)
+ * 👤 CLIENT DASHBOARD LOGIC
  */
 export const getClientDashboardStats = async (req, res) => {
   const { id } = req.params;
@@ -295,7 +309,6 @@ export const getClientDashboardStats = async (req, res) => {
     const client = clientRes.rows[0];
     const actualDob = client.dob || client.date_of_birth;
 
-    // Standard Portfolio Query used for both individual and family members
     const fetchPortfolio = async (clientId) => {
         const query = `
           SELECT m.scheme_name, m.large_cap, m.mid_cap, m.small_cap, m.debt_allocation, m.gold_allocation,
@@ -322,8 +335,17 @@ export const getClientDashboardStats = async (req, res) => {
       [id]
     );
 
-    // Fetch Family Member Data if applicable
+    // 🟢 REVIEW SCHEDULE & HISTORY
+    const reviewSchedule = await pool.query("SELECT * FROM review_schedules WHERE client_id = $1", [id]);
+    const reviewHistory = await pool.query(
+      "SELECT * FROM review_logs WHERE entity_type = 'CLIENT' AND entity_id = $1 ORDER BY review_date DESC", 
+      [id]
+    );
+
     let familyMembers = [];
+    let familyReviewSchedule = null;
+    let familyReviewHistory = [];
+
     if (client.family_id) {
         const membersRes = await pool.query(`
             SELECT id, full_name, family_role, dob, date_of_birth, nominee_name 
@@ -342,6 +364,15 @@ export const getClientDashboardStats = async (req, res) => {
                 portfolio: mPortfolio
             });
         }
+
+        // 🟢 FAMILY REVIEW DATA
+        const famReviewSched = await pool.query("SELECT * FROM review_schedules WHERE family_id = $1", [client.family_id]);
+        familyReviewSchedule = famReviewSched.rows[0] || null;
+        const famReviewHist = await pool.query(
+          "SELECT * FROM review_logs WHERE entity_type = 'FAMILY' AND entity_id = $1 ORDER BY review_date DESC", 
+          [client.family_id]
+        );
+        familyReviewHistory = famReviewHist.rows;
     }
 
     res.json({
@@ -349,7 +380,11 @@ export const getClientDashboardStats = async (req, res) => {
       summary: { totalAUM, totalSipBook, sipCount: portfolio.filter(r => Number(r.sip_amount) > 0).length },
       portfolio: portfolio.map(r => ({ ...r, percentage: totalAUM > 0 ? ((Number(r.invested_amount) / totalAUM) * 100).toFixed(1) : 0 })),
       alerts: alertRes.rows[0].count,
-      familyMembers
+      familyMembers,
+      review_schedule: reviewSchedule.rows[0] || null,
+      review_history: reviewHistory.rows,
+      family_review_schedule: familyReviewSchedule,
+      family_review_history: familyReviewHistory
     });
   } catch (err) {
     console.error("❌ Client Dashboard Error:", err.message);
@@ -358,7 +393,7 @@ export const getClientDashboardStats = async (req, res) => {
 };
 
 /**
- * 📸 SNAPSHOT ENGINE: CAPTURING HISTORY FOR TREND CHARTS
+ * 📸 SNAPSHOT ENGINE
  */
 export const triggerMonthlySnapshot = async (req, res) => {
   try {

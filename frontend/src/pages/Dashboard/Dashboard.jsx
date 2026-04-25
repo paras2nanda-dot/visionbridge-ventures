@@ -1,14 +1,16 @@
-import React, { useState, useRef } from 'react';
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect, useRef } from 'react';
 import BusinessDashboard from './BusinessDashboard';
 import ClientDashboard from './ClientDashboard';
-import LeaderboardsDashboard from './LeaderboardsDashboard'; // 🟢 NEW IMPORT
+import LeaderboardsDashboard from './LeaderboardsDashboard'; 
+import api from '../../services/api'; // 🟢 Added for Review Indicators
 
-import { Briefcase, Users, Trophy } from 'lucide-react'; // 🟢 Added Trophy icon
+import { Briefcase, Users, Trophy, AlertCircle } from 'lucide-react'; 
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
+  const [reviewAlert, setReviewAlert] = useState(0); // 🟢 Tracks Overdue/Urgent Reviews
   
-  // 🟢 Added 'leaderboards' to the swipe order
   const tabOrder = ['business', 'client', 'leaderboards']; 
   
   const touchStartX = useRef(null);
@@ -17,10 +19,24 @@ const Dashboard = () => {
   const tabRefs = {
     business: useRef(null),
     client: useRef(null),
-    leaderboards: useRef(null) // 🟢 Added ref for the new tab
+    leaderboards: useRef(null) 
   };
 
   const minSwipeDistance = 50;
+
+  // 🟢 FETCH REVIEW INDICATORS (Requirement: Dashboard Indicators)
+  useEffect(() => {
+    const fetchReviewStats = async () => {
+        try {
+            const res = await api.get('/dashboard/reviews/stats');
+            // Alert if there are any overdue reviews
+            setReviewAlert(parseInt(res.data.overdue) || 0);
+        } catch (err) {
+            console.error("Review Stats Fetch Error:", err);
+        }
+    };
+    fetchReviewStats();
+  }, []);
 
   const switchTab = (newTab) => {
     setActiveTab(newTab);
@@ -79,7 +95,8 @@ const Dashboard = () => {
     alignItems: 'center',
     gap: '8px',
     whiteSpace: 'nowrap', 
-    flexShrink: 0 
+    flexShrink: 0,
+    position: 'relative' // 🟢 Needed for notification badge
   });
 
   return (
@@ -96,6 +113,17 @@ const Dashboard = () => {
           border-radius: 0 !important;
         } 
         .dashboard-tabs button:hover { color: #0284c7; }
+        
+        .tab-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px var(--bg-main);
+        }
       `}</style>
       
       <div 
@@ -119,11 +147,11 @@ const Dashboard = () => {
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
           <Briefcase size={18} /> Business Analytics
+          {reviewAlert > 0 && <span className="tab-badge" title={`${reviewAlert} Reviews Overdue`}></span>}
         </button>
         <button ref={tabRefs.client} style={tabStyle('client')} onClick={(e) => handleTabClick(e, 'client')}>
           <Users size={18} /> Client Insights
         </button>
-        {/* 🟢 NEW LEADERBOARDS TAB */}
         <button ref={tabRefs.leaderboards} style={tabStyle('leaderboards')} onClick={(e) => handleTabClick(e, 'leaderboards')}>
           <Trophy size={18} /> Leaderboards
         </button>
@@ -137,7 +165,7 @@ const Dashboard = () => {
       >
         {activeTab === 'business' && <BusinessDashboard />}
         {activeTab === 'client' && <ClientDashboard />}
-        {activeTab === 'leaderboards' && <LeaderboardsDashboard />} {/* 🟢 NEW COMPONENT RENDERED HERE */}
+        {activeTab === 'leaderboards' && <LeaderboardsDashboard />} 
       </div>
     </div>
   );

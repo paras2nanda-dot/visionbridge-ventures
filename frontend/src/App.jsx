@@ -16,6 +16,8 @@ import Sips from "./pages/Sips";
 import Reports from "./pages/Reports";
 import SubDistributors from "./pages/SubDistributors"; 
 import Login from "./pages/Login";
+// 🟢 NEW IMPORT FOR REVIEW MODULE
+import Reviews from "./pages/Reviews";
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = sessionStorage.getItem("username");
@@ -121,6 +123,8 @@ function App() {
           <Route path="/sips" element={<Sips />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/sub-distributors" element={<SubDistributors />} />
+          {/* 🟢 NEW ROUTE FOR REVIEWS */}
+          <Route path="/reviews" element={<Reviews />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

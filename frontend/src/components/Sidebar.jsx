@@ -14,7 +14,8 @@ import {
   Settings, 
   LogOut,
   TrendingUp,
-  Handshake
+  Handshake,
+  CalendarCheck // 🟢 NEW ICON FOR REVIEWS
 } from 'lucide-react';
 
 const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
@@ -28,6 +29,8 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
     { name: 'Clients Database', path: '/clients', icon: <Users size={20} /> },
     { name: 'Sub-Distributors', path: '/sub-distributors', icon: <Handshake size={20} /> },
     { name: 'SIP Tracker', path: '/sips', icon: <Repeat size={20} /> },
+    // 🟢 NEW: CLIENT REVIEWS LINK
+    { name: 'Client Reviews', path: '/reviews', icon: <CalendarCheck size={20} /> },
     { name: 'Transactions', path: '/transactions', icon: <ArrowLeftRight size={20} /> },
     { name: 'MF Schemes', path: '/schemes', icon: <FolderOpen size={20} /> },
     { name: 'Charts & Analytics', path: '/charts', icon: <LineChart size={20} /> }, 
@@ -95,6 +98,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             color: #0284c7;
             border-left: 4px solid #0284c7;
             font-weight: 900;
+            font-size: 15px;
           }
 
           .sidebar-action-btn {

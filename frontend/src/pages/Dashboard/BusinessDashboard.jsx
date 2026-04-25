@@ -2,7 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api'; 
 import { toast } from 'react-toastify';
-import { Users, Wallet, TrendingUp, BarChart3, CircleDollarSign, Cake } from 'lucide-react';
+// 🟢 ADDED AlertTriangle and Clock for Review Module
+import { 
+  Users, Wallet, TrendingUp, BarChart3, 
+  CircleDollarSign, Cake, AlertTriangle, Clock 
+} from 'lucide-react';
 
 const BusinessDashboard = () => {
   const [data, setData] = useState(null);
@@ -38,16 +42,15 @@ const BusinessDashboard = () => {
     }}>
       <div style={{ 
         position: 'absolute', top: '24px', right: '24px', 
-        color: '#0284c7', 
-        background: 'rgba(2, 132, 199, 0.08)',
+        color: figureColor || '#0284c7', 
+        background: figureColor ? `${figureColor}15` : 'rgba(2, 132, 199, 0.08)',
         width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px'
       }}>
         {icon}
       </div>
 
       <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', letterSpacing: '0.3px' }}>
-        {/* ✅ Fixed alignment of pulse dot */}
-        {pulse && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', marginRight: '8px', boxShadow: '0 0 8px #10b981', flexShrink: 0 }}></span>}
+        {pulse && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: figureColor || '#10b981', marginRight: '8px', boxShadow: `0 0 8px ${figureColor || '#10b981'}`, flexShrink: 0 }}></span>}
         <span style={{ display: 'inline-flex', alignItems: 'center' }}>{label}</span>
       </div>
       
@@ -62,17 +65,38 @@ const BusinessDashboard = () => {
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
       
-      {/* 🚀 Unified Grid: Flows naturally to 4 columns on desktop, spacing out the 10 metrics */}
+      {/* 🚀 Unified Grid: Flows naturally to 4 columns on desktop */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+        
+        {/* 🟢 NEW: REVIEW MODULE CARDS (Requirement: Overdue & Due Soon) */}
+        <MetricCard 
+            label="Reviews Overdue" 
+            value={data.review_stats?.overdue || 0} 
+            sub="Action Required Now" 
+            icon={<AlertTriangle size={24} strokeWidth={2} />} 
+            figureColor="#ef4444" 
+            pulse 
+        />
+        <MetricCard 
+            label="Reviews Due (7D)" 
+            value={data.review_stats?.due_7d || 0} 
+            sub="Upcoming Cycle" 
+            icon={<Clock size={24} strokeWidth={2} />} 
+            figureColor="#f59e0b" 
+        />
+
         <MetricCard label="Total Clients" value={data.total_clients} sub="Master Database" icon={<Users size={24} strokeWidth={2} />} />
         <MetricCard label="Total Active Clients" value={data.total_active_clients} sub="Portfolio Value > 0" icon={<Users size={24} strokeWidth={2} />} />
+        
         <MetricCard label="Total Invested AUM" value={`₹${formatINR(data.total_invested_aum)}`} sub="Principal Cost Basis" icon={<Wallet size={24} strokeWidth={2} />} />
         <MetricCard label="Market Value AUM" value={`₹${formatINR(data.market_value_aum)}`} sub="Current Asset Value" icon={<TrendingUp size={24} strokeWidth={2} />} figureColor="#10b981" pulse />
-        <MetricCard label="Monthly SIP Book" value={`₹${formatINR(data.monthly_sip_book)}`} sub="Recurring Inflow" icon={<TrendingUp size={24} strokeWidth={2} />} />
         
+        <MetricCard label="Monthly SIP Book" value={`₹${formatINR(data.monthly_sip_book)}`} sub="Recurring Inflow" icon={<TrendingUp size={24} strokeWidth={2} />} />
         <MetricCard label="Expected AUM (12M)" value={`₹${formatINR(data.expected_aum_12m)}`} sub="Projected Growth" icon={<BarChart3 size={24} strokeWidth={2} />} figureColor="#f59e0b" />
+        
         <MetricCard label="Avg. Assets / Client" value={`₹${formatINR(data.avg_assets_per_client)}`} sub="Portfolio Quality" icon={<Users size={24} strokeWidth={2} />} />
         <MetricCard label="Comm. (Invested)" value={`₹${formatINR(data.comm_inv_monthly)}/mo`} sub={`Annual: ₹${formatINR(data.comm_inv_annual)}`} icon={<CircleDollarSign size={24} strokeWidth={2} />} figureColor="#0284c7" />
+        
         <MetricCard label="Comm. (Market)" value={`₹${formatINR(data.comm_mkt_monthly)}/mo`} sub={`Annual: ₹${formatINR(data.comm_mkt_annual)}`} icon={<CircleDollarSign size={24} strokeWidth={2} />} figureColor="#0284c7" pulse />
         <MetricCard label="Clients Onboarded" value={data.new_clients_30d} sub="Last 30 Days" icon={<Users size={24} strokeWidth={2} />} />
       </div>
