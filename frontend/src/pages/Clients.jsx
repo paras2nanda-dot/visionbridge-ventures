@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api'; 
 import { toast } from 'react-toastify'; 
-import { Search, Trash2, Edit, Eye, ClipboardList, FileText, UserPlus, Check, X, Handshake } from 'lucide-react';
+import { Search, Trash2, Edit, Eye, ClipboardList, FileText, UserPlus, Check, X, Handshake, Users } from 'lucide-react';
 
 const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
   const [clients, setClients] = useState([]);
   const [subDistributors, setSubDistributors] = useState([]); 
+  const [families, setFamilies] = useState([]); // 🟢 Family Master state
   const [searchTerm, setSearchTerm] = useState(''); 
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
@@ -66,7 +67,12 @@ const Clients = () => {
     onboarding_date: formatDateForInput(new Date()), 
     added_by: 'Paras', sourcing: 'Internal', sub_distributor_id: '', sourcing_type: 'Family / Relative', mobile_number: '',
     monthly_income: '', risk_profile: 'Moderate', investment_experience: 'Beginner', 
-    pan: '', aadhaar: '', nominee_name: '', nominee_relation: '', nominee_mobile: '', notes: '', email: ''
+    pan: '', aadhaar: '', nominee_name: '', nominee_relation: '', nominee_mobile: '', notes: '', email: '',
+    // 🟢 New Family State Fields
+    family_type: 'new', 
+    family_id: '',
+    family_name: '',
+    family_role: 'HEAD'
   };
 
   const [formData, setFormData] = useState(initialState);
@@ -74,6 +80,7 @@ const Clients = () => {
   useEffect(() => { 
     fetchClients(); 
     fetchSubDistributors(); 
+    fetchFamilies(); // 🟢 Load families on mount
   }, []);
 
   const fetchClients = async () => {
@@ -102,6 +109,14 @@ const Clients = () => {
     } catch (err) { console.error("Could not fetch sub-distributors"); }
   };
 
+  // 🟢 Fetch existing families for the dropdown
+  const fetchFamilies = async () => {
+    try {
+      const res = await api.get('/clients/families');
+      setFamilies(Array.isArray(res.data) ? res.data : []);
+    } catch (err) { console.error("Could not fetch families"); }
+  };
+
   const formatINR = (val) => val ? new Intl.NumberFormat('en-IN').format(val.toString().replace(/,/g, "")) : "";
 
   const handleSubmit = async (e) => {
@@ -116,13 +131,18 @@ const Clients = () => {
       return toast.warn("⚠️ Please select a Sub Distributor.");
     }
 
+    // 🟢 Requirement 3: Validation for existing family selection
+    if (formData.family_type === 'existing' && !formData.family_id) {
+        return toast.warn("⚠️ Please select an existing family from the dropdown.");
+    }
+
     setIsSaving(true); 
     try {
       if (isEditing) await api.put(`/clients/${editingId}`, formData);
       else await api.post(`/clients`, formData);
       toast.success("✅ Success");
-      setIsEditing(false); setFormData(initialState); fetchClients(); setActiveSubTab('basic'); 
-    } catch (err) { toast.error("Error saving client details"); }
+      setIsEditing(false); setFormData(initialState); fetchClients(); fetchFamilies(); setActiveSubTab('basic'); 
+    } catch (err) { toast.error(err.response?.data?.error || "Error saving client details"); }
     finally { setIsSaving(false); } 
   };
 
@@ -135,6 +155,7 @@ const Clients = () => {
         await api.post('/clients/bulk-delete', { ids: selectedIds });
         toast.success("🗑️ Bulk Deleted");
         fetchClients();
+        fetchFamilies();
       } catch (err) { toast.error("Bulk Delete Failed"); }
     }
   };
@@ -148,7 +169,12 @@ const Clients = () => {
       ...client, 
       date_of_birth: formatDateForInput(client.dob || client.date_of_birth), 
       onboarding_date: formatDateForInput(client.onboarding_date),
-      sub_distributor_id: client.sub_distributor_id || '' 
+      sub_distributor_id: client.sub_distributor_id || '',
+      // 🟢 Populate Family logic on edit/view
+      family_type: 'existing',
+      family_id: client.family_id || '',
+      family_name: client.family_name || '',
+      family_role: client.family_role || 'MEMBER'
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -210,7 +236,25 @@ const Clients = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
                 <div style={{ display: activeSubTab === 'basic' ? 'contents' : 'none' }}>
                   <div><label style={labelStyle}>Client ID</label><input style={{...inputStyle, opacity: 0.7}} value={formData.client_code} readOnly /></div>
-                  <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} type="text" value={formData.full_name} readOnly={isViewing} onChange={e => setFormData({...formData, full_name: e.target.value})} required /></div>
+                  <div>
+                    <label style={labelStyle}>Full Name *</label>
+                    <input 
+                      style={inputStyle} 
+                      type="text" 
+                      value={formData.full_name} 
+                      readOnly={isViewing} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setFormData({
+                          ...formData, 
+                          full_name: val, 
+                          // 🟢 Requirement 2.2: Auto-populate family name for new families
+                          family_name: formData.family_type === 'new' ? `${val} Family` : formData.family_name
+                        });
+                      }} 
+                      required 
+                    />
+                  </div>
                   <div><label style={labelStyle}>DOB *</label><input style={inputStyle} type="date" value={formData.date_of_birth} readOnly={isViewing} onChange={e => setFormData({...formData, date_of_birth: e.target.value})} required /></div>
                   <div><label style={labelStyle}>Onboarding Date</label><input style={inputStyle} type="date" value={formData.onboarding_date} readOnly={isViewing} onChange={e => setFormData({...formData, onboarding_date: e.target.value})} /></div>
                   <div><label style={labelStyle}>Added By</label><select style={inputStyle} value={formData.added_by} disabled={isViewing} onChange={e => setFormData({...formData, added_by: e.target.value})}><option>Paras</option><option>Himanshu</option></select></div>
@@ -268,6 +312,97 @@ const Clients = () => {
                   <div><label style={labelStyle}>Nominee Name</label><input style={inputStyle} type="text" value={formData.nominee_name} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_name: e.target.value})} /></div>
                   <div><label style={labelStyle}>Nominee Relation</label><input style={inputStyle} type="text" value={formData.nominee_relation} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_relation: e.target.value})} /></div>
                   <div><label style={labelStyle}>Nominee Mobile</label><input style={inputStyle} type="text" inputMode="numeric" value={formData.nominee_mobile} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_mobile: e.target.value.replace(/\D/g, '')})} /></div>
+                  
+                  {/* 🟢 REQUIREMENT 2: FAMILY GROUPING SECTION */}
+                  <div style={{ gridColumn: '1 / -1', marginTop: '10px', padding: '20px', background: 'rgba(2, 132, 199, 0.03)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+                    <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={18}/> Family Grouping</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                        <div>
+                            <label style={labelStyle}>Family Type</label>
+                            <select 
+                                style={inputStyle} 
+                                value={formData.family_type} 
+                                disabled={isViewing || isEditing} 
+                                onChange={e => {
+                                    const type = e.target.value;
+                                    setFormData({
+                                        ...formData, 
+                                        family_type: type, 
+                                        family_name: type === 'new' ? `${formData.full_name} Family` : '',
+                                        family_role: type === 'new' ? 'HEAD' : 'MEMBER'
+                                    });
+                                }}
+                            >
+                                <option value="new">New Family</option>
+                                <option value="existing">Existing Family</option>
+                            </select>
+                        </div>
+
+                        {formData.family_type === 'new' ? (
+                            <div>
+                                <label style={labelStyle}>New Family Name</label>
+                                <input 
+                                    style={inputStyle} 
+                                    type="text" 
+                                    placeholder="Auto-populated..."
+                                    value={formData.family_name} 
+                                    readOnly={isViewing || formData.family_role !== 'HEAD'} 
+                                    onChange={e => setFormData({...formData, family_name: e.target.value})} 
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label style={labelStyle}>Select Family</label>
+                                <select 
+                                    style={inputStyle} 
+                                    value={formData.family_id} 
+                                    disabled={isViewing}
+                                    onChange={e => {
+                                      const selectedFam = families.find(f => f.id.toString() === e.target.value);
+                                      setFormData({
+                                        ...formData, 
+                                        family_id: e.target.value,
+                                        family_name: selectedFam ? selectedFam.family_name : ''
+                                      });
+                                    }}
+                                >
+                                    <option value="">Select Existing Family...</option>
+                                    {families.map(f => (
+                                        <option key={f.id} value={f.id}>{f.family_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <div>
+                            <label style={labelStyle}>Family Role</label>
+                            <select 
+                                style={inputStyle} 
+                                value={formData.family_role} 
+                                disabled={isViewing}
+                                onChange={e => setFormData({...formData, family_role: e.target.value})}
+                            >
+                                <option value="HEAD">Head of Family</option>
+                                <option value="MEMBER">Family Member</option>
+                            </select>
+                        </div>
+
+                        {/* 🟢 Requirement 4: Allow renaming master record if role = HEAD */}
+                        {formData.family_type === 'existing' && formData.family_role === 'HEAD' && (
+                            <div>
+                                <label style={labelStyle}>Rename Master Family Name</label>
+                                <input 
+                                    style={inputStyle} 
+                                    type="text" 
+                                    value={formData.family_name} 
+                                    readOnly={isViewing} 
+                                    onChange={e => setFormData({...formData, family_name: e.target.value})} 
+                                />
+                            </div>
+                        )}
+                    </div>
+                  </div>
+
                   <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Client Notes</label><textarea style={{...inputStyle, height: '100px', resize: 'vertical'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
                 </div>
             </div>
@@ -336,8 +471,8 @@ const Clients = () => {
                 <th style={{ padding: '16px', width: '40px', borderBottom: '1px solid var(--border)' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></th>
                 <th style={thStyle}>ID</th>
                 <th style={thStyle}>Client Name</th>
-                {/* 🟢 Sub Distributor Column Header */}
-                <th style={thStyle}>Sub Distributor</th>
+                <th style={thStyle}>Family Group</th> {/* 🟢 Requirement 1: New Column */}
+                <th style={thStyle}>Partner</th>
                 <th style={thStyle}>Mobile</th>
                 <th style={thStyle}>Onboarded On</th>
                 <th style={thStyle}>Added By</th>
@@ -350,7 +485,18 @@ const Clients = () => {
                   <td style={{ padding: '16px', fontWeight: '800', color: '#0284c7' }}>{c.client_code}</td>
                   <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{c.full_name}</td>
                   
-                  {/* 🟢 Displays Partner Name instead of ID */}
+                  {/* 🟢 Requirement 1: Display family_name and role badge */}
+                  <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{c.family_name || '-'}</span>
+                        {c.family_role && (
+                            <span style={{ fontSize: '10px', color: c.family_role === 'HEAD' ? '#0284c7' : '#64748b', fontWeight: '800', textTransform: 'uppercase' }}>
+                                {c.family_role}
+                            </span>
+                        )}
+                    </div>
+                  </td>
+
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>
                     {subDistributors.find(d => d.id === c.sub_distributor_id)?.name || '-'}
                   </td>
@@ -365,7 +511,7 @@ const Clients = () => {
                       <button onClick={() => handleAction(c, 'edit')} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit Client">
                         <Edit size={18} />
                       </button>
-                      <button onClick={async () => { if(window.confirm("Permanently delete this client?")) { await api.delete(`/clients/${c.id}`); fetchClients(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete Client">
+                      <button onClick={async () => { if(window.confirm("Permanently delete this client?")) { await api.delete(`/clients/${c.id}`); fetchClients(); fetchFamilies(); } }} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete Client">
                         <Trash2 size={18} />
                       </button>
                   </td>
@@ -373,7 +519,7 @@ const Clients = () => {
               ))}
               {filteredClients.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  <td colSpan="9" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
                     No clients found matching your search.
                   </td>
                 </tr>

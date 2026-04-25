@@ -1,5 +1,11 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { Search, PieChart as PieChartIcon, CheckCircle2, AlertTriangle, UserSearch, Wallet, TrendingUp, Clock, Activity } from 'lucide-react';
+import { 
+  Search, PieChart as PieChartIcon, CheckCircle2, AlertTriangle, 
+  UserSearch, Wallet, TrendingUp, Clock, Activity, Users, 
+  ChevronDown, ChevronUp, ShieldAlert 
+} from 'lucide-react';
+import api from '../../services/api'; 
 
 // --- Premium Donut Chart with Precise Segments ---
 const AssetDonut = ({ data }) => {
@@ -11,7 +17,6 @@ const AssetDonut = ({ data }) => {
     </div>
   );
   
-  // 🟢 FIX: Ensure total is never 0 or NaN to prevent division by zero crashes
   const total = data.reduce((acc, item) => acc + (Number(item.value) || 0), 0);
   if (total <= 0) return (
     <div style={{ padding: '40px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', textAlign: 'center', width: '100%' }}>
@@ -22,7 +27,6 @@ const AssetDonut = ({ data }) => {
   );
 
   let cumulativePercent = 0;
-
   const getCoordinatesForPercent = (percent) => {
     const x = Math.cos(2 * Math.PI * percent);
     const y = Math.sin(2 * Math.PI * percent);
@@ -40,7 +44,6 @@ const AssetDonut = ({ data }) => {
           const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
           const largeArcFlag = val / total > 0.5 ? 1 : 0;
           
-          // 🟢 FIX: Handle 100% edge case where start and end coordinates are the same
           if (val / total === 1) {
              return <circle key={i} r="1" fill={item.color} cx="0" cy="0" />
           }
@@ -79,39 +82,50 @@ const ClientDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [clientUpcomingSIPs, setClientUpcomingSIPs] = useState([]);
 
-  useEffect(() => {
-    const token = sessionStorage.getItem("token");
-    const headers = { 'Authorization': `Bearer ${token}` };
+  // 🟢 FAMILY FEATURE STATE
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [totalBusinessAUM, setTotalBusinessAUM] = useState(0);
+  const [expandedMemberId, setExpandedMemberId] = useState(null);
 
-    fetch('https://visionbridge-backend.onrender.com/api/clients', { headers })
-      .then(res => res.json())
-      .then(data => setClients(Array.isArray(data) ? data : []))
+  useEffect(() => {
+    // 1. Fetch Clients
+    api.get('/clients')
+      .then(res => setClients(Array.isArray(res.data) ? res.data : []))
       .catch(err => console.error("Error fetching clients:", err));
 
-    fetch('https://visionbridge-backend.onrender.com/api/mf-schemes', { headers })
-      .then(res => res.json())
-      .then(data => setSchemes(Array.isArray(data) ? data : []))
+    // 2. Fetch Master Schemes for Allocation Donut
+    api.get('/mf-schemes')
+      .then(res => setSchemes(Array.isArray(res.data) ? res.data : []))
       .catch(err => console.error("Error fetching master schemes:", err));
+
+    // 3. Fetch Total Business AUM for denominator (Requirement 6.3)
+    api.get('/dashboard/business-total-aum')
+      .then(res => setTotalBusinessAUM(res.data.totalAUM || 0))
+      .catch(() => setTotalBusinessAUM(0));
   }, []);
 
   const handleSelectClient = (client) => {
-    const token = sessionStorage.getItem("token");
-    const headers = { 'Authorization': `Bearer ${token}` };
     setSearchTerm(`${client.full_name} (${client.client_code || 'C' + client.id})`);
     setIsLoading(true);
+    setExpandedMemberId(null);
 
+    // Sync with updated backend routes from Step 4
     Promise.all([
-      fetch(`https://visionbridge-backend.onrender.com/api/client-dashboard/${client.id}`, { headers }),
-      fetch(`https://visionbridge-backend.onrender.com/api/sips`, { headers })
+      api.get(`/dashboard/client/${client.id}`),
+      api.get(`/sips`)
     ])
       .then(async ([dashRes, sipRes]) => {
-        const dashData = await dashRes.json();
-        const sipData = await sipRes.json();
+        const dashData = dashRes.data;
+        const sipData = sipRes.data;
 
-        setSelectedClient(dashData.profile || client); // 🟢 FIX: Fallback to basic profile if dashboard fails
+        setSelectedClient(dashData.profile || client);
         setPortfolio(dashData.portfolio || []);
         setSummary(dashData.summary || { totalAUM: 0, totalSipBook: 0, sipCount: 0 });
+        
+        // 🟢 Set Family Data (Returned by updated Controller from Step 3)
+        setFamilyMembers(dashData.familyMembers || []);
 
+        // Logic for Upcoming SIP alerts
         if (Array.isArray(sipData)) {
             const today = new Date();
             const sixtyDaysFromNow = new Date();
@@ -130,9 +144,7 @@ const ClientDashboard = () => {
       })
       .catch(err => {
         console.error("Error loading profile:", err);
-        setSelectedClient(client); // 🟢 FIX: At least show the name if the data fetch fails completely
-        setPortfolio([]);
-        setSummary({ totalAUM: 0, totalSipBook: 0, sipCount: 0 });
+        setSelectedClient(client);
         setIsLoading(false);
       });
   };
@@ -145,14 +157,13 @@ const ClientDashboard = () => {
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Math.round(safeNum(val)));
 
   const getAssetAllocation = () => {
-    // 🟢 FIX: Return empty array if portfolio isn't loaded yet to prevent `.forEach` crashes
     if (!Array.isArray(portfolio) || portfolio.length === 0) return [];
 
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     
     portfolio.forEach(item => {
       const investedValue = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
-      if (investedValue <= 0) return; // Skip if no value
+      if (investedValue <= 0) return;
 
       const master = schemes.find(s => (s.scheme_name || '').trim().toLowerCase() === (item.scheme_name || '').trim().toLowerCase());
       
@@ -184,6 +195,8 @@ const ClientDashboard = () => {
     background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)',
     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '24px'
   };
+
+  const familyTotalAUM = familyMembers.reduce((acc, m) => acc + (m.summary?.totalAUM || 0), 0);
 
   return (
     <div className="fade-in" style={{ paddingBottom: '40px' }}>
@@ -217,7 +230,7 @@ const ClientDashboard = () => {
         </div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          {/* 🔴 ALERT: CLIENT-SPECIFIC UPCOMING CLOSURES */}
+          {/* Action Required Alert */}
           {clientUpcomingSIPs.length > 0 && (
             <div style={{ ...cardStyle, borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.02)', borderLeft: '6px solid #ef4444' }}>
                 <h3 style={{ margin: '0 0 12px 0', color: '#ef4444', fontSize: '16px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -248,7 +261,7 @@ const ClientDashboard = () => {
             </div>
           )}
 
-          {/* Header Card */}
+          {/* Individual Header */}
           <div style={{...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px'}}>
               <div>
                 <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -258,105 +271,152 @@ const ClientDashboard = () => {
                 <div style={{ display: 'flex', gap: '16px', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', alignItems: 'center' }}>
                   <span>Age: <strong style={{color: 'var(--text-main)', fontWeight: '700'}}>{selectedClient.age || 'N/A'} yrs</strong></span>
                   <span style={{width: '1px', height: '12px', background: 'var(--border)'}}></span>
-                  <span>Risk Profile: <strong style={{color: '#f59e0b', fontWeight: '700'}}>{selectedClient.risk_profile || 'Medium'}</strong></span>
+                  <span>Risk Profile: <strong style={{color: '#f59e0b', fontWeight: '700'}}>{selectedClient.risk_profile || 'Moderate'}</strong></span>
                 </div>
               </div>
           </div>
 
-          {/* Metrics Grid */}
+          {/* Individual Metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginBottom: '32px' }}>
             <div style={cardStyle}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
-                    <Wallet size={16} color="#0284c7" /> Client Invested AUM
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
+                    <Wallet size={16} color="#0284c7" /> Invested AUM
                 </div>
-                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary?.totalAUM)}</div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)'}}>₹{formatINR(summary?.totalAUM)}</div>
             </div>
             <div style={cardStyle}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
                     <TrendingUp size={16} color="#8b5cf6" /> Monthly SIP
                 </div>
-                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>₹{formatINR(summary?.totalSipBook)} <span style={{fontSize: '14px', color: 'var(--text-muted)', fontWeight: '600'}}>/ mo</span></div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)'}}>₹{formatINR(summary?.totalSipBook)}</div>
             </div>
             <div style={cardStyle}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
                     <Activity size={16} color="#10b981" /> Active SIPs
                 </div>
-                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px'}}>{summary?.sipCount || 0}</div>
+                <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)'}}>{summary?.sipCount || 0}</div>
             </div>
             <div style={cardStyle}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px'}}>
-                    <Clock size={16} color="#f59e0b" /> Relationship Since
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
+                    <Clock size={16} color="#f59e0b" /> Client Since
                 </div>
-                <div style={{fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px', marginTop: '4px'}}>{selectedClient.since_formatted || formatDateForDisplay(selectedClient.onboarding_date)}</div>
+                <div style={{fontSize: '24px', fontWeight: '800', color: 'var(--text-main)'}}>{selectedClient.since_formatted || 'N/A'}</div>
             </div>
           </div>
 
-          {/* Portfolio Table */}
-          <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', marginBottom: '32px' }}>
-             <div className="table-container" style={{ overflowX: 'auto' }}>
-                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                    <thead style={{ background: 'var(--bg-main)' }}>
-                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                        <th style={{ padding: '16px 24px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Scheme Name</th>
-                        <th style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SIP p.m.</th>
-                        <th style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invested AUM</th>
-                        <th style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>% of Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {portfolio.map((item, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
-                          <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '700' }}>{item.scheme_name}</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'center', color: '#10b981', fontWeight: '700' }}>{safeNum(item.sip_amount) > 0 ? `₹${formatINR(item.sip_amount)}` : '-'}</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(item.invested_amount)}</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>{summary?.totalAUM > 0 ? ((safeNum(item.invested_amount) / summary.totalAUM) * 100).toFixed(1) : '0'}%</td>
-                        </tr>
-                      ))}
-                      {portfolio.length > 0 && (
-                        <tr style={{ background: 'rgba(2, 132, 199, 0.04)' }}>
-                          <td style={{ padding: '16px 24px', color: 'var(--text-main)', fontWeight: '800' }}>TOTAL PORTFOLIO</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-main)', fontWeight: '800' }}>₹{formatINR(summary?.totalSipBook)}</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right', color: '#0284c7', fontWeight: '900', fontSize: '15px' }}>₹{formatINR(summary?.totalAUM)}</td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right', color: 'var(--text-main)', fontWeight: '800' }}>100%</td>
-                        </tr>
-                      )}
-                    </tbody>
-                 </table>
-             </div>
-          </div>
+          {/* 🟢 FAMILY PORTFOLIO SECTION (Requirement 5-9) */}
+          {selectedClient.family_id && (
+            <div className="fade-in" style={{ marginTop: '60px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(2, 132, 199, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Users size={22} color="#0284c7" />
+                    </div>
+                    <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-main)', margin: 0 }}>Family Group Portfolio</h2>
+                </div>
 
-          {/* Allocation & Nominee Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-            <div style={cardStyle}>
-                <h3 style={{ margin: '0 0 24px 0', fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <PieChartIcon size={18} /> Asset Allocation
-                </h3>
-                <AssetDonut data={getAssetAllocation()} />
-            </div>
-
-            <div style={{ ...cardStyle, borderLeft: selectedClient.nominee_name ? '4px solid #10b981' : '4px solid #f59e0b' }}>
-                <h3 style={{ margin: '0 0 20px 0', fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nominee Status</h3>
-                {selectedClient.nominee_name ? (
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontWeight: '800', fontSize: '16px', marginBottom: '8px' }}>
-                          <CheckCircle2 size={20} /> Registered
-                        </div>
-                        <div style={{ color: 'var(--text-main)', fontWeight: '700', fontSize: '15px', paddingLeft: '28px' }}>
-                          {selectedClient.nominee_name} <span style={{color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px'}}>({selectedClient.nominee_relation})</span>
+                {/* Aggregated Cards (Requirement 6) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                    <div style={cardStyle}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>Total Family Members</div>
+                        <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)' }}>{familyMembers.length}</div>
+                    </div>
+                    <div style={cardStyle}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>Total Family Invested AUM</div>
+                        <div style={{ fontSize: '32px', fontWeight: '900', color: '#0284c7' }}>₹{formatINR(familyTotalAUM)}</div>
+                    </div>
+                    <div style={cardStyle}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>% of Total Business AUM</div>
+                        <div style={{ fontSize: '32px', fontWeight: '900', color: '#10b981' }}>
+                            {totalBusinessAUM > 0 ? ((familyTotalAUM / totalBusinessAUM) * 100).toFixed(2) : '0.00'}%
                         </div>
                     </div>
-                ) : (
-                    <div style={{ padding: '16px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontWeight: '800', fontSize: '15px', marginBottom: '8px' }}>
-                          <AlertTriangle size={18} /> Nominee Not Registered
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '24px', alignItems: 'start' }}>
+                    
+                    {/* Expandable Table (Requirement 7-8) */}
+                    <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead style={{ background: 'var(--bg-main)' }}>
+                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Member</th>
+                                    <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Role</th>
+                                    <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Age</th>
+                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Invested AUM</th>
+                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>% Share</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {familyMembers.map(member => {
+                                    const isExpanded = expandedMemberId === member.id;
+                                    return (
+                                        <React.Fragment key={member.id}>
+                                            <tr 
+                                                onClick={() => setExpandedMemberId(isExpanded ? null : member.id)}
+                                                style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', background: isExpanded ? 'rgba(2, 132, 199, 0.02)' : 'transparent', transition: 'background 0.2s' }}
+                                            >
+                                                <td style={{ padding: '16px', fontWeight: '800', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>} {member.full_name}
+                                                </td>
+                                                <td style={{ padding: '16px', textAlign: 'center' }}>
+                                                    <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', background: member.family_role === 'HEAD' ? 'rgba(2, 132, 199, 0.1)' : 'var(--bg-main)', color: member.family_role === 'HEAD' ? '#0284c7' : 'var(--text-muted)' }}>
+                                                        {member.family_role}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '16px', textAlign: 'center', fontWeight: '700' }}>{member.age || '-'}</td>
+                                                <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800' }}>₹{formatINR(member.summary?.totalAUM)}</td>
+                                                <td style={{ padding: '16px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>
+                                                    {familyTotalAUM > 0 ? ((member.summary?.totalAUM / familyTotalAUM) * 100).toFixed(1) : '0'}%
+                                                </td>
+                                            </tr>
+                                            {/* Scheme Expansion (Requirement 8) */}
+                                            {isExpanded && member.portfolio?.map((scheme, sidx) => (
+                                                <tr key={`scheme-${sidx}`} style={{ background: 'var(--bg-main)', fontSize: '12px' }}>
+                                                    <td colSpan="3" style={{ padding: '10px 16px 10px 40px', color: 'var(--text-muted)', fontWeight: '600' }}>{scheme.scheme_name}</td>
+                                                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700' }}>₹{formatINR(scheme.invested_amount)}</td>
+                                                    <td style={{ padding: '10px 16px', textAlign: 'right', color: 'var(--text-muted)' }}>
+                                                        {familyTotalAUM > 0 ? ((safeNum(scheme.invested_amount) / familyTotalAUM) * 100).toFixed(1) : '0'}%
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        {/* Allocation Audit for Individual */}
+                        <div style={cardStyle}>
+                            <h3 style={{ margin: '0 0 24px 0', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation (Individual)</h3>
+                            <AssetDonut data={getAssetAllocation()} />
                         </div>
-                        <div style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '13px', lineHeight: 1.5, paddingLeft: '26px' }}>
-                          Ensure regulatory compliance by updating nominee details for this client in the Master Database.
+
+                        {/* Nominee Compliance Audit (Requirement 9) */}
+                        <div style={{ ...cardStyle, background: 'rgba(239, 68, 68, 0.02)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+                            <h3 style={{ margin: '0 0 16px 0', fontSize: '11px', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <ShieldAlert size={16} /> Nominee Compliance Audit
+                            </h3>
+                            {familyMembers.some(m => !m.nominee_name) ? (
+                                <ul style={{ margin: 0, padding: '0 0 0 12px', listStyle: 'none' }}>
+                                    {familyMembers.filter(m => !m.nominee_name).map(m => (
+                                        <li key={m.id} style={{ padding: '8px 0', fontSize: '13px', color: 'var(--text-main)', fontWeight: '700', borderBottom: '1px dashed var(--border)' }}>
+                                            ⚠️ {m.full_name}
+                                        </li>
+                                    ))}
+                                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', fontWeight: '600' }}>Note: Update details in Master database.</p>
+                                </ul>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontWeight: '800', fontSize: '14px' }}>
+                                    <CheckCircle2 size={18} /> All Family Nominees Registered
+                                </div>
+                            )}
                         </div>
                     </div>
-                )}
+                </div>
             </div>
-          </div>
+          )}
         </>
       ) : (
         <div style={{ textAlign: 'center', padding: '100px 20px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px dashed var(--border)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -367,22 +427,11 @@ const ClientDashboard = () => {
       )}
       
       <style>{`
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .spin {
-            animation: spin 1s linear infinite;
-        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
       `}</style>
     </div>
   );
-};
-
-const formatDateForDisplay = (dateString) => {
-    if (!dateString) return '-';
-    const d = new Date(dateString);
-    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-GB').replace(/\//g, '-'); 
 };
 
 export default ClientDashboard;

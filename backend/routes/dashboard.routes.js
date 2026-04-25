@@ -3,7 +3,8 @@ import {
   getBusinessStats, 
   getLeaderboardsStats, 
   getClientDashboardStats,
-  triggerMonthlySnapshot // 🟢 NEW IMPORT
+  triggerMonthlySnapshot,
+  getBusinessTotalAUM // 🟢 NEW IMPORT FOR FAMILY % CALCULATION
 } from '../controllers/dashboard.controller.js';
 import { getCharts } from '../controllers/charts.controller.js';
 
@@ -11,6 +12,10 @@ const router = express.Router();
 
 // Route: GET /api/dashboard/business
 router.get('/business', getBusinessStats);
+
+// 🟢 Route: GET /api/dashboard/business-total-aum
+// Provides the global denominator for "Family % of Total Business" card
+router.get('/business-total-aum', getBusinessTotalAUM);
 
 // Route: GET /api/dashboard/leaderboards
 router.get('/leaderboards', getLeaderboardsStats);

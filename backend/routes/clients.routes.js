@@ -4,10 +4,14 @@ import {
   createClient, 
   updateClient, 
   deleteClient, 
-  bulkDeleteClients 
+  bulkDeleteClients,
+  getFamilies // 🟢 Added to handle family master data
 } from '../controllers/clients.controller.js';
 
 const router = express.Router();
+
+// 🟢 NEW: Families Master Route (must be before or distinct from parameterized routes)
+router.get('/families', getFamilies);
 
 router.get('/', getClients);
 router.post('/', createClient);

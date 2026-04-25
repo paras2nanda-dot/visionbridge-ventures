@@ -22,6 +22,33 @@ const calculateAge = (dobString) => {
 };
 
 /**
+ * 🟢 NEW: TOTAL BUSINESS AUM (Fixes the Export Error)
+ * Provides the global denominator for "Family % of Total Business" calculation
+ */
+export const getBusinessTotalAUM = async (req, res) => {
+  try {
+    const query = `
+      WITH txn_sum AS (
+        SELECT COALESCE(SUM(CASE 
+          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+          ELSE 0 END), 0) as amt FROM transactions
+      ),
+      sip_sum AS (
+        SELECT COALESCE(SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)), 0) as amt 
+        FROM sips WHERE LOWER(status) = 'active'
+      )
+      SELECT (txn_sum.amt + sip_sum.amt) as total_invested_aum FROM txn_sum, sip_sum
+    `;
+    const result = await pool.query(query);
+    res.json({ totalAUM: result.rows[0].total_invested_aum || 0 });
+  } catch (err) {
+    console.error("❌ getBusinessTotalAUM Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
  * 🏢 BUSINESS DASHBOARD LOGIC 
  */
 export const getBusinessStats = async (req, res) => {
@@ -74,9 +101,7 @@ export const getBusinessStats = async (req, res) => {
       SELECT 
         COALESCE(SUM(trans_invested + sip_invested), 0) as total_invested_aum,
         COALESCE(SUM(market_value), 0) as market_value_aum,
-        -- Commission on Invested (Annualized)
         COALESCE(SUM((trans_invested + sip_invested) * (COALESCE(commission_rate, 0.8) / 100)), 0) as comm_inv_annual,
-        -- Commission on Market Value (Annualized)
         COALESCE(SUM(market_value * (COALESCE(commission_rate, 0.8) / 100)), 0) as comm_mkt_annual
       FROM scheme_calc
     `;
@@ -216,7 +241,7 @@ export const getLeaderboardsStats = async (req, res) => {
       LIMIT 10
     `);
 
-    // 4. 🟢 UPDATED: Top 5 Sub Distributors (JOIN with sub_distributors table)
+    // 4. Top 5 Sub Distributors (JOIN with sub_distributors table)
     const topSourcesRes = await pool.query(`
       WITH source_exposure AS (
         SELECT 
@@ -259,7 +284,7 @@ export const getLeaderboardsStats = async (req, res) => {
 };
 
 /**
- * 👤 CLIENT DASHBOARD LOGIC
+ * 👤 CLIENT DASHBOARD LOGIC (Augmented with Family aggregation)
  */
 export const getClientDashboardStats = async (req, res) => {
   const { id } = req.params;
@@ -270,34 +295,64 @@ export const getClientDashboardStats = async (req, res) => {
     const client = clientRes.rows[0];
     const actualDob = client.dob || client.date_of_birth;
 
-    const portfolioQuery = `
-      SELECT m.scheme_name, m.large_cap, m.mid_cap, m.small_cap, m.debt_allocation, m.gold_allocation,
-      COALESCE((SELECT SUM(CASE 
-        WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-        WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-        ELSE 0 END) 
-      FROM transactions WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT), 0) +
-      COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as invested_amount,
-      COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as sip_amount
-      FROM mf_schemes m
-      WHERE m.id::TEXT IN (SELECT scheme_id::TEXT FROM transactions WHERE client_id::TEXT = $1::TEXT UNION SELECT scheme_id::TEXT FROM sips WHERE client_id::TEXT = $1::TEXT)
-    `;
-    const portfolioRes = await pool.query(portfolioQuery, [id]);
-    const portfolio = portfolioRes.rows;
+    // Standard Portfolio Query used for both individual and family members
+    const fetchPortfolio = async (clientId) => {
+        const query = `
+          SELECT m.scheme_name, m.large_cap, m.mid_cap, m.small_cap, m.debt_allocation, m.gold_allocation,
+          COALESCE((SELECT SUM(CASE 
+            WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
+            WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+            ELSE 0 END) 
+          FROM transactions WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT), 0) +
+          COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as invested_amount,
+          COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as sip_amount
+          FROM mf_schemes m
+          WHERE m.id::TEXT IN (SELECT scheme_id::TEXT FROM transactions WHERE client_id::TEXT = $1::TEXT UNION SELECT scheme_id::TEXT FROM sips WHERE client_id::TEXT = $1::TEXT)
+        `;
+        const res = await pool.query(query, [clientId]);
+        return res.rows;
+    };
+
+    const portfolio = await fetchPortfolio(id);
     const totalAUM = portfolio.reduce((sum, r) => sum + Number(r.invested_amount), 0);
     const totalSipBook = portfolio.reduce((sum, r) => sum + Number(r.sip_amount), 0);
+    
     const alertRes = await pool.query(
       "SELECT COUNT(*)::INT FROM sips WHERE client_id::TEXT = $1::TEXT AND LOWER(status) = 'active' AND end_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '60 days' AND end_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date",
       [id]
     );
 
+    // Fetch Family Member Data if applicable
+    let familyMembers = [];
+    if (client.family_id) {
+        const membersRes = await pool.query(`
+            SELECT id, full_name, family_role, dob, date_of_birth, nominee_name 
+            FROM clients WHERE family_id = $1
+        `, [client.family_id]);
+
+        for (let member of membersRes.rows) {
+            const mPortfolio = await fetchPortfolio(member.id);
+            familyMembers.push({
+                ...member,
+                age: calculateAge(member.dob || member.date_of_birth),
+                summary: {
+                    totalAUM: mPortfolio.reduce((sum, r) => sum + Number(r.invested_amount), 0),
+                    totalSIP: mPortfolio.reduce((sum, r) => sum + Number(r.sip_amount), 0)
+                },
+                portfolio: mPortfolio
+            });
+        }
+    }
+
     res.json({
       profile: { ...client, age: calculateAge(actualDob), since_formatted: client.onboarding_date ? new Date(client.onboarding_date).toLocaleDateString('en-IN') : 'N/A' },
       summary: { totalAUM, totalSipBook, sipCount: portfolio.filter(r => Number(r.sip_amount) > 0).length },
       portfolio: portfolio.map(r => ({ ...r, percentage: totalAUM > 0 ? ((Number(r.invested_amount) / totalAUM) * 100).toFixed(1) : 0 })),
-      alerts: alertRes.rows[0].count
+      alerts: alertRes.rows[0].count,
+      familyMembers
     });
   } catch (err) {
+    console.error("❌ Client Dashboard Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -328,18 +383,15 @@ export const triggerMonthlySnapshot = async (req, res) => {
     const result = await pool.query(statsQuery);
     const { sip_book, market_value, invested_aum, monthly_comm } = result.rows[0];
 
-    // Check if a snapshot for today already exists to prevent duplicates
     const checkDup = await pool.query("SELECT id FROM monthly_analytics WHERE snapshot_date = CURRENT_DATE");
     
     if (checkDup.rows.length > 0) {
-      // Update existing snapshot for today
       await pool.query(`
         UPDATE monthly_analytics 
         SET total_invested = $1, total_market_value = $2, sip_book_amount = $3, actual_commission = $4
         WHERE snapshot_date = CURRENT_DATE
       `, [invested_aum, market_value, sip_book, monthly_comm]);
     } else {
-      // Insert new snapshot
       await pool.query(`
         INSERT INTO monthly_analytics 
         (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
