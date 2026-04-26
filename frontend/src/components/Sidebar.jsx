@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import SettingsModal from './SettingsModal';
+import { toast } from 'react-toastify';
 import { 
   LayoutDashboard, 
   Users, 
@@ -16,20 +17,23 @@ import {
   TrendingUp,
   Handshake,
   CalendarCheck,
-  Receipt // 🟢 NEW ICON FOR INVOICES (CRIT-02)
+  Receipt,
+  // 🟢 CRIT-01: NEW ICON FOR BACKUP
+  Database,
+  ShieldCheck
 } from 'lucide-react';
 
 const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
   const navigate = useNavigate();
   const userName = sessionStorage.getItem('username') || 'Advisor';
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Clients Database', path: '/clients', icon: <Users size={20} /> },
     { name: 'Sub-Distributors', path: '/sub-distributors', icon: <Handshake size={20} /> },
-    // 🟢 CRIT-02 FIX: ADDED INVOICE MANAGER LINK
     { name: 'Invoice Manager', path: '/invoices', icon: <Receipt size={20} /> },
     { name: 'SIP Tracker', path: '/sips', icon: <Repeat size={20} /> },
     { name: 'Client Reviews', path: '/reviews', icon: <CalendarCheck size={20} /> },
@@ -38,6 +42,38 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
     { name: 'Charts & Analytics', path: '/charts', icon: <LineChart size={20} /> }, 
     { name: 'Download Reports', path: '/reports', icon: <Download size={20} /> },
   ];
+
+  /**
+   * 🛡️ CRIT-01 FIX: SYSTEM BACKUP HANDLER
+   * Fetches full DB JSON and triggers a browser download.
+   */
+  const handleBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      const res = await api.get('/dashboard/backup');
+      const backupData = res.data;
+      
+      // Convert JSON to Blob
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create hidden link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `VisionBridge_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("✅ Full System Backup Exported Successfully!");
+    } catch (err) {
+      console.error("Backup failed", err);
+      toast.error("❌ Backup Failed: Check server connection.");
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true); 
@@ -124,8 +160,14 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
           .btn-settings { color: #94a3b8 !important; }
           .btn-settings:hover { background: rgba(255, 255, 255, 0.05) !important; color: #f8fafc !important; }
 
+          .btn-backup { color: #10b981 !important; border-top: 1px solid rgba(255,255,255,0.05) !important; }
+          .btn-backup:hover { background: rgba(16, 185, 129, 0.1) !important; }
+
           .btn-logout { color: #ef4444 !important; border-top: 1px solid rgba(255,255,255,0.05) !important; }
           .btn-logout:hover { background: rgba(239, 68, 68, 0.1) !important; }
+
+          .spin { animation: spin 1s linear infinite; }
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
           @media (max-width: 768px) {
             .sidebar-logo-text { font-size: 24px !important; letter-spacing: -0.5px; }
@@ -169,6 +211,16 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
 
         {/* BOTTOM ACTION AREA */}
         <div style={{ background: 'transparent' }}>
+          {/* 🟢 CRIT-01 FIX: SYSTEM BACKUP BUTTON */}
+          <button 
+            onClick={handleBackup} 
+            disabled={isBackingUp} 
+            className="sidebar-action-btn btn-backup"
+          >
+            {isBackingUp ? <Database size={20} className="spin" /> : <ShieldCheck size={20} />} 
+            {isBackingUp ? "Backing up..." : "Backup System"}
+          </button>
+
           <button onClick={() => { setIsSettingsOpen(true); closeMobileMenu(); }} className="sidebar-action-btn btn-settings">
             <Settings size={20} /> Settings
           </button>

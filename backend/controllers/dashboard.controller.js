@@ -23,7 +23,6 @@ const calculateAge = (dobString) => {
 
 /**
  * 🟢 TOTAL BUSINESS AUM
- * Provides the global denominator for "Family % of Total Business" calculation
  */
 export const getBusinessTotalAUM = async (req, res) => {
   try {
@@ -53,7 +52,6 @@ export const getBusinessTotalAUM = async (req, res) => {
  */
 export const getBusinessStats = async (req, res) => {
   try {
-    // 1. Basic Counts & SIP Book (Including "Total Active Clients")
     const statsQuery = `
       WITH current_ist AS (
         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
@@ -78,7 +76,6 @@ export const getBusinessStats = async (req, res) => {
     const basicRes = await pool.query(statsQuery);
     const basic = basicRes.rows[0];
 
-    // 2. AUM & Commission Calculations
     const aumQuery = `
       WITH scheme_calc AS (
         SELECT 
@@ -108,7 +105,6 @@ export const getBusinessStats = async (req, res) => {
     const aumRes = await pool.query(aumQuery);
     const aum = aumRes.rows[0];
 
-    // 3. 🎂 Birthday Logic
     const clientsRes = await pool.query(`
       SELECT full_name, dob, date_of_birth 
       FROM clients 
@@ -133,7 +129,6 @@ export const getBusinessStats = async (req, res) => {
     });
     upcomingBirthdays.sort((a, b) => a.days_left - b.days_left);
 
-    // 4. 🔔 SIP END ALERTS
     const sipsEndingRes = await pool.query(`
       SELECT c.full_name, m.scheme_name, s.end_date,
         (s.end_date - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date)::INT as days_left
@@ -147,7 +142,6 @@ export const getBusinessStats = async (req, res) => {
       ORDER BY s.end_date ASC
     `);
 
-    // 🟢 5. 🔍 REVIEW MODULE STATS (Requirement: Overdue & Due in 7 days)
     const reviewStatsRes = await pool.query(`
       SELECT 
         COUNT(*) FILTER (WHERE next_review_date < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date) as overdue,
@@ -179,7 +173,7 @@ export const getBusinessStats = async (req, res) => {
       new_clients_30d: basic.new_clients_30d,
       upcomingBirthdays: upcomingBirthdays,
       sipsEndingSoon: sipsEndingRes.rows,
-      review_stats: reviewStatsRes.rows[0] // 🟢 RESTORED/ADDED
+      review_stats: reviewStatsRes.rows[0]
     });
   } catch (err) {
     console.error("❌ Business Stats Error:", err.message);
@@ -335,7 +329,6 @@ export const getClientDashboardStats = async (req, res) => {
       [id]
     );
 
-    // 🟢 REVIEW SCHEDULE & HISTORY
     const reviewSchedule = await pool.query("SELECT * FROM review_schedules WHERE client_id = $1", [id]);
     const reviewHistory = await pool.query(
       "SELECT * FROM review_logs WHERE entity_type = 'CLIENT' AND entity_id = $1 ORDER BY review_date DESC", 
@@ -365,7 +358,6 @@ export const getClientDashboardStats = async (req, res) => {
             });
         }
 
-        // 🟢 FAMILY REVIEW DATA
         const famReviewSched = await pool.query("SELECT * FROM review_schedules WHERE family_id = $1", [client.family_id]);
         familyReviewSchedule = famReviewSched.rows[0] || null;
         const famReviewHist = await pool.query(
@@ -438,5 +430,43 @@ export const triggerMonthlySnapshot = async (req, res) => {
   } catch (err) {
     console.error("Snapshot Error:", err.message);
     res.status(500).json({ error: "Failed to capture snapshot" });
+  }
+};
+
+/**
+ * 🛡️ SYSTEM BACKUP ENGINE
+ * 🟢 CRIT-01 FIX: Generates a full portable JSON export of all core database tables.
+ */
+export const exportSystemBackup = async (req, res) => {
+  try {
+    // List of all tables to include in the backup
+    const tables = [
+      'clients', 'families', 'mf_schemes', 'transactions', 'sips', 
+      'sub_distributors', 'monthly_analytics', 'review_schedules', 
+      'review_logs', 'audit_logs', 'users', 'user_passkeys'
+    ];
+    
+    const backup = {
+      timestamp: new Date().toISOString(),
+      source: "VisionBridge Ventures Portal",
+      version: "1.0",
+      data: {}
+    };
+
+    // Iterate through tables and capture all records
+    for (const table of tables) {
+      try {
+        const result = await pool.query(`SELECT * FROM ${table}`);
+        backup.data[table] = result.rows;
+      } catch (tableErr) {
+        console.warn(`⚠️ Could not backup table ${table}:`, tableErr.message);
+        backup.data[table] = []; // Fallback to empty array if table doesn't exist
+      }
+    }
+
+    res.json(backup);
+  } catch (err) {
+    console.error("❌ Export Backup Error:", err.message);
+    res.status(500).json({ error: "Failed to generate system backup" });
   }
 };
