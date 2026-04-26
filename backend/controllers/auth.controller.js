@@ -8,7 +8,7 @@ import {
   verifyAuthenticationResponse
 } from "@simplewebauthn/server";
 
-// 🟢 IMPORT YOUR EXISTING SYSTEM LOGGER
+// 🟢 IMPORT SYSTEM LOGGER
 import { logActivity } from "./activityController.js";
 
 const rpName = 'VisionBridge Ventures';
@@ -25,11 +25,37 @@ const getWebAuthnConfig = (req) => {
   return { rpID, origin };
 };
 
-// Temporary memory store for cryptographic challenges
-const challengeStore = new Map();
+/**
+ * 🛡️ HIGH-02 FIX: DATABASE-BACKED CHALLENGE STORE
+ * Replaces the in-memory Map to survive server restarts on Render.
+ */
+const saveChallenge = async (key, challenge) => {
+  await pool.query(
+    `INSERT INTO webauthn_challenges (key, challenge) VALUES ($1, $2) 
+     ON CONFLICT (key) DO UPDATE SET challenge = $2, created_at = NOW()`,
+    [key, challenge]
+  );
+};
 
-// 🛡️ AUTO-HEALING DB FUNCTION
-const ensurePasskeyTable = async () => {
+const getChallenge = async (key) => {
+  // Challenges expire after 5 minutes for security
+  const result = await pool.query(
+    `SELECT challenge FROM webauthn_challenges 
+     WHERE key = $1 AND created_at > NOW() - INTERVAL '5 minutes'`,
+    [key]
+  );
+  return result.rows[0]?.challenge;
+};
+
+const deleteChallenge = async (key) => {
+  await pool.query('DELETE FROM webauthn_challenges WHERE key = $1', [key]);
+};
+
+/**
+ * 🛡️ AUTO-HEALING DB FUNCTION
+ * Ensures all necessary WebAuthn tables exist.
+ */
+const ensureWebAuthnTables = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_passkeys (
@@ -39,10 +65,15 @@ const ensurePasskeyTable = async () => {
         public_key TEXT NOT NULL,
         counter BIGINT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
+      );
+      CREATE TABLE IF NOT EXISTS webauthn_challenges (
+        key TEXT PRIMARY KEY,
+        challenge TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
     `);
   } catch (err) {
-    console.error("Error ensuring passkey table exists:", err.message);
+    console.error("Error ensuring WebAuthn tables exist:", err.message);
   }
 };
 
@@ -100,7 +131,7 @@ export const generateRegOptions = async (req, res) => {
   }
 
   try {
-    await ensurePasskeyTable(); 
+    await ensureWebAuthnTables(); 
     const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
 
     const safeExcludeCredentials = userPasskeys.rows
@@ -118,12 +149,12 @@ export const generateRegOptions = async (req, res) => {
       userDisplayName: username,
       excludeCredentials: safeExcludeCredentials,
       authenticatorSelection: {
-        residentKey: 'required', // 🟢 Set to 'required' for One-Tap Discoverable credentials
+        residentKey: 'required',
         userVerification: 'preferred',
       },
     });
 
-    challengeStore.set(`reg_${username}`, options.challenge);
+    await saveChallenge(`reg_${username}`, options.challenge);
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
@@ -135,9 +166,10 @@ export const verifyReg = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const body = req.body.data;
   const { rpID, origin } = getWebAuthnConfig(req);
-  const expectedChallenge = challengeStore.get(`reg_${username}`);
+  
+  const expectedChallenge = await getChallenge(`reg_${username}`);
 
-  if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Try again." });
+  if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired or not found. Try again." });
 
   try {
     const verification = await verifyRegistrationResponse({
@@ -150,7 +182,6 @@ export const verifyReg = async (req, res) => {
     if (verification.verified && verification.registrationInfo) {
       const { credential } = verification.registrationInfo;
 
-      await ensurePasskeyTable();
       await pool.query(
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
         [
@@ -161,10 +192,9 @@ export const verifyReg = async (req, res) => {
         ]
       );
 
-      // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
       await logActivity(username, "CREATE", "Security", "Registered new biometric device");
-
-      challengeStore.delete(`reg_${username}`);
+      await deleteChallenge(`reg_${username}`);
+      
       return res.json({ verified: true, message: "Device registered successfully!" });
     }
   } catch (error) {
@@ -174,11 +204,11 @@ export const verifyReg = async (req, res) => {
 };
 
 export const generateAuthOptions = async (req, res) => {
-  const username = req.body.username?.trim().toLowerCase(); // Optional for discoverable
+  const username = req.body.username?.trim().toLowerCase();
   const { rpID } = getWebAuthnConfig(req);
 
   try {
-    await ensurePasskeyTable();
+    await ensureWebAuthnTables();
     
     let allowCredentials = [];
     if (username) {
@@ -191,13 +221,12 @@ export const generateAuthOptions = async (req, res) => {
 
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials, // 🟢 Empty array allows "Discoverable Credentials" (One-Tap login)
+      allowCredentials,
       userVerification: 'preferred',
     });
 
-    // Use a generic key for discoverable challenges, or user-specific if username is provided
     const challengeKey = username ? `auth_${username}` : `auth_discoverable`;
-    challengeStore.set(challengeKey, options.challenge);
+    await saveChallenge(challengeKey, options.challenge);
     
     res.json(options);
   } catch (err) {
@@ -211,20 +240,18 @@ export const verifyAuth = async (req, res) => {
   const body = req.body.data; 
   const { rpID, origin } = getWebAuthnConfig(req);
   
-  // Try to retrieve the correct challenge
   const challengeKey = username ? `auth_${username}` : `auth_discoverable`;
-  const expectedChallenge = challengeStore.get(challengeKey);
+  const expectedChallenge = await getChallenge(challengeKey);
 
   if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Try again." });
 
   try {
-    // 🟢 FIND THE PASSKEY BY CREDENTIAL ID (Supports One-Tap login)
     const keyResult = await pool.query('SELECT * FROM user_passkeys WHERE credential_id = $1', [body.id]);
     const passkey = keyResult.rows[0];
 
     if (!passkey) {
         return res.status(400).json({ 
-            error: "This device is no longer synced. Please login with your password to re-register it." 
+            error: "Device not recognized. Please login with password to re-register." 
         });
     }
 
@@ -242,16 +269,23 @@ export const verifyAuth = async (req, res) => {
 
     if (verification.verified) {
       await pool.query('UPDATE user_passkeys SET counter = $1 WHERE id = $2', [verification.authenticationInfo.newCounter, passkey.id]);
-      challengeStore.delete(challengeKey);
+      await deleteChallenge(challengeKey);
 
-      const authUsername = passkey.username; // Use the username found in the DB
+      const authUsername = passkey.username;
+
+      /**
+       * 🛡️ MED-07 FIX: FETCH ACTUAL ROLE FROM DB
+       * Prevents biometric login from incorrectly granting hardcoded admin rights.
+       */
+      const userResult = await pool.query('SELECT role FROM users WHERE username = $1', [authUsername]);
+      const userRole = userResult.rows[0]?.role || 'advisor';
+
       const token = jwt.sign(
-        { username: authUsername, role: 'admin' }, 
+        { username: authUsername, role: userRole }, 
         process.env.JWT_SECRET || 'fallback_secret_key', 
         { expiresIn: '8h' }
       );
 
-      // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
       await logActivity(authUsername, "UPDATE", "Login", "Authenticated via Biometrics");
 
       res.cookie('token', token, {
@@ -261,7 +295,7 @@ export const verifyAuth = async (req, res) => {
         maxAge: 8 * 60 * 60 * 1000 
       });
 
-      return res.json({ message: "Biometric login successful", user: { username: authUsername }, token });
+      return res.json({ message: "Biometric login successful", user: { username: authUsername, role: userRole }, token });
     }
   } catch (error) {
     console.error("WebAuthn Auth Error:", error);
@@ -276,7 +310,7 @@ export const verifyAuth = async (req, res) => {
 export const getPasskeys = async (req, res) => {
   try {
     const username = req.user.username; 
-    await ensurePasskeyTable();
+    await ensureWebAuthnTables();
     const result = await pool.query(
       'SELECT id, username, created_at FROM user_passkeys WHERE username = $1 ORDER BY created_at DESC',
       [username]
@@ -300,7 +334,6 @@ export const deletePasskey = async (req, res) => {
       return res.status(404).json({ error: "Passkey not found or unauthorized." });
     }
 
-    // 📝 RECORD IN AUDIT TRAIL USING SYSTEM LOGGER
     await logActivity(username, "DELETE", "Security", "Revoked biometric device");
 
     res.json({ message: "Passkey removed successfully" });

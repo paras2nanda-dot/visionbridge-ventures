@@ -6,6 +6,8 @@ import {
 } from 'recharts';
 import { AlertTriangle, PieChart as PieChartIcon, TrendingUp, Activity, CheckCircle2, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
+// 🟢 CRIT-04 & 05 FIX: IMPORT STANDARDIZED API SERVICE
+import api from '../../services/api';
 
 const Charts = () => {
   const [charts, setCharts] = useState(null);
@@ -21,7 +23,6 @@ const Charts = () => {
     return new Intl.NumberFormat('en-IN').format(val);
   };
 
-  // 💰 SMART Y-AXIS FORMATTER (Indian Financial System)
   const formatYAxis = (val) => {
     if (val >= 10000000) return (val / 10000000).toFixed(1) + ' Cr';
     if (val >= 100000) return (val / 100000).toFixed(1) + ' L';
@@ -29,42 +30,42 @@ const Charts = () => {
     return val;
   };
 
-  const fetchData = () => {
-    const token = sessionStorage.getItem("token");
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
+  const fetchData = async () => {
+    try {
+      // 🟢 CRIT-04 & 05 FIX: Standardized API calls via Axios
+      const [chartRes, sipRes] = await Promise.all([
+        api.get('/dashboard/charts'),
+        api.get('/sips')
+      ]);
 
-    Promise.all([
-      fetch('https://visionbridge-backend.onrender.com/api/dashboard/charts', { headers }),
-      fetch('https://visionbridge-backend.onrender.com/api/sips', { headers })
-    ])
-    .then(async ([chartRes, sipRes]) => {
-      const chartJson = await chartRes.json();
-      const sipJson = await sipRes.json();
-      if (chartJson.success) setCharts(chartJson.data);
+      const chartData = chartRes.data;
+      const sipData = sipRes.data;
+
+      if (chartData.success) setCharts(chartData.data);
       
-      if (Array.isArray(sipJson)) {
-        const today = new Date();
-        const sixtyDaysFromNow = new Date();
-        sixtyDaysFromNow.setDate(today.getDate() + 60);
+      // Handle the SIP list for upcoming closures
+      // Note: getClients in Sprint 3 now returns { data: [] }, adjusting if needed
+      const sipList = Array.isArray(sipData) ? sipData : (sipData.data || []);
+      
+      const today = new Date();
+      const sixtyDaysFromNow = new Date();
+      sixtyDaysFromNow.setDate(today.getDate() + 60);
 
-        const closingSoon = sipJson
-          .filter(sip => {
-            if (!sip.end_date || sip.status !== 'Active') return false;
-            const endDate = new Date(sip.end_date);
-            return endDate >= today && endDate <= sixtyDaysFromNow;
-          })
-          .sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
-        setUpcomingClosures(closingSoon);
-      }
+      const closingSoon = sipList
+        .filter(sip => {
+          if (!sip.end_date || sip.status !== 'Active') return false;
+          const endDate = new Date(sip.end_date);
+          return endDate >= today && endDate <= sixtyDaysFromNow;
+        })
+        .sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
+      
+      setUpcomingClosures(closingSoon);
       setLoading(false);
-    })
-    .catch(err => {
+    } catch (err) {
       console.error("Data Fetch Error:", err);
+      // No need for manual 401 redirect; the api.js interceptor handles it
       setLoading(false);
-    });
+    }
   };
 
   useEffect(() => {
@@ -72,33 +73,25 @@ const Charts = () => {
   }, []);
 
   const handleCaptureSnapshot = async () => {
-    const token = sessionStorage.getItem("token");
     if (!window.confirm("Capture current AUM & SIP data for history trends? This will create a data point for today.")) return;
     
     setIsSnapshotting(true);
     try {
-      const res = await fetch('https://visionbridge-backend.onrender.com/api/dashboard/snapshot', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const json = await res.json();
-      if (json.success) {
+      // 🟢 CRIT-04 FIX: Using standardized api.post
+      const res = await api.post('/dashboard/snapshot');
+      if (res.data.success) {
         toast.success("✅ History Snapshot Captured!");
         fetchData(); 
       } else {
         toast.error("Failed to capture snapshot");
       }
     } catch (err) {
-      toast.error("Connection Error");
+      toast.error(err.response?.data?.error || "Connection Error");
     } finally {
       setIsSnapshotting(false);
     }
   };
 
-  // 📈 SMART X-AXIS FORMATTER (Stock Chart Logic)
   const formatXAxis = (tickItem) => {
     if (!charts?.trends || charts.trends.length === 0) return '';
     const date = new Date(tickItem);
@@ -117,7 +110,7 @@ const Charts = () => {
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: 'var(--text-muted)' }}>SYNCING EXECUTIVE ANALYTICS...</div>;
-  if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: '#ef4444' }}>Session Expired. Please log in again.</div>;
+  if (!charts) return <div style={{ padding: '100px', textAlign: 'center', fontWeight: '700', color: '#ef4444' }}>Unable to load charts. Please check your connection.</div>;
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
     const RADIAN = Math.PI / 180;
@@ -257,7 +250,7 @@ const Charts = () => {
         <div style={chartCardStyle}><p style={chartLabel}>Age Buckets (AUM %)</p>{renderDonut(charts.category2?.ageBucketsAum)}</div>
       </div>
 
-      {/* 📈 GROWTH PERFORMANCE TRENDS (Time-Series / Stock Chart Style) */}
+      {/* GROWTH PERFORMANCE TRENDS */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
         {sectionHeader("Growth Performance Trends", "#8b5cf6", TrendingUp)}
         
@@ -353,8 +346,6 @@ const Charts = () => {
       <style>{`
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
       `}</style>
     </div>
   );

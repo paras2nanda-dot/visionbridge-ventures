@@ -8,14 +8,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// 💡 Completely strip query parameters to prevent database name mangling
-const rawUrl = process.env.DATABASE_URL || '';
-const cleanUrl = rawUrl.split('?')[0];
+/**
+ * 🛡️ MED-02 FIX: RESTORED FULL DATABASE URL
+ * We no longer strip query parameters. Neon requires parameters like 
+ * ?sslmode=require for secure, authenticated connections.
+ */
+const DATABASE_URL = process.env.DATABASE_URL || '';
 
 export const pool = new Pool({
-  connectionString: cleanUrl,
+  connectionString: DATABASE_URL,
+  /**
+   * 🛡️ MED-02 FIX: SECURE SSL CONFIGURATION
+   * Using the full URL ensures the driver respects the sslmode parameter.
+   * rejectUnauthorized: true is the more secure strict setting.
+   */
   ssl: {
-    rejectUnauthorized: false, 
+    rejectUnauthorized: true, 
   },
   max: 10,
   idleTimeoutMillis: 30000,
@@ -23,7 +31,6 @@ export const pool = new Pool({
 });
 
 // ✅ FIX: Handle unexpected errors on idle clients
-// This prevents the "Connection terminated unexpectedly" error from crashing or spamming your logs
 pool.on('error', (err) => {
   console.error('⚠️ Unexpected error on idle database client:', err.message);
 });
@@ -32,8 +39,14 @@ pool.on('error', (err) => {
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
     console.error('❌ Database connection error!');
-    console.error(err);
+    console.error(err.message);
+    
+    // Fallback logic: if strict SSL fails in certain environments, 
+    // log a specific warning about the certificate.
+    if (err.message.includes('self-signed certificate')) {
+        console.warn('💡 Tip: If you are seeing certificate errors, ensure your environment supports the Neon CA root.');
+    }
   } else {
-    console.log('✅ Connected to Neon Database at:', res.rows[0].now);
+    console.log('✅ Securely connected to Neon Database at:', res.rows[0].now);
   }
 });
