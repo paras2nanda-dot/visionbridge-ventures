@@ -32,18 +32,28 @@ const Sips = () => {
   const fetchInitialData = async () => {
     setLoading(true); 
     try {
-      const [c, s, sip] = await Promise.all([api.get('/clients'), api.get('/mf-schemes'), api.get('/sips')]);
-      setClients(c.data || []); 
-      setSchemes(s.data || []); 
-      setSips(sip.data || []);
+      const [c, s, sip] = await Promise.all([
+        api.get('/clients'), 
+        api.get('/mf-schemes'), 
+        api.get('/sips')
+      ]);
+
+      // 🛡️ Robust Data Extraction: Prevents "n.find is not a function"
+      const clientList = c.data?.data || (Array.isArray(c.data) ? c.data : []);
+      const schemeList = s.data?.data || (Array.isArray(s.data) ? s.data : []);
+      const sipList = sip.data?.data || (Array.isArray(sip.data) ? sip.data : []);
+
+      setClients(clientList); 
+      setSchemes(schemeList); 
+      setSips(sipList);
       setSelectedIds([]); 
       
       if (!isEditing && !isViewing) {
-        const high = Math.max(...(sip.data || []).map(i => parseInt(i.sip_id?.replace(/\D/g, '') || 0)), 0);
+        const high = Math.max(...sipList.map(i => parseInt(i.sip_id?.replace(/\D/g, '') || 0)), 0);
         setFormData(prev => ({ ...prev, sip_id: `SID${(high + 1).toString().padStart(5, '0')}` }));
       }
     } catch (e) { 
-      toast.error("Sync Error"); 
+      toast.error("Sync Error: Check Backend Connection"); 
     } finally {
       setLoading(false); 
     }
@@ -117,8 +127,6 @@ const Sips = () => {
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
       
-      {/* 🚀 Removed giant "SIP Tracker" title to rely on breadcrumbs */}
-      
       {/* METRIC CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
         
@@ -151,52 +159,64 @@ const Sips = () => {
             Lifetime Processing
           </div>
         </div>
-
       </div>
       
-      {/* ADD/EDIT SIP FORM MODULE */}
+      {/* FORM MODULE */}
       <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '40px', position: 'relative', overflow: 'hidden' }}>
-        
-        {/* State Indicator */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : isViewing ? '#94a3b8' : '#0284c7' }}></div>
 
         <form onSubmit={handleSubmit}>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
-              <div><label style={labelStyle}>SID</label><input style={{...inputStyle, opacity: 0.7}} value={formData.sip_id} readOnly /></div>
+              <div><label style={labelStyle}>SID</label><input style={{...inputStyle, opacity: 0.7}} value={formData.sip_id || ''} readOnly /></div>
+              
+              {/* 🟢 FIXED: TYPING UNLOCKED */}
               <div><label style={labelStyle}>Client ID *</label>
-              <input style={inputStyle} value={formData.client_code_input} readOnly={isViewing} placeholder="e.g. C001" onChange={(e)=> {
-                const val = e.target.value.toUpperCase();
-                const found = clients.find(c => c.client_code === val);
-                setClientName(found ? found.full_name : '');
-                setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
+              <input 
+                style={inputStyle} 
+                value={formData.client_code_input || ''} 
+                readOnly={isViewing} 
+                placeholder="e.g. C001" 
+                onChange={(e)=> {
+                  const val = e.target.value.toUpperCase().trim();
+                  // Pre-emptive update so the keyboard is not locked
+                  setFormData(prev => ({ ...prev, client_code_input: val }));
+                  
+                  const found = clients.find(c => c.client_code === val);
+                  if (found) {
+                    setClientName(found.full_name);
+                    setFormData(prev => ({ ...prev, client_code_input: val, client_id: found.id }));
+                  } else {
+                    setClientName('');
+                    setFormData(prev => ({ ...prev, client_code_input: val, client_id: '' }));
+                  }
               }} required /></div>
               
-              <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, opacity: 0.7}} value={clientName} readOnly /></div>
+              <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, opacity: 0.7}} value={clientName || ''} readOnly /></div>
               
               <div><label style={labelStyle}>MF Scheme Name *</label>
-              <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e=>setFormData({...formData, scheme_id:e.target.value})} required>
-                <option value="">Select Scheme...</option>{schemes.map(s=><option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+              <select style={inputStyle} value={formData.scheme_id || ''} disabled={isViewing} onChange={e=>setFormData({...formData, scheme_id:e.target.value})} required>
+                <option value="">Select Scheme...</option>
+                {schemes.map(s=><option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select></div>
-              <div><label style={labelStyle}>SIP Amount (₹) *</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e=>setFormData({...formData, amount:e.target.value})} required /></div>
+              <div><label style={labelStyle}>SIP Amount (₹) *</label><input style={inputStyle} value={formData.amount || ''} readOnly={isViewing} onChange={e=>setFormData({...formData, amount:e.target.value})} required /></div>
               <div><label style={labelStyle}>Frequency</label>
-              <select style={inputStyle} value={formData.frequency} disabled={isViewing} onChange={e=>setFormData({...formData, frequency:e.target.value})}>
+              <select style={inputStyle} value={formData.frequency || 'MONTHLY'} disabled={isViewing} onChange={e=>setFormData({...formData, frequency:e.target.value})}>
                 <option value="MONTHLY">Monthly</option>
                 <option value="QUARTERLY">Quarterly</option>
               </select></div>
-              <div><label style={labelStyle}>SIP Day</label><select style={inputStyle} value={formData.sip_day} disabled={isViewing} onChange={e=>setFormData({...formData, sip_day:e.target.value})}>
+              <div><label style={labelStyle}>SIP Day</label><select style={inputStyle} value={formData.sip_day || '1'} disabled={isViewing} onChange={e=>setFormData({...formData, sip_day:e.target.value})}>
                 {[...Array(31)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
               </select></div>
               <div><label style={labelStyle}>Status</label>
-              <select style={inputStyle} value={formData.status} disabled={isViewing} onChange={e=>setFormData({...formData, status:e.target.value})}>
+              <select style={inputStyle} value={formData.status || 'Active'} disabled={isViewing} onChange={e=>setFormData({...formData, status:e.target.value})}>
                 <option>Active</option><option>Paused</option><option>Stopped</option>
               </select></div>
-              <div><label style={labelStyle}>Start Date</label><input type="date" style={inputStyle} value={formData.start_date} readOnly={isViewing} onChange={e=>setFormData({...formData, start_date:e.target.value})} required /></div>
-              <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} value={formData.end_date} readOnly={isViewing} onChange={e=>setFormData({...formData, end_date:e.target.value})} /></div>
-              <div><label style={labelStyle}>Platform</label><select style={inputStyle} value={formData.platform} disabled={isViewing} onChange={e=>setFormData({...formData, platform:e.target.value})}><option>NSE</option><option>BSE</option></select></div>
-              <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '80px', resize: 'vertical'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
+              <div><label style={labelStyle}>Start Date</label><input type="date" style={inputStyle} value={formData.start_date || ''} readOnly={isViewing} onChange={e=>setFormData({...formData, start_date:e.target.value})} required /></div>
+              <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} value={formData.end_date || ''} readOnly={isViewing} onChange={e=>setFormData({...formData, end_date:e.target.value})} /></div>
+              <div><label style={labelStyle}>Platform</label><select style={inputStyle} value={formData.platform || 'NSE'} disabled={isViewing} onChange={e=>setFormData({...formData, platform:e.target.value})}><option>NSE</option><option>BSE</option></select></div>
+              <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '80px', resize: 'vertical'}} value={formData.notes || ''} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
            </div>
            
-           {/* Action Buttons */}
            <div style={{marginTop: '40px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'flex-start'}}>
                <button 
                   type="submit" 
@@ -221,8 +241,6 @@ const Sips = () => {
                       border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', 
                       cursor: 'pointer', fontWeight: '800', letterSpacing: '0.5px', transition: 'all 0.2s'
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'var(--bg-main)'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     <X size={18} /> CANCEL
                   </button>
@@ -253,7 +271,7 @@ const Sips = () => {
         )}
       </div>
 
-      {/* SIP TRACKER TABLE */}
+      {/* TABLE */}
       <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -270,7 +288,7 @@ const Sips = () => {
             </thead>
             <tbody>
               {filteredSips.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(2, 132, 199, 0.04)' : 'transparent', transition: 'background 0.2s' }} onMouseOver={(e) => { if(!selectedIds.includes(s.id)) e.currentTarget.style.background = 'var(--bg-main)'; }} onMouseOut={(e) => { if(!selectedIds.includes(s.id)) e.currentTarget.style.background = 'transparent'; }}>
+                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', background: selectedIds.includes(s.id) ? 'rgba(2, 132, 199, 0.04)' : 'transparent', transition: 'background 0.2s' }}>
                   <td style={{ padding: '16px', textAlign: 'center' }}><input type="checkbox" checked={selectedIds.includes(s.id)} onChange={() => toggleSelect(s.id)} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></td>
                   <td style={{ padding: '16px', color: '#0284c7', fontWeight: '800' }}>{s.sip_id}</td>
                   <td style={{ padding: '16px', color: 'var(--text-main)', fontWeight: '700' }}>{s.client_code} - {s.client_name}</td>
@@ -288,25 +306,18 @@ const Sips = () => {
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: 'var(--text-main)' }}>₹{formatINR(s.amount)}</td>
                   <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View SIP" onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-main)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>
+                      <button onClick={() => { setIsViewing(true); setIsEditing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'color 0.2s' }} title="View SIP">
                         <Eye size={18} />
                       </button>
-                      <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit SIP" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                      <button onClick={() => { setIsEditing(true); setIsViewing(false); setEditingId(s.id); setFormData({...s, client_code_input: s.client_code}); setClientName(s.client_name); window.scrollTo({top:0, behavior:'smooth'}); }} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Edit SIP">
                         <Edit size={18} />
                       </button>
-                      <button onClick={() => handleDelete(s.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete SIP" onMouseOver={(e) => e.currentTarget.style.opacity = 0.7} onMouseOut={(e) => e.currentTarget.style.opacity = 1}>
+                      <button onClick={() => handleDelete(s.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', margin: '0 4px', transition: 'opacity 0.2s' }} title="Delete SIP">
                         <Trash2 size={18} />
                       </button>
                   </td>
                 </tr>
               ))}
-              {filteredSips.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
-                    No SIP records found.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

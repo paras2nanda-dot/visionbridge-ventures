@@ -17,7 +17,7 @@ const Transactions = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🟢 Added switch_in_scheme_id to the initial state
+  // 🟢 Preserved switch_in_scheme_id in the initial state
   const initialState = {
     transaction_id: '',
     transaction_date: new Date().toISOString().split('T')[0],
@@ -34,13 +34,20 @@ const Transactions = () => {
       const [cRes, sRes, tRes] = await Promise.all([
         api.get('/clients'), api.get('/mf-schemes'), api.get('/transactions')
       ]);
-      setClients(cRes.data || []);
-      setSchemes(sRes.data || []);
-      setTransactions(tRes.data || []);
+      
+      // 🛡️ FIX: Robust data extraction to prevent "n.find is not a function"
+      // This ensures 'clients' is always an array even if the API wraps it in { data: [] }
+      const clientList = cRes.data?.data || (Array.isArray(cRes.data) ? cRes.data : []);
+      const schemeList = sRes.data?.data || (Array.isArray(sRes.data) ? sRes.data : []);
+      const transactionList = tRes.data?.data || (Array.isArray(tRes.data) ? tRes.data : []);
+
+      setClients(clientList);
+      setSchemes(schemeList);
+      setTransactions(transactionList);
       setSelectedIds([]);
 
       if (!isEditing && !isViewing) {
-        const highestTID = Math.max(...(tRes.data || []).map(t => parseInt(t.transaction_id?.replace(/\D/g, '') || 0)), 0);
+        const highestTID = Math.max(...transactionList.map(t => parseInt(t.transaction_id?.replace(/\D/g, '') || 0)), 0);
         setFormData(prev => ({ ...prev, transaction_id: `TID${(highestTID + 1).toString().padStart(5, '0')}` }));
       }
     } catch (err) { 
@@ -156,20 +163,37 @@ const Transactions = () => {
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
-            <div><label style={labelStyle}>TID</label><input style={{...inputStyle, opacity: 0.7}} value={formData.transaction_id} readOnly /></div>
-            <div><label style={labelStyle}>Date</label><input style={inputStyle} type="date" value={formData.transaction_date} readOnly={isViewing} onChange={e => setFormData({...formData, transaction_date: e.target.value})} required /></div>
-            <div><label style={labelStyle}>Client ID *</label><input style={inputStyle} value={formData.client_code_input} readOnly={isViewing} placeholder="e.g. C001" onChange={e => {
-                const val = e.target.value.toUpperCase();
-                const found = clients.find(c => c.client_code === val);
-                setClientName(found ? found.full_name : '');
-                setFormData({...formData, client_code_input: val, client_id: found ? found.id : ''});
-            }} required /></div>
-            <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, opacity: 0.7}} value={clientName} readOnly /></div>
+            <div><label style={labelStyle}>TID</label><input style={{...inputStyle, opacity: 0.7}} value={formData.transaction_id || ''} readOnly /></div>
+            <div><label style={labelStyle}>Date</label><input style={inputStyle} type="date" value={formData.transaction_date || ''} readOnly={isViewing} onChange={e => setFormData({...formData, transaction_date: e.target.value})} required /></div>
             
-            {/* 🟢 REORDERED TYPE FIELD FOR BETTER UX */}
+            {/* 🟢 FIXED: CLIENT ID TYPING LOCK REMOVED */}
+            <div>
+              <label style={labelStyle}>Client ID *</label>
+              <input 
+                style={inputStyle} 
+                value={formData.client_code_input || ''} 
+                readOnly={isViewing} 
+                placeholder="e.g. C001" 
+                onChange={e => {
+                  const val = e.target.value.toUpperCase().trim();
+                  // Check against the safe client array
+                  const found = Array.isArray(clients) ? clients.find(c => c.client_code === val) : null;
+                  setClientName(found ? found.full_name : '');
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    client_code_input: val, 
+                    client_id: found ? found.id : '' 
+                  }));
+                }} 
+                required 
+              />
+            </div>
+            
+            <div><label style={labelStyle}>Client Name</label><input style={{...inputStyle, opacity: 0.7}} value={clientName || ''} readOnly /></div>
+            
             <div>
               <label style={labelStyle}>Type</label>
-              <select style={inputStyle} value={formData.transaction_type} disabled={isViewing || isEditing} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
+              <select style={inputStyle} value={formData.transaction_type || 'Purchase'} disabled={isViewing || isEditing} onChange={e => setFormData({...formData, transaction_type: e.target.value})}>
                 {isEditing && ['Switch In', 'Switch Out'].includes(formData.transaction_type) ? (
                   <option value={formData.transaction_type}>{formData.transaction_type}</option>
                 ) : (
@@ -187,8 +211,9 @@ const Transactions = () => {
               <label style={labelStyle}>
                 {formData.transaction_type === 'Switch' ? 'Switch Out Scheme *' : 'Scheme Name *'}
               </label>
-              <select style={inputStyle} value={formData.scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
-                <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+              <select style={inputStyle} value={formData.scheme_id || ''} disabled={isViewing} onChange={e => setFormData({...formData, scheme_id: e.target.value})} required>
+                <option value="">Select Scheme...</option>
+                {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
               </select>
             </div>
 
@@ -196,14 +221,15 @@ const Transactions = () => {
             {formData.transaction_type === 'Switch' && (
               <div className="fade-in">
                 <label style={labelStyle}>Switch In Scheme *</label>
-                <select style={inputStyle} value={formData.switch_in_scheme_id} disabled={isViewing} onChange={e => setFormData({...formData, switch_in_scheme_id: e.target.value})} required>
-                  <option value="">Select Scheme...</option>{schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
+                <select style={inputStyle} value={formData.switch_in_scheme_id || ''} disabled={isViewing} onChange={e => setFormData({...formData, switch_in_scheme_id: e.target.value})} required>
+                  <option value="">Select Scheme...</option>
+                  {schemes.map(s => <option key={s.id} value={s.id}>{s.scheme_name}</option>)}
                 </select>
               </div>
             )}
 
-            <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
-            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '80px', resize: 'vertical'}} value={formData.notes} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
+            <div><label style={labelStyle}>Amount (₹)</label><input style={inputStyle} value={formData.amount || ''} readOnly={isViewing} onChange={e => setFormData({...formData, amount: e.target.value})} required /></div>
+            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Notes</label><textarea style={{...inputStyle, height: '80px', resize: 'vertical'}} value={formData.notes || ''} readOnly={isViewing} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea></div>
           </div>
           
           <div style={{ marginTop: '40px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
