@@ -15,7 +15,8 @@ import {
   LogOut,
   TrendingUp,
   Handshake,
-  CalendarCheck // 🟢 NEW ICON FOR REVIEWS
+  CalendarCheck,
+  Receipt // 🟢 NEW ICON FOR INVOICES (CRIT-02)
 } from 'lucide-react';
 
 const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
@@ -28,8 +29,9 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Clients Database', path: '/clients', icon: <Users size={20} /> },
     { name: 'Sub-Distributors', path: '/sub-distributors', icon: <Handshake size={20} /> },
+    // 🟢 CRIT-02 FIX: ADDED INVOICE MANAGER LINK
+    { name: 'Invoice Manager', path: '/invoices', icon: <Receipt size={20} /> },
     { name: 'SIP Tracker', path: '/sips', icon: <Repeat size={20} /> },
-    // 🟢 NEW: CLIENT REVIEWS LINK
     { name: 'Client Reviews', path: '/reviews', icon: <CalendarCheck size={20} /> },
     { name: 'Transactions', path: '/transactions', icon: <ArrowLeftRight size={20} /> },
     { name: 'MF Schemes', path: '/schemes', icon: <FolderOpen size={20} /> },
@@ -176,7 +178,6 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
         </div>
       </div>
 
-      {/* Render Settings Modal */}
       {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
     </>
   );

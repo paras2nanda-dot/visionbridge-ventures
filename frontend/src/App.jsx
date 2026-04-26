@@ -16,8 +16,10 @@ import Sips from "./pages/Sips";
 import Reports from "./pages/Reports";
 import SubDistributors from "./pages/SubDistributors"; 
 import Login from "./pages/Login";
-// 🟢 NEW IMPORT FOR REVIEW MODULE
 import Reviews from "./pages/Reviews";
+
+// 🟢 CRIT-02 FIX: IMPORT INVOICE MANAGER
+import InvoiceManager from "./pages/Invoices/InvoiceManager";
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = sessionStorage.getItem("username");
@@ -94,7 +96,6 @@ function App() {
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', transition: 'background 0.3s ease', overflowX: 'hidden' }}>
       
-      {/* 🚀 EXECUTIVE TOAST CONTAINER */}
       <ToastContainer 
         position={window.innerWidth < 768 ? "bottom-center" : "top-right"}
         autoClose={3000} 
@@ -123,8 +124,10 @@ function App() {
           <Route path="/sips" element={<Sips />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/sub-distributors" element={<SubDistributors />} />
-          {/* 🟢 NEW ROUTE FOR REVIEWS */}
           <Route path="/reviews" element={<Reviews />} />
+          
+          {/* 🟢 CRIT-02 FIX: ADDED ROUTE FOR INVOICES */}
+          <Route path="/invoices" element={<InvoiceManager />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

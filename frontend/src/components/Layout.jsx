@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AutoLogout from './AutoLogout';
 import CommandPalette from './CommandPalette';
-import { Home, Search } from 'lucide-react'; // ✅ Imported Lucide icons
+import { Home, Search } from 'lucide-react'; 
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -12,6 +12,7 @@ const Layout = () => {
   const pathnames = location.pathname.split('/').filter((x) => x);
 
   const formatBreadcrumb = (path) => {
+    // 🟢 HIGH-06 FIX: ADDED MISSING LABELS FOR NEW ROUTES
     const titles = { 
         dashboard: 'Dashboard', 
         clients: 'Clients Database', 
@@ -20,7 +21,9 @@ const Layout = () => {
         schemes: 'MF Schemes', 
         charts: 'Charts & Analytics', 
         reports: 'Download Reports',
-        'sub-distributors': 'Sub-Distributors' // 🟢 Added mapping for the new section
+        'sub-distributors': 'Sub-Distributors',
+        reviews: 'Client Reviews',  // 🟢 Added mapping
+        invoices: 'Invoice Manager' // 🟢 Added mapping
     };
     return titles[path] || (path.charAt(0).toUpperCase() + path.slice(1));
   };
@@ -56,7 +59,7 @@ const Layout = () => {
       {/* 🖥️ Main Content Area */}
       <main style={{ flex: 1, minHeight: '100vh', width: '100%', transition: 'all 0.3s ease', position: 'relative', zIndex: 1 }} className="main-content-layout">
         
-        {/* 📱 STICKY MOBILE HEADER BAR (Solves Overlap) */}
+        {/* 📱 STICKY MOBILE HEADER BAR */}
         <div className="mobile-top-nav no-print">
             <button onClick={toggleSidebar} className="mobile-nav-toggle">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -66,11 +69,10 @@ const Layout = () => {
                 </svg>
             </button>
             <span style={{ fontWeight: '900', fontSize: '18px', color: 'var(--text-main)', letterSpacing: '-0.5px' }}>VisionBridge</span>
-            <div style={{ width: '40px' }}></div> {/* Balanced Spacer */}
+            <div style={{ width: '40px' }}></div>
         </div>
 
         <div className="content-padding-wrapper">
-            {/* 🔝 Top Header Bar (Breadcrumbs & Search) */}
             <div className="top-header-bar no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
             
                 {/* Breadcrumbs */}
@@ -90,7 +92,7 @@ const Layout = () => {
                     })}
                 </div>
 
-                {/* Search / Command Palette Trigger */}
+                {/* Command Palette Trigger */}
                 <button 
                     className="search-cmd-btn"
                     onClick={() => window.dispatchEvent(new Event('open-cmd-k'))} 
@@ -117,7 +119,6 @@ const Layout = () => {
       </main>
 
       <style>{`
-        /* Desktop Layout Defaults */
         .mobile-top-nav { display: none; }
         .content-padding-wrapper { padding: 40px; }
 
@@ -127,7 +128,6 @@ const Layout = () => {
           .search-cmd-btn:hover { border-color: #0284c7 !important; transform: translateY(-2px); }
         }
         
-        /* Mobile Premium Overhaul */
         @media (max-width: 1023px) { 
           .mobile-top-nav { 
             display: flex; 
@@ -155,14 +155,9 @@ const Layout = () => {
           .search-cmd-btn { width: 100% !important; padding: 14px 20px !important; }
         }
 
-        /* 🖨️ AGGRESSIVE PRINT RESET */
         @media print {
           .app-root-wrapper { background: white !important; display: block !important; }
-          .main-content-layout { 
-            margin-left: 0 !important; 
-            width: 100% !important; 
-            padding: 0 !important; 
-          }
+          .main-content-layout { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
           .content-padding-wrapper { padding: 0 !important; }
           .no-print { display: none !important; }
         }

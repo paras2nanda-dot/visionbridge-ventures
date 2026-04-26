@@ -3,6 +3,8 @@ import {
   FileText, CheckCircle, RefreshCw, Save, Printer, Trash2, Edit, BookOpen, X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+// 🟢 CRIT-04 & 05 FIX: IMPORT STANDARDIZED API SERVICE
+import api from '../../services/api';
 
 const SLABS = [
   { id: 'slab1', name: 'Slab-1', desc: 'Less than Rs 10 lacs AUM' },
@@ -53,17 +55,16 @@ const InvoiceManager = () => {
   }, []);
 
   const fetchInitialData = async () => {
-    const token = sessionStorage.getItem("token");
-    const headers = { 'Authorization': `Bearer ${token}` };
     try {
+      setLoading(true);
+      // 🟢 CRIT-04 & 05 FIX: REMOVED HARDCODED URLS AND RAW FETCH
       const [sdRes, invRes] = await Promise.all([
-        fetch('https://visionbridge-backend.onrender.com/api/sub-distributors', { headers }),
-        fetch('https://visionbridge-backend.onrender.com/api/sub-distributors/invoices', { headers })
+        api.get('/sub-distributors'),
+        api.get('/sub-distributors/invoices')
       ]);
-      const sds = await sdRes.json();
-      const invs = await invRes.json();
-      setSubDistributors(sds);
-      if (invs.success) setInvoices(invs.data);
+      
+      setSubDistributors(sdRes.data);
+      if (invRes.data.success) setInvoices(invRes.data.data);
       setLoading(false);
     } catch (err) {
       toast.error("Failed to sync data");
@@ -79,13 +80,11 @@ const InvoiceManager = () => {
 
   const fetchPreview = async () => {
     setPreviewLoading(true);
-    const token = sessionStorage.getItem("token");
     try {
-      const res = await fetch(
-        `https://visionbridge-backend.onrender.com/api/sub-distributors/${formData.sub_distributor_id}/invoice-preview?startDate=${formData.start_date}&endDate=${formData.end_date}`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      const json = await res.json();
+      const res = await api.get(`/sub-distributors/${formData.sub_distributor_id}/invoice-preview`, {
+        params: { startDate: formData.start_date, endDate: formData.end_date }
+      });
+      const json = res.data;
       if (json.success) {
         setFormData(prev => ({
           ...prev,
@@ -103,9 +102,7 @@ const InvoiceManager = () => {
   };
 
   const calculateTotals = () => {
-    // 🟢 ROUNDING LOGIC: round to nearest whole month as per requirements
     const roundedMonths = Math.round(formData.duration_months || 1);
-    
     const platformDeduction = formData.platform_applicable ? (formData.txn_count * formData.txn_rate) : 0;
     const opsDeduction = formData.ops_applicable ? (formData.client_count * formData.ops_rate_pm * roundedMonths) : 0;
     const netCommission = formData.gross_commission - platformDeduction - opsDeduction;
@@ -118,21 +115,14 @@ const InvoiceManager = () => {
   const totals = calculateTotals();
 
   const handleSave = async () => {
-    const token = sessionStorage.getItem("token");
     try {
-      const method = isEditing ? 'PUT' : 'POST';
-      const url = isEditing 
-        ? `https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${editingId}`
-        : 'https://visionbridge-backend.onrender.com/api/sub-distributors/invoices';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, net_payout: totals.netPayout })
-      });
-      const json = await res.json();
+      const payload = { ...formData, net_payout: totals.netPayout };
       
-      if (json.success) {
+      const res = isEditing 
+        ? await api.put(`/sub-distributors/invoices/${editingId}`, payload)
+        : await api.post('/sub-distributors/invoices', payload);
+
+      if (res.data.success) {
         toast.success(isEditing ? "Invoice Updated!" : "Invoice Generated!");
         setIsEditing(false);
         setEditingId(null);
@@ -140,7 +130,7 @@ const InvoiceManager = () => {
         fetchInitialData();
       }
     } catch (err) {
-      toast.error("Save failed");
+      toast.error(err.response?.data?.error || "Save failed");
     }
   };
 
@@ -168,13 +158,9 @@ const InvoiceManager = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this invoice? This cannot be undone.")) return;
-    const token = sessionStorage.getItem("token");
     try {
-      const res = await fetch(`https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
+      const res = await api.delete(`/sub-distributors/invoices/${id}`);
+      if (res.status === 200) {
         toast.success("Invoice Deleted");
         fetchInitialData();
       }
@@ -184,21 +170,13 @@ const InvoiceManager = () => {
   };
 
   const handleMarkPaid = async (id) => {
-    const token = sessionStorage.getItem("token");
     try {
-      const res = await fetch(`https://visionbridge-backend.onrender.com/api/sub-distributors/invoices/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Paid' })
-      });
-      
-      const responseData = await res.json();
-      
-      if (res.ok && responseData.success) {
+      const res = await api.put(`/sub-distributors/invoices/${id}/status`, { status: 'Paid' });
+      if (res.data.success) {
         toast.success("Payment Recorded!");
         fetchInitialData();
       } else {
-        toast.error("Update failed. Check console.");
+        toast.error("Update failed.");
       }
     } catch (err) {
       toast.error("Network Error. Is backend deployed?");
@@ -235,7 +213,6 @@ const InvoiceManager = () => {
   const cardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' };
   const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600' };
-  
   const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '40px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', position: 'relative' };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)' }}>SYNCHRONIZING INVOICE ENGINE...</div>;
@@ -247,7 +224,7 @@ const InvoiceManager = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-card)', width: '100%', maxWidth: '800px', borderRadius: '20px', border: '1px solid var(--border)', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}><BookOpen color="#0284c7" /> Partner Statement of Account (Ledger)</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}><BookOpen color="#0284c7" /> Partner Statement of Account</h2>
               <button onClick={() => setShowLedger(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
@@ -290,7 +267,6 @@ const InvoiceManager = () => {
       )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
-        
         <div style={{ flex: '1 1 350px' }} className="no-print">
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
             <button onClick={() => setShowLedger(true)} style={{ flex: 1, background: '#0284c7', color: 'white', padding: '12px', borderRadius: '10px', border: 'none', fontWeight: '800', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(2, 132, 199, 0.2)' }}>
@@ -330,7 +306,6 @@ const InvoiceManager = () => {
                 <input type="number" style={inputStyle} value={formData.gross_commission} onChange={(e) => setFormData({...formData, gross_commission: parseFloat(e.target.value) || 0})} />
               </div>
 
-              {/* TOGGLES */}
               <div style={{ marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-main)' }}>Platform Charges</span>
@@ -357,7 +332,6 @@ const InvoiceManager = () => {
         </div>
 
         <div style={{ flex: '2 1 600px' }} className="print-main-column">
-          
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }} className="no-print">
             <button onClick={() => window.print()} style={{ background: '#10b981', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
               <Printer size={18} /> Download / Print PDF
@@ -365,8 +339,6 @@ const InvoiceManager = () => {
           </div>
 
           <div id="invoice-printable" style={paperStyle}>
-            
-            {/* BRAND HEADER: PROFESSIONAL BLUE & SINGLE LINE */}
             <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '20px', marginBottom: '30px' }}>
               <h1 style={{ fontSize: '42px', fontWeight: '900', color: '#1e40af', margin: '0 0 5px 0', letterSpacing: '-1px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>VisionBridge Ventures</h1>
               <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#475569', margin: 0, textTransform: 'uppercase', letterSpacing: '3px' }}>Commission Report</h3>
@@ -388,7 +360,6 @@ const InvoiceManager = () => {
               </div>
             </div>
 
-            {/* FULL WIDTH TABLE (100%) */}
             <div style={{ width: '100%', margin: '0 auto 40px auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -439,7 +410,6 @@ const InvoiceManager = () => {
               </table>
             </div>
 
-            {/* PAYOUT BOX: PROFESSIONAL GREEN */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
               <div style={{ border: '2px solid #e2e8f0', background: '#f0fdf4', padding: '24px 60px', borderRadius: '16px', textAlign: 'center', minWidth: '350px' }}>
                 <p style={{ fontSize: '12px', fontWeight: '900', color: '#15803d', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 10px 0' }}>Final Net Payout</p>
@@ -493,42 +463,12 @@ const InvoiceManager = () => {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
         @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
-          
-          body, html, #root, .print-root {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            background: white !important;
-          }
-
-          body * {
-            visibility: hidden;
-            margin-left: 0 !important;
-          }
-
-          #invoice-printable, #invoice-printable * {
-            visibility: visible;
-          }
-
-          #invoice-printable {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 210mm !important; 
-            height: 297mm !important;
-            padding: 20mm !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-          }
-
-          .no-print {
-            display: none !important;
-          }
+          @page { size: A4 portrait; margin: 0; }
+          body, html, #root, .print-root { margin: 0 !important; padding: 0 !important; width: 100% !important; background: white !important; }
+          body * { visibility: hidden; margin-left: 0 !important; }
+          #invoice-printable, #invoice-printable * { visibility: visible; }
+          #invoice-printable { position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; height: 297mm !important; padding: 20mm !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+          .no-print { display: none !important; }
         }
       `}</style>
     </div>

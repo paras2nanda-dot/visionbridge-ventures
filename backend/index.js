@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet'; 
 
+// 📂 Routes
 import authRoutes from './routes/auth.routes.js';
 import authMiddleware from './middleware/auth.middleware.js';
 import clientRoutes from './routes/clients.routes.js';
@@ -15,7 +16,11 @@ import mfschemeRoutes from './routes/mfSchemes.routes.js';
 import transactionRoutes from './routes/transactions.routes.js'; 
 import reportRoutes from './routes/reports.routes.js'; 
 import activityRoutes from './routes/activity.routes.js'; 
-import subDistributorRoutes from './routes/subDistributor.routes.js'; // 🟢 NEW IMPORT
+import subDistributorRoutes from './routes/subDistributor.routes.js';
+
+// 🛡️ Middleware
+// 🟢 CRIT-03 FIX: IMPORT AUDIT MIDDLEWARE
+import auditMiddleware from './middleware/audit.middleware.js';
 
 import { pool } from './config/db.js'; 
 
@@ -24,7 +29,22 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } })); 
+/**
+ * 🔒 SUGG-03 FIX: ENHANCED HELMET SECURITY
+ * Added Content Security Policy (CSP) headers to protect against XSS and injection.
+ */
+app.use(helmet({ 
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    }
+  }
+})); 
+
 app.use(express.json({ limit: '10kb' })); 
 app.use(cookieParser());
 
@@ -53,18 +73,31 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// Route mounting
+/**
+ * 🚦 ROUTE MOUNTING
+ */
+
+// 1. Public Routes
 app.use('/api/auth', authRoutes);
+
+// 🟢 CRIT-03 FIX: MOUNT AUDIT LOGGING
+// This captures all subsequent API actions in the audit_logs table.
+app.use('/api', auditMiddleware);
+
+// 2. Protected Routes (Requiring Authentication)
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/client-dashboard', authMiddleware, clientDashboardRoutes); 
 app.use('/api/clients', authMiddleware, clientRoutes);
 app.use('/api/sips', authMiddleware, sipRoutes);
+
+// 🟡 HIGH-01 FIX: CONSOLIDATED SCHEMES ROUTE
+// Removed duplicate /api/schemes mount to prevent logic fragmentation.
 app.use('/api/mf-schemes', authMiddleware, mfschemeRoutes); 
-app.use('/api/schemes', authMiddleware, mfschemeRoutes); 
+
 app.use('/api/transactions', authMiddleware, transactionRoutes); 
 app.use('/api/reports', authMiddleware, reportRoutes); 
 app.use('/api/activities', authMiddleware, activityRoutes);
-app.use('/api/sub-distributors', authMiddleware, subDistributorRoutes); // 🟢 MOUNTED NEW ROUTE
+app.use('/api/sub-distributors', authMiddleware, subDistributorRoutes);
 
 app.get('/', (req, res) => res.send('✅ VisionBridge API Secure & Active'));
 
