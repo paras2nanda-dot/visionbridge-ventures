@@ -123,7 +123,7 @@ function App() {
           <Route path="/charts" element={<Charts />} />
           <Route path="/clients" element={<ClientsDatabase />} />
           
-          {/* 🟢 NEW-01 FIX: DEDICATED CLIENT PROFILE ROUTE */}
+          {/* 🟢 NEW-01 FIX: REGISTERED CLIENT PROFILE ROUTE */}
           <Route path="/clients/:id" element={<ClientProfile />} />
 
           <Route path="/schemes" element={<MFSchemes />} />
