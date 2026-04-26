@@ -8,7 +8,7 @@ const Clients = () => {
   const [activeSubTab, setActiveSubTab] = useState('basic');
   const [clients, setClients] = useState([]);
   const [subDistributors, setSubDistributors] = useState([]); 
-  const [families, setFamilies] = useState([]); // 🟢 Family Master state
+  const [families, setFamilies] = useState([]); 
   const [searchTerm, setSearchTerm] = useState(''); 
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
@@ -68,7 +68,6 @@ const Clients = () => {
     added_by: 'Paras', sourcing: 'Internal', sub_distributor_id: '', sourcing_type: 'Family / Relative', mobile_number: '',
     monthly_income: '', risk_profile: 'Moderate', investment_experience: 'Beginner', 
     pan: '', aadhaar: '', nominee_name: '', nominee_relation: '', nominee_mobile: '', notes: '', email: '',
-    // 🟢 New Family State Fields
     family_type: 'new', 
     family_id: '',
     family_name: '',
@@ -80,17 +79,29 @@ const Clients = () => {
   useEffect(() => { 
     fetchClients(); 
     fetchSubDistributors(); 
-    fetchFamilies(); // 🟢 Load families on mount
+    fetchFamilies(); 
   }, []);
 
+  /**
+   * 🛡️ FIX: UPDATED FETCH LOGIC FOR SPRINT 3 PAGINATION
+   * This resolves the invisible data issue.
+   */
   const fetchClients = async () => {
     setLoading(true);
     try {
       const res = await api.get('/clients');
-      const validData = Array.isArray(res.data) ? res.data : [];
+      
+      // 🟢 CHANGE: Accessing .data.data because of backend pagination
+      const validData = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      
       setClients(validData);
       setSelectedIds([]);
       
+      /**
+       * 🟢 FIX: ID GENERATOR
+       * This uses the visible data to correctly calculate C002, C003, etc.
+       * This resolves the "Duplicate Key C001" error in image_8b99e9.png.
+       */
       if (!isEditing && !isViewing) {
         const maxNum = validData.reduce((acc, c) => {
           const num = parseInt(c.client_code?.replace('C', ''), 10);
@@ -98,8 +109,11 @@ const Clients = () => {
         }, 0);
         setFormData(prev => ({ ...prev, client_code: `C${(maxNum + 1).toString().padStart(3, '0')}` }));
       }
-    } catch (err) { toast.error("Database Sync Error"); }
-    finally { setLoading(false); }
+    } catch (err) { 
+      toast.error("Database Sync Error"); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const fetchSubDistributors = async () => {
@@ -109,7 +123,6 @@ const Clients = () => {
     } catch (err) { console.error("Could not fetch sub-distributors"); }
   };
 
-  // 🟢 Fetch existing families for the dropdown
   const fetchFamilies = async () => {
     try {
       const res = await api.get('/clients/families');
@@ -131,7 +144,6 @@ const Clients = () => {
       return toast.warn("⚠️ Please select a Sub Distributor.");
     }
 
-    // 🟢 Requirement 3: Validation for existing family selection
     if (formData.family_type === 'existing' && !formData.family_id) {
         return toast.warn("⚠️ Please select an existing family from the dropdown.");
     }
@@ -142,8 +154,11 @@ const Clients = () => {
       else await api.post(`/clients`, formData);
       toast.success("✅ Success");
       setIsEditing(false); setFormData(initialState); fetchClients(); fetchFamilies(); setActiveSubTab('basic'); 
-    } catch (err) { toast.error(err.response?.data?.error || "Error saving client details"); }
-    finally { setIsSaving(false); } 
+    } catch (err) { 
+      toast.error(err.response?.data?.error || "Error saving client details"); 
+    } finally { 
+      setIsSaving(false); 
+    } 
   };
 
   const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -170,7 +185,6 @@ const Clients = () => {
       date_of_birth: formatDateForInput(client.dob || client.date_of_birth), 
       onboarding_date: formatDateForInput(client.onboarding_date),
       sub_distributor_id: client.sub_distributor_id || '',
-      // 🟢 Populate Family logic on edit/view
       family_type: 'existing',
       family_id: client.family_id || '',
       family_name: client.family_name || '',
@@ -248,7 +262,6 @@ const Clients = () => {
                         setFormData({
                           ...formData, 
                           full_name: val, 
-                          // 🟢 Requirement 2.2: Auto-populate family name for new families
                           family_name: formData.family_type === 'new' ? `${val} Family` : formData.family_name
                         });
                       }} 
@@ -313,7 +326,6 @@ const Clients = () => {
                   <div><label style={labelStyle}>Nominee Relation</label><input style={inputStyle} type="text" value={formData.nominee_relation} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_relation: e.target.value})} /></div>
                   <div><label style={labelStyle}>Nominee Mobile</label><input style={inputStyle} type="text" inputMode="numeric" value={formData.nominee_mobile} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_mobile: e.target.value.replace(/\D/g, '')})} /></div>
                   
-                  {/* 🟢 REQUIREMENT 2: FAMILY GROUPING SECTION */}
                   <div style={{ gridColumn: '1 / -1', marginTop: '10px', padding: '20px', background: 'rgba(2, 132, 199, 0.03)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
                     <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={18}/> Family Grouping</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
@@ -387,7 +399,6 @@ const Clients = () => {
                             </select>
                         </div>
 
-                        {/* 🟢 Requirement 4: Allow renaming master record if role = HEAD */}
                         {formData.family_type === 'existing' && formData.family_role === 'HEAD' && (
                             <div>
                                 <label style={labelStyle}>Rename Master Family Name</label>
@@ -471,7 +482,7 @@ const Clients = () => {
                 <th style={{ padding: '16px', width: '40px', borderBottom: '1px solid var(--border)' }}><input type="checkbox" checked={selectedIds.length === filteredClients.length && filteredClients.length > 0} onChange={toggleAll} style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }} /></th>
                 <th style={thStyle}>ID</th>
                 <th style={thStyle}>Client Name</th>
-                <th style={thStyle}>Family Group</th> {/* 🟢 Requirement 1: New Column */}
+                <th style={thStyle}>Family Group</th>
                 <th style={thStyle}>Partner</th>
                 <th style={thStyle}>Mobile</th>
                 <th style={thStyle}>Onboarded On</th>
@@ -485,7 +496,6 @@ const Clients = () => {
                   <td style={{ padding: '16px', fontWeight: '800', color: '#0284c7' }}>{c.client_code}</td>
                   <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{c.full_name}</td>
                   
-                  {/* 🟢 Requirement 1: Display family_name and role badge */}
                   <td style={{ padding: '16px', fontWeight: '600', color: 'var(--text-muted)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span>{c.family_name || '-'}</span>
