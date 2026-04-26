@@ -20,7 +20,8 @@ const ClientProfile = () => {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const COLORS = ['#0284c7', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+  // 🎨 Palette prioritizing your Dashboard's Purple
+  const COLORS = ['#8b5cf6', '#0284c7', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,29 +38,33 @@ const ClientProfile = () => {
     fetchProfile();
   }, [id, navigate]);
 
-  // 🟢 FIX 1: AGGREGATE DATA BY CATEGORY (Matches 'image_54b31f.png' logic)
+  // 🟢 FIX 1: Smart Aggregation (Checks multiple keys to avoid 'Other')
   const chartData = useMemo(() => {
     if (!data?.portfolio) return [];
     const groups = {};
+    
     data.portfolio.forEach(item => {
-      const cat = item.category || 'Other';
-      groups[cat] = (groups[cat] || 0) + parseFloat(item.invested_amount || 0);
+      // Tries multiple backend keys to find the correct label (Mid, Large, etc.)
+      const cat = item.scheme_type || item.asset_class || item.category || item.type || 'Other';
+      const val = parseFloat(item.invested_amount || item.amount || 0);
+      if (val > 0) groups[cat] = (groups[cat] || 0) + val;
     });
+
     return Object.keys(groups).map(name => ({ name, value: groups[name] }));
   }, [data]);
 
-  // 🟢 FIX 2: IMPROVED PDF CAPTURE (Forces vertical balance for A4)
+  // 🟢 FIX 2: Centered PDF Capture with Standard Margins
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
     setIsGenerating(true);
-    const toastId = toast.loading("Constructing portfolio statement...");
+    const toastId = toast.loading("Standardizing report alignment...");
 
     try {
       const element = reportRef.current;
-      
-      // Temporarily set a fixed width so the grid wraps into two columns for the PDF
       const originalWidth = element.style.width;
-      element.style.width = "900px"; 
+      
+      // Force a standard 1000px width for the capture to prevent shifting
+      element.style.width = "1000px"; 
 
       const canvas = await html2canvas(element, {
         scale: 2, 
@@ -68,19 +73,22 @@ const ClientProfile = () => {
         backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-main').trim(),
       });
 
-      element.style.width = originalWidth; // Reset back to screen width
+      element.style.width = originalWidth; // Reset UI width
 
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`VisionBridge_Review_${data.profile.full_name}.pdf`);
+      const pdf = new jsPDF('p', 'mm', 'a4'); 
       
-      toast.update(toastId, { render: "Statement Downloaded!", type: "success", isLoading: false, autoClose: 2000 });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 10; // 10mm margin
+      const imgWidth = pageWidth - (margin * 2); 
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+      pdf.save(`Review_${data.profile.full_name}.pdf`);
+      
+      toast.update(toastId, { render: "Report Ready!", type: "success", isLoading: false, autoClose: 2000 });
     } catch (error) {
-      toast.update(toastId, { render: "PDF Generation Failed", type: "error", isLoading: false, autoClose: 2000 });
+      toast.update(toastId, { render: "Formatting Error", type: "error", isLoading: false, autoClose: 2000 });
     } finally {
       setIsGenerating(false);
     }
@@ -92,7 +100,7 @@ const ClientProfile = () => {
 
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--text-muted)', fontWeight: '800' }}>
-      <Activity className="spin" style={{ marginRight: '10px' }} /> ANALYZING PORTFOLIO...
+      <Activity className="spin" /> &nbsp; LOADING PORTFOLIO...
     </div>
   );
   
@@ -111,7 +119,7 @@ const ClientProfile = () => {
           </button>
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: 'var(--text-main)' }}>{profile.full_name}</h1>
-            <p style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '13px' }}>Wealth Management Insights</p>
+            <p style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '13px' }}>VisionBridge Wealth Insights</p>
           </div>
         </div>
 
@@ -127,20 +135,20 @@ const ClientProfile = () => {
           }}
         >
           {isGenerating ? <Activity size={18} className="spin" /> : <Download size={18} />}
-          {isGenerating ? "GENERTING..." : "GENERATE PDF REPORT"}
+          {isGenerating ? "FIXING ALIGNMENT..." : "GENERATE PDF REPORT"}
         </button>
       </div>
 
       {/* 📄 REPORT CONTENT AREA */}
-      <div ref={reportRef} style={{ padding: '10px', borderRadius: '16px' }}>
+      <div ref={reportRef} style={{ padding: '15px' }}>
         
         <div style={{ marginBottom: '24px', borderBottom: '2px solid var(--border)', paddingBottom: '16px' }}>
             <h2 style={{ color: 'var(--text-main)', fontWeight: '900', marginBottom: '4px' }}>Portfolio Review Statement</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: '700' }}>VisionBridge Ventures • Generated on {new Date().toLocaleDateString('en-IN')}</p>
         </div>
 
-        {/* 🟢 MODIFIED GRID: Using 2 columns to ensure height is filled properly in PDF */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        {/* GRID LAYOUT: Fixed 400px left col to keep things steady */}
+        <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '24px' }}>
           
           {/* LEFT COLUMN: KYC & ASSETS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -177,7 +185,7 @@ const ClientProfile = () => {
                   <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-main)' }}>{m.full_name}</span>
                   <span style={{ fontWeight: '800', color: '#0284c7', fontSize: '13px' }}>{formatINR(m.summary.totalAUM)}</span>
                 </div>
-              )) : <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No linked family members.</p>}
+              )) : <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No family linked.</p>}
             </div>
           </div>
 
@@ -187,13 +195,21 @@ const ClientProfile = () => {
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '20px', color: '#8b5cf6', textTransform: 'uppercase', fontWeight: '900' }}>
                 <PieIcon size={18} /> Asset Allocation
               </h3>
-              <div style={{ height: '300px' }}>
-                <ResponsiveContainer width="100%" height="100%">
+              {/* 🟢 CENTERED CHART CONTAINER */}
+              <div style={{ height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                <ResponsiveContainer width="95%" height="100%">
                   <PieChart>
-                    <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={5}>
+                    <Pie 
+                      data={chartData} 
+                      dataKey="value" 
+                      nameKey="name" 
+                      innerRadius={65} 
+                      outerRadius={95} 
+                      paddingAngle={5}
+                    >
                       {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px rgba(0,0,0,0.1)' }} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" />
                   </PieChart>
                 </ResponsiveContainer>
@@ -207,7 +223,7 @@ const ClientProfile = () => {
               {review_history.length > 0 ? review_history.slice(0, 5).map(h => (
                 <div key={h.id} style={{ marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px dashed var(--border)' }}>
                   <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-main)' }}>{new Date(h.review_date).toLocaleDateString('en-IN')}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{h.notes || "Standard portfolio check-up."}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{h.notes || "Periodic portfolio check-up."}</div>
                 </div>
               )) : <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No previous logs available.</p>}
             </div>
