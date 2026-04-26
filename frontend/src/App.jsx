@@ -17,7 +17,8 @@ import Reports from "./pages/Reports";
 import SubDistributors from "./pages/SubDistributors"; 
 import Login from "./pages/Login";
 import Reviews from "./pages/Reviews";
-// 🟢 NEW-01: IMPORT CLIENT PROFILE COMPONENT
+
+// 🟢 NEW-01: IMPORT CLIENT PROFILE
 import ClientProfile from "./pages/ClientProfile";
 
 // 🟢 CRIT-02 FIX: IMPORT INVOICE MANAGER
@@ -122,7 +123,7 @@ function App() {
           <Route path="/charts" element={<Charts />} />
           <Route path="/clients" element={<ClientsDatabase />} />
           
-          {/* 🟢 NEW-01 FIX: ADDED CLIENT PROFILE ROUTE */}
+          {/* 🟢 NEW-01 FIX: DEDICATED CLIENT PROFILE ROUTE */}
           <Route path="/clients/:id" element={<ClientProfile />} />
 
           <Route path="/schemes" element={<MFSchemes />} />
