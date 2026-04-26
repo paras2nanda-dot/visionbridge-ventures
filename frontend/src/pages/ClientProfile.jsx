@@ -4,91 +4,120 @@ import api from '../services/api';
 import { toast } from 'react-toastify';
 import { 
   User, Briefcase, Users, ArrowLeft, 
-  PieChart as PieIcon, Activity, Clock, Download
+  PieChart as PieChartIcon, Activity, Clock, Download
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-
-// 🟢 PDF GENERATION LIBRARIES
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const ClientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const reportRef = useRef(null); 
+  const reportRef = useRef(null);
   const [data, setData] = useState(null);
+  const [schemes, setSchemes] = useState([]); // 🟢 Added to match Dashboard lookup
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // 🎨 Palette prioritizing your Dashboard's Purple
-  const COLORS = ['#8b5cf6', '#0284c7', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
+  const COLORS = ['#0284c7', '#8b5cf6', '#f59e0b', '#10b981', '#fbbf24'];
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchAllData = async () => {
       try {
-        const res = await api.get(`/dashboard/client/${id}`);
-        setData(res.data);
+        // Fetch both client data and master schemes simultaneously
+        const [clientRes, schemesRes] = await Promise.all([
+          api.get(`/dashboard/client/${id}`),
+          api.get('/mf-schemes')
+        ]);
+        
+        setData(clientRes.data);
+        setSchemes(schemesRes.data?.data || (Array.isArray(schemesRes.data) ? schemesRes.data : []));
       } catch (err) {
-        toast.error("Failed to load client profile");
+        toast.error("Error syncing profile data");
         navigate('/dashboard');
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    fetchAllData();
   }, [id, navigate]);
 
-  // 🟢 FIX 1: Smart Aggregation (Checks multiple keys to avoid 'Other')
+  // 🟢 FIX 1: DASHBOARD-MATCHING ALLOCATION LOGIC
   const chartData = useMemo(() => {
-    if (!data?.portfolio) return [];
-    const groups = {};
+    if (!data?.portfolio || schemes.length === 0) return [];
     
+    const totals = { Large: 0, Mid: 0, Small: 0, Debt: 0, Gold: 0 };
+    const safeNum = (val) => isNaN(parseFloat(val)) ? 0 : parseFloat(val);
+
     data.portfolio.forEach(item => {
-      // Tries multiple backend keys to find the correct label (Mid, Large, etc.)
-      const cat = item.scheme_type || item.asset_class || item.category || item.type || 'Other';
-      const val = parseFloat(item.invested_amount || item.amount || 0);
-      if (val > 0) groups[cat] = (groups[cat] || 0) + val;
+      const investedValue = safeNum(item.invested_amount) || safeNum(item.sip_amount);
+      if (investedValue <= 0) return;
+
+      // Find the master scheme match just like ClientDashboard.jsx does
+      const master = schemes.find(s => 
+        (s.scheme_name || '').trim().toLowerCase() === (item.scheme_name || '').trim().toLowerCase()
+      );
+
+      if (master) {
+        const l = safeNum(master.large_percent || master.large_cap || master.large_allocation);
+        const m = safeNum(master.mid_percent || master.mid_cap || master.mid_allocation);
+        const s = safeNum(master.small_percent || master.small_cap || master.small_allocation);
+        const d = safeNum(master.debt_percent || master.debt_cap || master.debt_allocation);
+        const g = safeNum(master.gold_percent || master.gold_cap || master.gold_allocation);
+
+        totals.Large += investedValue * (l / 100);
+        totals.Mid += investedValue * (m / 100);
+        totals.Small += investedValue * (s / 100);
+        totals.Debt += investedValue * (d / 100);
+        totals.Gold += investedValue * (g / 100);
+      }
     });
 
-    return Object.keys(groups).map(name => ({ name, value: groups[name] }));
-  }, [data]);
+    return [
+      { name: 'Large', value: totals.Large },
+      { name: 'Mid', value: totals.Mid },
+      { name: 'Small', value: totals.Small },
+      { name: 'Debt', value: totals.Debt },
+      { name: 'Gold', value: totals.Gold }
+    ].filter(a => a.value > 0);
+  }, [data, schemes]);
 
-  // 🟢 FIX 2: Centered PDF Capture with Standard Margins
+  // 🟢 FIX 2: PDF CENTERING & SCALE
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
     setIsGenerating(true);
-    const toastId = toast.loading("Standardizing report alignment...");
+    const toastId = toast.loading("Standardizing PDF Alignment...");
 
     try {
       const element = reportRef.current;
-      const originalWidth = element.style.width;
+      const originalStyle = element.style.cssText;
       
-      // Force a standard 1000px width for the capture to prevent shifting
-      element.style.width = "1000px"; 
+      // Force a consistent 1050px width for the snapshot capture
+      element.style.width = "1050px"; 
+      element.style.background = "#ffffff";
 
       const canvas = await html2canvas(element, {
-        scale: 2, 
+        scale: 2,
         useCORS: true,
-        logging: false,
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-main').trim(),
+        backgroundColor: "#ffffff",
+        windowWidth: 1050
       });
 
-      element.style.width = originalWidth; // Reset UI width
+      element.style.cssText = originalStyle;
 
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4'); 
-      
+      const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 10; // 10mm margin
-      const imgWidth = pageWidth - (margin * 2); 
+      const margin = 10;
+      const imgWidth = pageWidth - (margin * 2);
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-      pdf.save(`Review_${data.profile.full_name}.pdf`);
+      pdf.save(`VisionBridge_Review_${data.profile.full_name}.pdf`);
       
-      toast.update(toastId, { render: "Report Ready!", type: "success", isLoading: false, autoClose: 2000 });
+      toast.update(toastId, { render: "PDF Generated!", type: "success", isLoading: false, autoClose: 2000 });
     } catch (error) {
-      toast.update(toastId, { render: "Formatting Error", type: "error", isLoading: false, autoClose: 2000 });
+      toast.update(toastId, { render: "PDF Alignment Error", type: "error", isLoading: false, autoClose: 2000 });
     } finally {
       setIsGenerating(false);
     }
@@ -98,150 +127,91 @@ const ClientProfile = () => {
     style: 'currency', currency: 'INR', maximumFractionDigits: 0
   }).format(val || 0);
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--text-muted)', fontWeight: '800' }}>
-      <Activity className="spin" /> &nbsp; LOADING PORTFOLIO...
-    </div>
-  );
-  
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Activity className="spin" color="#0284c7" /></div>;
   if (!data) return null;
 
   const { profile, summary, familyMembers, review_history } = data;
 
   return (
-    <div className="container fade-in" style={{ padding: '24px', paddingBottom: '60px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="container fade-in" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* 🔍 ACTION HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => navigate(-1)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ArrowLeft size={20} />
-          </button>
+          <button onClick={() => navigate(-1)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ArrowLeft size={20} /></button>
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: 'var(--text-main)' }}>{profile.full_name}</h1>
-            <p style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '13px' }}>VisionBridge Wealth Insights</p>
+            <p style={{ color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px' }}>Institutional Portfolio Review</p>
           </div>
         </div>
-
         <button 
-          onClick={handleDownloadPDF}
+          onClick={handleDownloadPDF} 
           disabled={isGenerating}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', 
-            background: isGenerating ? 'var(--text-muted)' : '#10b981', 
-            color: 'white', borderRadius: '12px', border: 'none', fontWeight: '800', 
-            cursor: isGenerating ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
-          }}
+          style={{ background: '#10b981', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
         >
           {isGenerating ? <Activity size={18} className="spin" /> : <Download size={18} />}
-          {isGenerating ? "FIXING ALIGNMENT..." : "GENERATE PDF REPORT"}
+          {isGenerating ? "PREPARING..." : "GENERATE PDF REPORT"}
         </button>
       </div>
 
-      {/* 📄 REPORT CONTENT AREA */}
-      <div ref={reportRef} style={{ padding: '15px' }}>
-        
-        <div style={{ marginBottom: '24px', borderBottom: '2px solid var(--border)', paddingBottom: '16px' }}>
-            <h2 style={{ color: 'var(--text-main)', fontWeight: '900', marginBottom: '4px' }}>Portfolio Review Statement</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: '700' }}>VisionBridge Ventures • Generated on {new Date().toLocaleDateString('en-IN')}</p>
+      <div ref={reportRef} style={{ padding: '20px', background: 'var(--bg-main)' }}>
+        <div style={{ borderBottom: '2px solid var(--border)', marginBottom: '30px', paddingBottom: '10px' }}>
+          <h2 style={{ margin: 0, color: 'var(--text-main)', fontWeight: '900' }}>Portfolio Review Statement</h2>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '12px', fontWeight: '700' }}>VisionBridge Ventures • {new Date().toLocaleDateString('en-IN')}</p>
         </div>
 
-        {/* GRID LAYOUT: Fixed 400px left col to keep things steady */}
-        <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '24px' }}>
-          
-          {/* LEFT COLUMN: KYC & ASSETS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '30px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '20px', color: '#0284c7', textTransform: 'uppercase', fontWeight: '900' }}>
-                <User size={18} /> Client Details
-              </h3>
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <DetailRow label="Client Code" value={profile.client_code} />
-                <DetailRow label="Age" value={`${profile.age} Years`} />
-                <DetailRow label="Risk Profile" value={profile.risk_profile || 'Moderate'} highlight="#f59e0b" />
-                <DetailRow label="PAN" value={profile.pan || 'N/A'} />
-              </div>
+              <h3 style={{ color: '#0284c7', fontSize: '11px', textTransform: 'uppercase', marginBottom: '15px', fontWeight: '900', letterSpacing: '1px' }}>Client KYC</h3>
+              <DetailRow label="Client Code" value={profile.client_code} />
+              <DetailRow label="Age" value={`${profile.age} Years`} />
+              <DetailRow label="Risk Profile" value={profile.risk_profile || 'Moderate'} highlight="#f59e0b" />
+              <DetailRow label="PAN" value={profile.pan || 'N/A'} />
             </div>
 
-            <div style={{ padding: '24px', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: 'white', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(2, 132, 199, 0.3)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', marginBottom: '16px', color: 'rgba(255,255,255,0.8)', fontWeight: '900' }}>
-                <Briefcase size={18} /> INVESTED AUM
-              </h3>
-              <div style={{ fontSize: '36px', fontWeight: '900' }}>{formatINR(summary.totalAUM)}</div>
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.2)', margin: '16px 0' }}></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.9, fontSize: '13px', fontWeight: '800' }}>
-                <span>Monthly SIP Book</span>
-                <span>{formatINR(summary.totalSipBook)}</span>
+            <div style={{ padding: '30px', background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: 'white', borderRadius: '16px' }}>
+              <p style={{ margin: 0, fontSize: '11px', fontWeight: '800', opacity: 0.8, letterSpacing: '1px' }}>TOTAL INVESTED VALUE</p>
+              <h2 style={{ fontSize: '36px', margin: '10px 0', fontWeight: '900' }}>{formatINR(summary.totalAUM)}</h2>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: '700', fontSize: '13px' }}>Monthly SIP</span>
+                <span style={{ fontWeight: '900', fontSize: '13px' }}>{formatINR(summary.totalSipBook)}</span>
               </div>
-            </div>
-
-            <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '20px', color: '#f59e0b', textTransform: 'uppercase', fontWeight: '900' }}>
-                <Users size={18} /> Family Group
-              </h3>
-              {familyMembers.length > 0 ? familyMembers.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-main)' }}>{m.full_name}</span>
-                  <span style={{ fontWeight: '800', color: '#0284c7', fontSize: '13px' }}>{formatINR(m.summary.totalAUM)}</span>
-                </div>
-              )) : <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No family linked.</p>}
             </div>
           </div>
 
-          {/* RIGHT COLUMN: ALLOCATION & HISTORY */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', minHeight: '380px' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '20px', color: '#8b5cf6', textTransform: 'uppercase', fontWeight: '900' }}>
-                <PieIcon size={18} /> Asset Allocation
-              </h3>
-              {/* 🟢 CENTERED CHART CONTAINER */}
-              <div style={{ height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-                <ResponsiveContainer width="95%" height="100%">
+            <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', minHeight: '400px' }}>
+              <h3 style={{ color: '#8b5cf6', fontSize: '11px', textTransform: 'uppercase', marginBottom: '25px', fontWeight: '900', letterSpacing: '1px' }}>Asset Allocation</h3>
+              <div style={{ height: '300px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie 
                       data={chartData} 
-                      dataKey="value" 
-                      nameKey="name" 
-                      innerRadius={65} 
-                      outerRadius={95} 
-                      paddingAngle={5}
+                      cx="50%" cy="50%" 
+                      innerRadius={70} 
+                      outerRadius={100} 
+                      paddingAngle={5} 
+                      dataKey="value"
+                      nameKey="name"
                     >
-                      {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      {chartData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                    <Tooltip />
+                    <Legend verticalAlign="bottom" align="center" iconType="circle" />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
-
-            <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '20px', color: '#10b981', textTransform: 'uppercase', fontWeight: '900' }}>
-                <Clock size={18} /> Review History
-              </h3>
-              {review_history.length > 0 ? review_history.slice(0, 5).map(h => (
-                <div key={h.id} style={{ marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px dashed var(--border)' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-main)' }}>{new Date(h.review_date).toLocaleDateString('en-IN')}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{h.notes || "Periodic portfolio check-up."}</div>
-                </div>
-              )) : <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No previous logs available.</p>}
-            </div>
           </div>
         </div>
-
-        <div style={{ marginTop: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '10px', fontWeight: '800' }}>
-          PROPRIETARY DATA • FOR INTERNAL ADVISORY PURPOSES ONLY
-        </div>
       </div>
-
-      <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`.spin { animation: rotate 1s linear infinite; } @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
 
 const DetailRow = ({ label, value, highlight }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', paddingTop: '4px' }}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' }}>
     <span style={{ color: 'var(--text-muted)', fontWeight: '700' }}>{label}</span>
     <span style={{ fontWeight: '900', color: highlight || 'var(--text-main)' }}>{value}</span>
   </div>
