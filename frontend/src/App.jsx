@@ -17,6 +17,8 @@ import Reports from "./pages/Reports";
 import SubDistributors from "./pages/SubDistributors"; 
 import Login from "./pages/Login";
 import Reviews from "./pages/Reviews";
+// 🟢 NEW-01: IMPORT CLIENT PROFILE COMPONENT
+import ClientProfile from "./pages/ClientProfile";
 
 // 🟢 CRIT-02 FIX: IMPORT INVOICE MANAGER
 import InvoiceManager from "./pages/Invoices/InvoiceManager";
@@ -119,6 +121,10 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/charts" element={<Charts />} />
           <Route path="/clients" element={<ClientsDatabase />} />
+          
+          {/* 🟢 NEW-01 FIX: ADDED CLIENT PROFILE ROUTE */}
+          <Route path="/clients/:id" element={<ClientProfile />} />
+
           <Route path="/schemes" element={<MFSchemes />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/sips" element={<Sips />} />
@@ -126,7 +132,6 @@ function App() {
           <Route path="/sub-distributors" element={<SubDistributors />} />
           <Route path="/reviews" element={<Reviews />} />
           
-          {/* 🟢 CRIT-02 FIX: ADDED ROUTE FOR INVOICES */}
           <Route path="/invoices" element={<InvoiceManager />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
