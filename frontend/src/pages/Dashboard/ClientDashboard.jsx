@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🟢 Added for Full-Screen Navigation
 import { 
   Search, PieChart as PieChartIcon, CheckCircle2, AlertTriangle, 
   UserSearch, Wallet, TrendingUp, Clock, Activity, Users, 
-  ChevronDown, ChevronUp, ShieldAlert 
+  ChevronDown, ChevronUp, ShieldAlert, ExternalLink 
 } from 'lucide-react';
 import api from '../../services/api'; 
 
@@ -73,6 +74,7 @@ const AssetDonut = ({ data }) => {
 };
 
 const ClientDashboard = () => {
+  const navigate = useNavigate(); // 🟢 Restored for full-screen view
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
@@ -88,17 +90,15 @@ const ClientDashboard = () => {
   const [expandedMemberId, setExpandedMemberId] = useState(null);
 
   useEffect(() => {
-    // 1. Fetch Clients
+    // 🛡️ SPRINT 3 FIX: Use .data.data for paginated client list
     api.get('/clients')
-      .then(res => setClients(Array.isArray(res.data) ? res.data : []))
+      .then(res => setClients(res.data?.data || (Array.isArray(res.data) ? res.data : [])))
       .catch(err => console.error("Error fetching clients:", err));
 
-    // 2. Fetch Master Schemes for Allocation Donut
     api.get('/mf-schemes')
-      .then(res => setSchemes(Array.isArray(res.data) ? res.data : []))
+      .then(res => setSchemes(res.data?.data || (Array.isArray(res.data) ? res.data : [])))
       .catch(err => console.error("Error fetching master schemes:", err));
 
-    // 3. Fetch Total Business AUM for denominator (Requirement 6.3)
     api.get('/dashboard/business-total-aum')
       .then(res => setTotalBusinessAUM(res.data.totalAUM || 0))
       .catch(() => setTotalBusinessAUM(0));
@@ -109,37 +109,31 @@ const ClientDashboard = () => {
     setIsLoading(true);
     setExpandedMemberId(null);
 
-    // Sync with updated backend routes from Step 4
     Promise.all([
       api.get(`/dashboard/client/${client.id}`),
       api.get(`/sips`)
     ])
       .then(async ([dashRes, sipRes]) => {
         const dashData = dashRes.data;
-        const sipData = sipRes.data;
+        // 🛡️ SPRINT 3 FIX: Handle potentially paginated SIP response
+        const sipData = sipRes.data?.data || (Array.isArray(sipRes.data) ? sipRes.data : []);
 
         setSelectedClient(dashData.profile || client);
         setPortfolio(dashData.portfolio || []);
         setSummary(dashData.summary || { totalAUM: 0, totalSipBook: 0, sipCount: 0 });
-        
-        // 🟢 Set Family Data (Returned by updated Controller from Step 3)
         setFamilyMembers(dashData.familyMembers || []);
 
-        // Logic for Upcoming SIP alerts
-        if (Array.isArray(sipData)) {
-            const today = new Date();
-            const sixtyDaysFromNow = new Date();
-            sixtyDaysFromNow.setDate(today.getDate() + 60);
+        const today = new Date();
+        const sixtyDaysFromNow = new Date();
+        sixtyDaysFromNow.setDate(today.getDate() + 60);
 
-            const filtered = sipData.filter(sip => {
-                const isSameClient = String(sip.client_id) === String(client.id);
-                if (!isSameClient || !sip.end_date || sip.status !== 'Active') return false;
-                const endDate = new Date(sip.end_date);
-                return endDate >= today && endDate <= sixtyDaysFromNow;
-            });
-            setClientUpcomingSIPs(filtered);
-        }
-
+        const filtered = sipData.filter(sip => {
+            const isSameClient = String(sip.client_id) === String(client.id);
+            if (!isSameClient || !sip.end_date || sip.status !== 'Active') return false;
+            const endDate = new Date(sip.end_date);
+            return endDate >= today && endDate <= sixtyDaysFromNow;
+        });
+        setClientUpcomingSIPs(filtered);
         setIsLoading(false);
       })
       .catch(err => {
@@ -158,21 +152,18 @@ const ClientDashboard = () => {
 
   const getAssetAllocation = () => {
     if (!Array.isArray(portfolio) || portfolio.length === 0) return [];
-
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
-    
     portfolio.forEach(item => {
       const investedValue = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
       if (investedValue <= 0) return;
 
       const master = schemes.find(s => (s.scheme_name || '').trim().toLowerCase() === (item.scheme_name || '').trim().toLowerCase());
-      
       if (master) {
-          const l = safeNum(master.large_percent || master.large_cap || master.large_allocation || master.large);
-          const m = safeNum(master.mid_percent || master.mid_cap || master.mid_allocation || master.mid);
-          const s = safeNum(master.small_percent || master.small_cap || master.small_allocation || master.small);
-          const d = safeNum(master.debt_percent || master.debt_cap || master.debt_allocation || master.debt);
-          const g = safeNum(master.gold_percent || master.gold_cap || master.gold_allocation || master.gold);
+          const l = safeNum(master.large_percent || master.large_cap || master.large_allocation);
+          const m = safeNum(master.mid_percent || master.mid_cap || master.mid_allocation);
+          const s = safeNum(master.small_percent || master.small_cap || master.small_allocation);
+          const d = safeNum(master.debt_percent || master.debt_cap || master.debt_allocation);
+          const g = safeNum(master.gold_percent || master.gold_cap || master.gold_allocation);
 
           totals.large += investedValue * (l / 100);
           totals.mid += investedValue * (m / 100);
@@ -274,6 +265,12 @@ const ClientDashboard = () => {
                   <span>Risk Profile: <strong style={{color: '#f59e0b', fontWeight: '700'}}>{selectedClient.risk_profile || 'Moderate'}</strong></span>
                 </div>
               </div>
+              <button 
+                onClick={() => navigate(`/clients/${selectedClient.id}`)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: '#0284c7', color: 'white', borderRadius: '12px', border: 'none', fontWeight: '800', cursor: 'pointer', transition: 'transform 0.2s', boxShadow: '0 4px 6px -1px rgba(2, 132, 199, 0.3)' }}
+              >
+                VIEW FULL PROFILE <ExternalLink size={18} />
+              </button>
           </div>
 
           {/* Individual Metrics */}
@@ -304,7 +301,7 @@ const ClientDashboard = () => {
             </div>
           </div>
 
-          {/* 🟢 FAMILY PORTFOLIO SECTION (Requirement 5-9) */}
+          {/* 🟢 FAMILY PORTFOLIO SECTION (Fully Restored) */}
           {selectedClient.family_id && (
             <div className="fade-in" style={{ marginTop: '60px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
@@ -314,7 +311,6 @@ const ClientDashboard = () => {
                     <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-main)', margin: 0 }}>Family Group Portfolio</h2>
                 </div>
 
-                {/* Aggregated Cards (Requirement 6) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                     <div style={cardStyle}>
                         <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>Total Family Members</div>
@@ -333,8 +329,6 @@ const ClientDashboard = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '24px', alignItems: 'start' }}>
-                    
-                    {/* 🟢 RESTORED: Expandable Table (Requirement 7-8) */}
                     <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                             <thead style={{ background: 'var(--bg-main)' }}>
@@ -342,7 +336,7 @@ const ClientDashboard = () => {
                                     <th style={{ padding: '16px', textAlign: 'left', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Member</th>
                                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Role</th>
                                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Age</th>
-                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Monthly SIP</th> {/* 🟢 Restored Header */}
+                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Monthly SIP</th>
                                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Invested AUM</th>
                                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>% Share</th>
                                 </tr>
@@ -360,22 +354,21 @@ const ClientDashboard = () => {
                                                     {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>} {member.full_name}
                                                 </td>
                                                 <td style={{ padding: '16px', textAlign: 'center' }}>
-                                                    <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', background: member.family_role === 'HEAD' ? 'rgba(2, 132, 199, 0.1)' : 'var(--bg-main)', color: member.family_role === 'HEAD' ? '#0284c7' : 'var(--text-muted)' }}>
+                                                    <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', background: member.family_role === 'HEAD' ? 'rgba(2, 132, 199, 0.1)' : 'var(--bg-main)', color: member.family_role === 'HEAD' ? '#0284c7' : '#64748b' }}>
                                                         {member.family_role}
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '16px', textAlign: 'center', fontWeight: '700' }}>{member.age || '-'}</td>
-                                                <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>₹{formatINR(member.summary?.totalSIP)}</td> {/* 🟢 Restored Body Cell */}
+                                                <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>₹{formatINR(member.summary?.totalSIP)}</td>
                                                 <td style={{ padding: '16px', textAlign: 'right', fontWeight: '800' }}>₹{formatINR(member.summary?.totalAUM)}</td>
                                                 <td style={{ padding: '16px', textAlign: 'right', fontWeight: '600', color: 'var(--text-muted)' }}>
                                                     {familyTotalAUM > 0 ? ((member.summary?.totalAUM / familyTotalAUM) * 100).toFixed(1) : '0'}%
                                                 </td>
                                             </tr>
-                                            {/* Scheme Expansion (Requirement 8) */}
                                             {isExpanded && member.portfolio?.map((scheme, sidx) => (
                                                 <tr key={`scheme-${sidx}`} style={{ background: 'var(--bg-main)', fontSize: '12px' }}>
                                                     <td colSpan="3" style={{ padding: '10px 16px 10px 40px', color: 'var(--text-muted)', fontWeight: '600' }}>{scheme.scheme_name}</td>
-                                                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>₹{formatINR(scheme.sip_amount)}</td> {/* 🟢 Restored Scheme SIP */}
+                                                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>₹{formatINR(scheme.sip_amount)}</td>
                                                     <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700' }}>₹{formatINR(scheme.invested_amount)}</td>
                                                     <td style={{ padding: '10px 16px', textAlign: 'right', color: 'var(--text-muted)' }}>
                                                         {familyTotalAUM > 0 ? ((safeNum(scheme.invested_amount) / familyTotalAUM) * 100).toFixed(1) : '0'}%
@@ -390,13 +383,11 @@ const ClientDashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        {/* Allocation Audit for Individual */}
                         <div style={cardStyle}>
                             <h3 style={{ margin: '0 0 24px 0', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation (Individual)</h3>
                             <AssetDonut data={getAssetAllocation()} />
                         </div>
 
-                        {/* Nominee Compliance Audit (Requirement 9) */}
                         <div style={{ ...cardStyle, background: 'rgba(239, 68, 68, 0.02)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
                             <h3 style={{ margin: '0 0 16px 0', fontSize: '11px', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <ShieldAlert size={16} /> Nominee Compliance Audit
@@ -408,7 +399,6 @@ const ClientDashboard = () => {
                                             ⚠️ {m.full_name}
                                         </li>
                                     ))}
-                                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', fontWeight: '600' }}>Note: Update details in Master database.</p>
                                 </ul>
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontWeight: '800', fontSize: '14px' }}>
