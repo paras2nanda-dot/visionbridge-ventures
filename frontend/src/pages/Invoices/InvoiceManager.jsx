@@ -37,7 +37,7 @@ const InvoiceManager = () => {
     start_date: '',
     end_date: '',
     slab_name: 'Slab-1',
-    sharing_percentage: 90.00, // 🟢 Variable Global Input: Sharing split ratio %
+    sharing_percentage: 90.00, // Variable Global Input: Sharing split ratio %
     gross_commission: 0,
     platform_applicable: true,
     txn_rate: 5,         // ₹5 Per Transaction Execution
@@ -216,7 +216,6 @@ const InvoiceManager = () => {
       duration_months: parseFloat(inv.duration_months)
     });
 
-    // Fetch child lines for editing
     try {
       setPreviewLoading(true);
       const res = await api.get(`/sub-distributors/${inv.sub_distributor_id}/invoice-preview`, {
@@ -288,8 +287,10 @@ const InvoiceManager = () => {
 
   const ledgerData = showLedger ? getLedgerData() : null;
 
+  // 🟢 CORE LAYOUT DESIGN VARIABLES STYLES RE-SECURED
   const cardStyle = { background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' };
+  const inputStyle = { width: '100%', padding: '12px 16px', fontSize: '14px', outline: 'none', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: '600' };
   const paperStyle = { background: '#ffffff', color: '#0f172a', padding: '50px 40px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', position: 'relative' };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: '800', color: 'var(--text-muted)' }}>SYNCHRONIZING INVOICE RECONCILIATION SUITE...</div>;
@@ -371,7 +372,7 @@ const InvoiceManager = () => {
                 <div><label style={labelStyle}>End Date</label><input type="date" style={inputStyle} value={formData.end_date} onChange={(e) => setFormData({...formData, end_date: e.target.value})} disabled={isEditing} /></div>
               </div>
 
-              {/* 🟢 VARIABLE VARIABLE INPUT FIELD #1: MASTER COMMISSION SHARING SPLIT % */}
+              {/* VARIABLE VARIABLE INPUT FIELD #1: MASTER COMMISSION SHARING SPLIT % */}
               <div style={{ background: 'rgba(139, 92, 246, 0.04)', padding: '16px', borderRadius: '12px', border: '1px dashed #8b5cf6' }}>
                 <label style={{ ...labelStyle, color: '#8b5cf6', fontWeight: '900' }}>Variable: Commission Sharing %</label>
                 <input 
@@ -534,7 +535,7 @@ const InvoiceManager = () => {
                     <th style={{ textAlign: 'right', padding: '10px 6px', fontWeight: '800' }}>OPENING PRINCIPAL</th>
                     <th style={{ textAlign: 'right', padding: '10px 6px', fontWeight: '800' }}>REDEMPTIONS</th>
                     <th style={{ textAlign: 'right', padding: '10px 6px', fontWeight: '800' }}>ELIGIBLE ASSET</th>
-                    {/* 🟢 VARIABLE INPUT OVERRIDE #2: INDEPENDENT MUTUAL FUND RATE CELLS */}
+                    {/* VARIABLE INPUT OVERRIDE #2: INDEPENDENT MUTUAL FUND RATE CELLS */}
                     <th style={{ textAlign: 'center', padding: '10px 6px', fontWeight: '900', color: '#8b5cf6', width: '90px' }}>SCHEME %</th>
                     <th style={{ textAlign: 'right', padding: '10px 6px', fontWeight: '800' }}>PARTNER SHARE</th>
                   </tr>
