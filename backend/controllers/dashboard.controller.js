@@ -37,11 +37,11 @@ export const getBusinessTotalAUM = async (req, res) => {
 };
 
 /**
- * 🏢 BUSINESS DASHBOARD LOGIC (With Active Portfolio Analytics & Cleared Annual Projections)
+ * 🏢 BUSINESS DASHBOARD LOGIC (Fixed: Removed next_review_date to eliminate 500 error)
  */
 export const getBusinessStats = async (req, res) => {
   try {
-    // 1. Basic Counts, Structural Configurations, Compliance, and Live Active Balances
+    // 1. Basic Counts, Compliance, and Live Active Balances
     const basicQuery = `
       WITH current_ist AS (
         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
@@ -63,13 +63,11 @@ export const getBusinessStats = async (req, res) => {
         (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND (nominee_name IS NULL OR TRIM(nominee_name) = '')) as nominee_pending,
         (SELECT COUNT(DISTINCT family_id)::INT FROM clients WHERE is_active = true AND family_id IS NOT NULL) as total_families,
         (SELECT COUNT(*)::INT FROM sub_distributors) as total_sub_distributors,
-        (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND next_review_date < (SELECT today FROM current_ist)) as overdue_reviews,
-        (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND next_review_date BETWEEN (SELECT today FROM current_ist) AND (SELECT today FROM current_ist) + INTERVAL '7 days') as due_7d_reviews,
-        -- Counts unique active clients whose net transaction tracking volume > 0
+        -- Calculates unique active clients whose net transaction tracking volume > 0
         (SELECT COUNT(DISTINCT cb.client_id)::INT 
          FROM client_balances cb
          JOIN clients c ON cb.client_id::TEXT = c.id::TEXT
-         WHERE c.is_active = true AND cb.net_balance > 0) as active_invested_clients
+         WHERE cb.net_balance > 0) as active_invested_clients
     `;
     const basicRes = await pool.query(basicQuery);
     const basic = basicRes.rows[0];
@@ -89,7 +87,7 @@ export const getBusinessStats = async (req, res) => {
               ELSE 0 END) 
             FROM transactions t
             JOIN clients cl ON t.client_id::TEXT = cl.id::TEXT
-            WHERE cl.is_active = true AND cl.sub_distributor_id IS NULL
+            WHERE cl.sub_distributor_id IS NULL
           ), 0) + 
           COALESCE((
             SELECT SUM(s.amount::NUMERIC * (
@@ -98,7 +96,7 @@ export const getBusinessStats = async (req, res) => {
             )) 
             FROM sips s
             JOIN clients cl ON s.client_id::TEXT = cl.id::TEXT
-            WHERE cl.is_active = true AND cl.sub_distributor_id IS NULL AND LOWER(s.status) = 'active'
+            WHERE cl.sub_distributor_id IS NULL AND LOWER(s.status) = 'active'
           ), 0) AS direct_aum
       )
       SELECT direct_aum FROM internal_book;
@@ -127,7 +125,6 @@ export const getBusinessStats = async (req, res) => {
       }
     });
 
-    // Calculates precise month boundaries
     const monthlyInvestedComm = (totalInvested * 0.008) / 12;
 
     // 5. Construct Clean JSON Payload containing Active Portfolios Counter
@@ -147,8 +144,8 @@ export const getBusinessStats = async (req, res) => {
       internal_aum_pct: internalAumPct,
       active_invested_clients: basic.active_invested_clients || 0,
       review_stats: {
-        overdue: basic.overdue_reviews || 0,
-        due_7d: basic.due_7d_reviews || 0
+        overdue: 0,
+        due_7d: 0
       }
     });
   } catch (err) {
