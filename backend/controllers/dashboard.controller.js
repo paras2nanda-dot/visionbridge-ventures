@@ -37,33 +37,48 @@ export const getBusinessTotalAUM = async (req, res) => {
 };
 
 /**
- * 🏢 BUSINESS DASHBOARD LOGIC (Updated with Custom Matrix Channels)
+ * 🏢 BUSINESS DASHBOARD LOGIC (With Active Portfolio Analytics & Cleared Annual Projections)
  */
 export const getBusinessStats = async (req, res) => {
   try {
-    // 1. Basic Counts, Structural Configurations, and Compliance Parameters
+    // 1. Basic Counts, Structural Configurations, Compliance, and Live Active Balances
     const basicQuery = `
       WITH current_ist AS (
         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
+      ),
+      client_balances AS (
+        SELECT t.client_id, 
+               SUM(CASE 
+                 WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+                 WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+                 ELSE 0 END) as net_balance
+        FROM transactions t
+        GROUP BY t.client_id
       )
       SELECT 
         (SELECT COUNT(*)::INT FROM clients WHERE is_active = true) as total_clients,
         (SELECT COUNT(*)::INT FROM clients WHERE onboarding_date >= (SELECT today FROM current_ist) - INTERVAL '30 days') as new_clients_30d,
         (SELECT COALESCE(SUM(amount::NUMERIC), 0) FROM sips WHERE LOWER(status) = 'active') as monthly_sip_book,
         (SELECT COALESCE(SUM(total_current_value), 0) FROM mf_schemes) as market_value_aum,
-        -- 🟢 NEW: Gather compliance tracking and structural totals in a single pass
         (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND (nominee_name IS NULL OR TRIM(nominee_name) = '')) as nominee_pending,
         (SELECT COUNT(DISTINCT family_id)::INT FROM clients WHERE is_active = true AND family_id IS NOT NULL) as total_families,
-        (SELECT COUNT(*)::INT FROM sub_distributors) as total_sub_distributors
+        (SELECT COUNT(*)::INT FROM sub_distributors) as total_sub_distributors,
+        (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND next_review_date < (SELECT today FROM current_ist)) as overdue_reviews,
+        (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND next_review_date BETWEEN (SELECT today FROM current_ist) AND (SELECT today FROM current_ist) + INTERVAL '7 days') as due_7d_reviews,
+        -- Counts unique active clients whose net transaction tracking volume > 0
+        (SELECT COUNT(DISTINCT cb.client_id)::INT 
+         FROM client_balances cb
+         JOIN clients c ON cb.client_id::TEXT = c.id::TEXT
+         WHERE c.is_active = true AND cb.net_balance > 0) as active_invested_clients
     `;
     const basicRes = await pool.query(basicQuery);
     const basic = basicRes.rows[0];
 
-    // 2. 🧠 Call Centralized Brain (MathService)
+    // 2. Call Centralized Brain (MathService)
     const totalInvested = await MathService.calculateInvestedAUM();
     const commMarketMonthly = await MathService.getMonthlyCommission();
 
-    // 3. 🟢 Organic Direct-to-Firm Resource Isolation Logic (Internal Sourcing Split)
+    // 3. Organic Direct-to-Firm Resource Isolation Logic (Internal Sourcing Split)
     const internalAumQuery = `
       WITH internal_book AS (
         SELECT 
@@ -96,7 +111,7 @@ export const getBusinessStats = async (req, res) => {
       ? Number(((directAumValue / totalInvested) * 100).toFixed(1)) 
       : 0;
 
-    // 4. Additional Insights (Birthdays & SIP Expiry Alerts)
+    // 4. Additional Insights (Birthdays)
     const clientsRes = await pool.query("SELECT full_name, dob, date_of_birth FROM clients WHERE is_active = true");
     const today = new Date();
     let upcomingBirthdays = [];
@@ -112,22 +127,29 @@ export const getBusinessStats = async (req, res) => {
       }
     });
 
-    // 5. ⚡ Construct Standardized JSON Response Object with snake_case Keys matching Frontend requirements
+    // Calculates precise month boundaries
+    const monthlyInvestedComm = (totalInvested * 0.008) / 12;
+
+    // 5. Construct Clean JSON Payload containing Active Portfolios Counter
     res.json({
       total_clients: basic.total_clients,
       total_invested_aum: totalInvested,
       market_value_aum: basic.market_value_aum,
       monthly_sip_book: basic.monthly_sip_book,
       expected_aum_12m: totalInvested + (Number(basic.monthly_sip_book) * 12),
-      comm_inv_monthly: (totalInvested * 0.008) / 12, 
+      comm_inv_monthly: monthlyInvestedComm, 
       comm_mkt_monthly: commMarketMonthly,
       new_clients_30d: basic.new_clients_30d,
       upcomingBirthdays: upcomingBirthdays.sort((a,b) => a.days_left - b.days_left),
-      // Mapped Structural Extensions
       nominee_pending: basic.nominee_pending,
       total_families: basic.total_families,
       total_sub_distributors: basic.total_sub_distributors,
-      internal_aum_pct: internalAumPct
+      internal_aum_pct: internalAumPct,
+      active_invested_clients: basic.active_invested_clients || 0,
+      review_stats: {
+        overdue: basic.overdue_reviews || 0,
+        due_7d: basic.due_7d_reviews || 0
+      }
     });
   } catch (err) {
     console.error("❌ Business Stats Error:", err.message);
@@ -136,12 +158,47 @@ export const getBusinessStats = async (req, res) => {
 };
 
 /**
- * 🏆 LEADERBOARDS DASHBOARD LOGIC
+ * 🏆 LEADERBOARDS DASHBOARD LOGIC (Fixed: Full structural populating across all three panels)
  */
 export const getLeaderboardsStats = async (req, res) => {
   try {
     const total_invested_aum = await MathService.calculateInvestedAUM();
 
+    // 1. Query Top 5 Funds by Exposure based on net transaction metrics
+    const topFundsRes = await pool.query(`
+      SELECT 
+        m.scheme_name,
+        COALESCE(SUM(CASE 
+          WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+          WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+          ELSE 0 END), 0) as invested_value
+      FROM transactions t
+      JOIN mf_schemes m ON t.scheme_id::TEXT = m.id::TEXT
+      GROUP BY m.id, m.scheme_name
+      HAVING SUM(CASE 
+        WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+        WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+        ELSE 0 END) > 0
+      ORDER BY invested_value DESC LIMIT 5
+    `);
+
+    // 2. Query Top 10 Active Clients by Net Invested Portfolio Position
+    const topClientsRes = await pool.query(`
+      SELECT 
+        c.full_name,
+        c.client_code,
+        COALESCE(SUM(CASE 
+          WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+          WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+          ELSE 0 END), 0) as invested_value
+      FROM clients c
+      JOIN transactions t ON c.id::TEXT = t.client_id::TEXT
+      WHERE c.is_active = true
+      GROUP BY c.id, c.full_name, c.client_code
+      ORDER BY invested_value DESC LIMIT 10
+    `);
+
+    // 3. Query Partner Leaderboard Intermediary Network
     const topSourcesRes = await pool.query(`
       SELECT 
         sd.name,
@@ -159,9 +216,12 @@ export const getLeaderboardsStats = async (req, res) => {
 
     res.json({
       total_invested_aum,
+      topFunds: topFundsRes.rows,
+      topClients: topClientsRes.rows,
       topSources: topSourcesRes.rows,
     });
   } catch (err) {
+    console.error("❌ getLeaderboardsStats Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -224,4 +284,4 @@ export const exportSystemBackup = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Failed to generate system backup" });
   }
-}; 
+};
