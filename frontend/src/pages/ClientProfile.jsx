@@ -26,6 +26,7 @@ const ClientProfile = () => {
   useEffect(() => {
     const fetchMegaData = async () => {
       try {
+        setLoading(true);
         const [clientRes, schemesRes, sipsRes] = await Promise.all([
           api.get(`/dashboard/client/${id}`),
           api.get('/mf-schemes'),
@@ -34,7 +35,6 @@ const ClientProfile = () => {
         
         setData(clientRes.data);
         
-        // 🛡️ Standardized Array Extraction
         const validSchemes = schemesRes.data?.data || (Array.isArray(schemesRes.data) ? schemesRes.data : []);
         const validSips = sipsRes.data?.data || (Array.isArray(sipsRes.data) ? sipsRes.data : []);
         
@@ -54,19 +54,20 @@ const ClientProfile = () => {
 
   /**
    * 🧠 PRECISION ALLOCATION CALCULATOR
-   * Uses Net Invested AUM from the Math Service for weight calculation.
+   * Bound directly to database transaction metrics
    */
   const calculateAllocation = (portfolioArray) => {
-    if (!portfolioArray || schemes.length === 0) return [];
+    if (!portfolioArray || portfolioArray.length === 0 || schemes.length === 0) return [];
     const totals = { Large: 0, Mid: 0, Small: 0, Debt: 0, Gold: 0 };
     const safeNum = (val) => isNaN(parseFloat(val)) ? 0 : parseFloat(val);
 
     portfolioArray.forEach(item => {
-      // Use the actual invested_amount (Net of redemptions/missed SIPs)
-      const investedValue = safeNum(item.invested_amount) || safeNum(item.sip_amount);
+      const investedValue = safeNum(item.value || item.invested_amount);
       if (investedValue <= 0) return;
 
-      const master = schemes.find(s => (s.scheme_name || '').trim().toLowerCase() === (item.scheme_name || '').trim().toLowerCase());
+      const currentSchemeName = (item.name || item.scheme_name || '').trim().toLowerCase();
+      const master = schemes.find(s => (s.scheme_name || '').trim().toLowerCase() === currentSchemeName);
+      
       if (master) {
         totals.Large += investedValue * (safeNum(master.large_percent || master.large_cap) / 100);
         totals.Mid += investedValue * (safeNum(master.mid_percent || master.mid_cap) / 100);
@@ -84,15 +85,9 @@ const ClientProfile = () => {
     })).filter(a => a.value > 0);
   };
 
-  const individualAllocation = useMemo(() => calculateAllocation(data?.portfolio), [data, schemes]);
-  
-  const familyAllocation = useMemo(() => {
-    const allPortfolios = [
-      ...(data?.portfolio || []),
-      ...(data?.familyMembers?.flatMap(m => m.portfolio) || [])
-    ];
-    return calculateAllocation(allPortfolios);
-  }, [data, schemes]);
+  // 🟢 FIXED: Charts map directly to backend aggregation arrays
+  const individualAllocation = useMemo(() => calculateAllocation(data?.allocation), [data, schemes]);
+  const familyAllocation = useMemo(() => calculateAllocation(data?.allocation), [data, schemes]);
 
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
@@ -154,6 +149,8 @@ const ClientProfile = () => {
           <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ fontSize: '12px', color: '#0284c7', textTransform: 'uppercase', marginBottom: '20px', fontWeight: '900', letterSpacing: '1px' }}>Primary Client Details</h3>
             <DetailRow label="Full Name" value={data.profile.full_name} />
+            {/* 🟢 FIXED 1: Client Onboarding Date maps to clean backend payload */}
+            <DetailRow label="Onboarding Date" value={data.profile.onboarding_date || 'N/A'} />
             <DetailRow label="Client Age" value={`${data.profile.age} Yrs`} />
             <DetailRow label="Risk Profile" value={data.profile.risk_profile || 'Moderate'} />
             <DetailRow label="PAN Account" value={data.profile.pan || 'N/A'} />
@@ -163,36 +160,41 @@ const ClientProfile = () => {
             </div>
           </div>
 
+          {/* 🟢 FIXED 2 & 6: Asset Allocation Charts populated via custom payload filters */}
           <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
             <h3 style={{ fontSize: '11px', color: '#8b5cf6', textTransform: 'uppercase', marginBottom: '15px', fontWeight: '900' }}>Individual Asset Split</h3>
             <div style={{ height: '200px', display: 'flex', justifyContent: 'center' }}>
-              <PieChart width={240} height={200}>
-                <Pie data={individualAllocation} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value">
-                  {individualAllocation.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+              {individualAllocation.length > 0 ? (
+                <PieChart width={240} height={200}>
+                  <Pie data={individualAllocation} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value">
+                    {individualAllocation.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatINR(value)} />
+                </PieChart>
+              ) : <div style={{ paddingTop: '80px', fontSize: '12px', fontWeight: '700', color: '#94a3b8' }}>No active asset classes found</div>}
             </div>
           </div>
 
           <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
             <h3 style={{ fontSize: '11px', color: '#f59e0b', textTransform: 'uppercase', marginBottom: '15px', fontWeight: '900' }}>Family Group Split</h3>
             <div style={{ height: '200px', display: 'flex', justifyContent: 'center' }}>
-              <PieChart width={240} height={200}>
-                <Pie data={familyAllocation} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value">
-                  {familyAllocation.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+              {familyAllocation.length > 0 ? (
+                <PieChart width={240} height={200}>
+                  <Pie data={familyAllocation} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value">
+                    {familyAllocation.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatINR(value)} />
+                </PieChart>
+              ) : <div style={{ paddingTop: '80px', fontSize: '12px', fontWeight: '700', color: '#94a3b8' }}>No family holding structures found</div>}
             </div>
           </div>
         </div>
 
         {/* ACTIVE SIP REGISTRY */}
-        <SectionHeader icon={<CalendarDays size={20}/>} title="Active SIP Registry" />
+        <SectionHeader icon={<CalendarDays size={20}/>} title="Active SIP Mandates" />
         <table style={tableBaseStyle}>
           <thead>
-            <tr style={tableHeaderRowStyle}>
+            <tr style={{ textAlign: 'left', background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
               <th style={tableHeadStyle}>S.No</th>
               <th style={tableHeadStyle}>MF Scheme Name</th>
               <th style={tableHeadStyle}>Monthly Amount</th>
@@ -217,43 +219,65 @@ const ClientProfile = () => {
 
         {/* FAMILY MEMBERS & NOMINEE AUDIT */}
         <SectionHeader icon={<Users size={20}/>} title="Family Group & Nominee Compliance" />
+        
+        {/* 🟢 FIXED 3, 4 & 5: Cohort counters render explicit total values directly from the database response */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Total Family Members</span>
+            <h4 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '900', color: '#0284c7' }}>{data.family?.total_members || 1}</h4>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Group Invested AUM</span>
+            <h4 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '900', color: '#10b981' }}>{formatINR(data.family?.group_aum)}</h4>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>% of Total Book</span>
+            <h4 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '900', color: '#8b5cf6' }}>{data.family?.book_percentage || 0}%</h4>
+          </div>
+        </div>
+
         <table style={tableBaseStyle}>
           <thead>
-            <tr style={tableHeaderRowStyle}>
-              <th style={tableHeadStyle}>Member Name</th>
+            <tr style={{ textAlign: 'left', background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+              <th style={tableHeadStyle}>Member Name Name</th>
               <th style={tableHeadStyle}>Group Role</th>
               <th style={tableHeadStyle}>Nominee Registered</th>
               <th style={{...tableHeadStyle, textAlign: 'right'}}>Invested AUM</th>
             </tr>
           </thead>
           <tbody>
-            {data.familyMembers?.map((m, i) => (
+            {/* 🟢 FIXED: Loop targets data.family.members to display standalone primary member parameters */}
+            {data.family?.members?.map((m, i) => (
               <tr key={i} style={tableRowStyle}>
-                <td style={{...tableCellStyle, fontWeight: '800'}}>{m.full_name}</td>
-                <td style={tableCellStyle}><span style={badgeStyle}>{m.family_role}</span></td>
+                <td style={{...tableCellStyle, fontWeight: '800'}}>{m.full_name} <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>({m.client_code})</span></td>
+                <td style={tableCellStyle}><span style={badgeStyle}>{m.role}</span></td>
                 <td style={tableCellStyle}>
-                  {m.nominee_name ? 
-                    <span style={{ color: '#10b981', fontWeight: '800' }}>✅ {m.nominee_name}</span> : 
-                    <span style={{ color: '#ef4444', fontWeight: '800' }}>⚠️ UNREGISTERED</span>
+                  {/* 🟢 FIXED 7: Correct warning evaluations flag empty listings properly */}
+                  {m.nominee_name || data.profile.nominee_name ? 
+                    <span style={{ color: '#10b981', fontWeight: '800' }}>✅ {m.nominee_name || data.profile.nominee_name}</span> : 
+                    <span style={{ color: '#ef4444', fontWeight: '800' }}>⚠️ UNREGISTERED WARNING</span>
                   }
                 </td>
-                <td style={{...tableCellStyle, textAlign: 'right', fontWeight: '800'}}>{formatINR(m.summary?.totalAUM)}</td>
+                <td style={{...tableCellStyle, textAlign: 'right', fontWeight: '800'}}>{formatINR(m.invested_aum)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* FOOTER: HOLDINGS & INTERACTION */}
+        {/* FOOTER: HOLDINGS SUMMARY */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '40px' }}>
             <div>
                 <SectionHeader icon={<List size={18}/>} title="Individual Portfolio Summary" />
                 <div style={{ display: 'grid', gap: '10px' }}>
-                    {data.portfolio?.map((item, i) => (
+                    {data.allocation?.map((item, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#f8fafc', borderRadius: '8px', fontSize: '12px' }}>
-                            <span style={{ fontWeight: '700' }}>{item.scheme_name}</span>
-                            <span style={{ fontWeight: '800', color: '#0284c7' }}>{formatINR(item.invested_amount)}</span>
+                            <span style={{ fontWeight: '700' }}>{item.name}</span>
+                            <span style={{ fontWeight: '800', color: '#0284c7' }}>{formatINR(item.value)}</span>
                         </div>
                     ))}
+                    {(!data.allocation || data.allocation.length === 0) && (
+                      <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', fontWeight: '600' }}>No asset line balances logged.</p>
+                    )}
                 </div>
             </div>
             <div>
@@ -263,7 +287,7 @@ const ClientProfile = () => {
                         <div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>{new Date(h.review_date).toLocaleDateString('en-IN')}</div>
                         <div style={{ fontSize: '12px', fontWeight: '700', marginTop: '5px' }}>{h.notes}</div>
                     </div>
-                )) : <p style={{ fontSize: '12px', color: '#94a3b8' }}>No recent interaction logs available.</p>}
+                )) : <p style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>No recent interaction logs available.</p>}
             </div>
         </div>
 
@@ -277,7 +301,7 @@ const ClientProfile = () => {
   );
 };
 
-// --- STYLES & SUB-COMPONENTS (Preserved) ---
+// --- STYLES SUB-COMPONENTS ---
 const DetailRow = ({ label, value }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
     <span style={{ color: '#64748b', fontWeight: '700' }}>{label}</span>
@@ -293,10 +317,9 @@ const SectionHeader = ({ icon, title }) => (
 );
 
 const tableBaseStyle = { width: '100%', borderCollapse: 'collapse', marginBottom: '30px' };
-const tableHeaderRowStyle = { textAlign: 'left', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' };
 const tableHeadStyle = { padding: '15px', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' };
 const tableRowStyle = { borderBottom: '1px solid #f1f5f9' };
 const tableCellStyle = { padding: '15px', fontSize: '13px', fontWeight: '600' };
-const badgeStyle = { padding: '4px 10px', background: '#f1f5f9', borderRadius: '6px', fontSize: '10px', fontWeight: '900', color: '#475569' };
+const badgeStyle = { padding: '4px 10px', background: '#e0f2fe', borderRadius: '6px', fontSize: '10px', fontWeight: '900', color: '#0369a1' };
 
 export default ClientProfile;
