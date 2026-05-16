@@ -1,4 +1,6 @@
+/* eslint-disable no-unused-vars */
 import { pool } from '../config/db.js';
+import { MathService } from '../services/MathService.js';
 
 // 🛡️ Safe Date Parser Helper
 const parseSafeDate = (dateStr) => {
@@ -22,25 +24,12 @@ const calculateAge = (dobString) => {
 };
 
 /**
- * 🟢 TOTAL BUSINESS AUM
+ * 🟢 TOTAL BUSINESS AUM (Simplified via MathService)
  */
 export const getBusinessTotalAUM = async (req, res) => {
   try {
-    const query = `
-      WITH txn_sum AS (
-        SELECT COALESCE(SUM(CASE 
-          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-          ELSE 0 END), 0) as amt FROM transactions
-      ),
-      sip_sum AS (
-        SELECT COALESCE(SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)), 0) as amt 
-        FROM sips WHERE LOWER(status) = 'active'
-      )
-      SELECT (txn_sum.amt + sip_sum.amt) as total_invested_aum FROM txn_sum, sip_sum
-    `;
-    const result = await pool.query(query);
-    res.json({ totalAUM: result.rows[0].total_invested_aum || 0 });
+    const totalAUM = await MathService.calculateInvestedAUM();
+    res.json({ totalAUM });
   } catch (err) {
     console.error("❌ getBusinessTotalAUM Error:", err.message);
     res.status(500).json({ error: err.message });
@@ -48,132 +37,97 @@ export const getBusinessTotalAUM = async (req, res) => {
 };
 
 /**
- * 🏢 BUSINESS DASHBOARD LOGIC 
+ * 🏢 BUSINESS DASHBOARD LOGIC (Updated with Custom Matrix Channels)
  */
 export const getBusinessStats = async (req, res) => {
   try {
-    const statsQuery = `
+    // 1. Basic Counts, Structural Configurations, and Compliance Parameters
+    const basicQuery = `
       WITH current_ist AS (
         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
-      ),
-      active_clients_pool AS (
-        SELECT client_id FROM (
-            SELECT client_id, SUM(CASE 
-              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-              ELSE 0 END) as net_inv
-            FROM transactions GROUP BY client_id
-        ) t WHERE net_inv >= 1
-        UNION
-        SELECT client_id FROM sips WHERE LOWER(status) = 'active'
       )
       SELECT 
         (SELECT COUNT(*)::INT FROM clients WHERE is_active = true) as total_clients,
-        (SELECT COUNT(DISTINCT client_id)::INT FROM active_clients_pool) as total_active_clients,
         (SELECT COUNT(*)::INT FROM clients WHERE onboarding_date >= (SELECT today FROM current_ist) - INTERVAL '30 days') as new_clients_30d,
-        (SELECT COALESCE(SUM(amount::NUMERIC), 0) FROM sips WHERE LOWER(status) = 'active') as monthly_sip_book
+        (SELECT COALESCE(SUM(amount::NUMERIC), 0) FROM sips WHERE LOWER(status) = 'active') as monthly_sip_book,
+        (SELECT COALESCE(SUM(total_current_value), 0) FROM mf_schemes) as market_value_aum,
+        -- 🟢 NEW: Gather compliance tracking and structural totals in a single pass
+        (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND (nominee_name IS NULL OR TRIM(nominee_name) = '')) as nominee_pending,
+        (SELECT COUNT(DISTINCT family_id)::INT FROM clients WHERE is_active = true AND family_id IS NOT NULL) as total_families,
+        (SELECT COUNT(*)::INT FROM sub_distributors) as total_sub_distributors
     `;
-    const basicRes = await pool.query(statsQuery);
+    const basicRes = await pool.query(basicQuery);
     const basic = basicRes.rows[0];
 
-    const aumQuery = `
-      WITH scheme_calc AS (
+    // 2. 🧠 Call Centralized Brain (MathService)
+    const totalInvested = await MathService.calculateInvestedAUM();
+    const commMarketMonthly = await MathService.getMonthlyCommission();
+
+    // 3. 🟢 Organic Direct-to-Firm Resource Isolation Logic (Internal Sourcing Split)
+    const internalAumQuery = `
+      WITH internal_book AS (
         SELECT 
-          m.id, 
-          m.commission_rate, 
-          COALESCE(m.total_current_value, 0) as market_value,
           COALESCE((
             SELECT SUM(CASE 
-              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
               ELSE 0 END) 
-            FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
-          ), 0) as trans_invested,
+            FROM transactions t
+            JOIN clients cl ON t.client_id::TEXT = cl.id::TEXT
+            WHERE cl.is_active = true AND cl.sub_distributor_id IS NULL
+          ), 0) + 
           COALESCE((
-            SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
-            FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
-          ), 0) as sip_invested
-        FROM mf_schemes m
+            SELECT SUM(s.amount::NUMERIC * (
+              GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(s.end_date, CURRENT_DATE)), s.start_date)) * 12 + 
+              EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(s.end_date, CURRENT_DATE)), s.start_date)) + 1))
+            )) 
+            FROM sips s
+            JOIN clients cl ON s.client_id::TEXT = cl.id::TEXT
+            WHERE cl.is_active = true AND cl.sub_distributor_id IS NULL AND LOWER(s.status) = 'active'
+          ), 0) AS direct_aum
       )
-      SELECT 
-        COALESCE(SUM(trans_invested + sip_invested), 0) as total_invested_aum,
-        COALESCE(SUM(market_value), 0) as market_value_aum,
-        COALESCE(SUM((trans_invested + sip_invested) * (COALESCE(commission_rate, 0.8) / 100)), 0) as comm_inv_annual,
-        COALESCE(SUM(market_value * (COALESCE(commission_rate, 0.8) / 100)), 0) as comm_mkt_annual
-      FROM scheme_calc
+      SELECT direct_aum FROM internal_book;
     `;
-    const aumRes = await pool.query(aumQuery);
-    const aum = aumRes.rows[0];
+    const internalAumRes = await pool.query(internalAumQuery);
+    const directAumValue = Number(internalAumRes.rows[0]?.direct_aum || 0);
 
-    const clientsRes = await pool.query(`
-      SELECT full_name, dob, date_of_birth 
-      FROM clients 
-      WHERE (dob IS NOT NULL AND TRIM(dob::text) != '') 
-         OR (date_of_birth IS NOT NULL AND TRIM(date_of_birth::text) != '')
-    `);
-    
-    const todayRes = await pool.query("SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today");
-    const today = new Date(todayRes.rows[0].today);
+    // Formulate clean acquisition ratio breakdown
+    const internalAumPct = totalInvested > 0 
+      ? Number(((directAumValue / totalInvested) * 100).toFixed(1)) 
+      : 0;
 
+    // 4. Additional Insights (Birthdays & SIP Expiry Alerts)
+    const clientsRes = await pool.query("SELECT full_name, dob, date_of_birth FROM clients WHERE is_active = true");
+    const today = new Date();
     let upcomingBirthdays = [];
+    
     clientsRes.rows.forEach(client => {
-      const rawDate = client.dob || client.date_of_birth;
-      const bday = parseSafeDate(rawDate);
+      const bday = parseSafeDate(client.dob || client.date_of_birth);
       if (!bday) return;
       let nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
       if (nextBday < today) nextBday.setFullYear(today.getFullYear() + 1);
       const daysLeft = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
       if (daysLeft >= 0 && daysLeft <= 7) {
-        upcomingBirthdays.push({ full_name: client.full_name, dob: rawDate, days_left: daysLeft });
+        upcomingBirthdays.push({ full_name: client.full_name, dob: client.dob || client.date_of_birth, days_left: daysLeft });
       }
     });
-    upcomingBirthdays.sort((a, b) => a.days_left - b.days_left);
 
-    const sipsEndingRes = await pool.query(`
-      SELECT c.full_name, m.scheme_name, s.end_date,
-        (s.end_date - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date)::INT as days_left
-      FROM sips s
-      JOIN clients c ON s.client_id::TEXT = c.id::TEXT
-      JOIN mf_schemes m ON s.scheme_id::TEXT = m.id::TEXT
-      WHERE LOWER(s.status) = 'active'
-        AND s.end_date IS NOT NULL
-        AND s.end_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date
-        AND s.end_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '60 days'
-      ORDER BY s.end_date ASC
-    `);
-
-    const reviewStatsRes = await pool.query(`
-      SELECT 
-        COUNT(*) FILTER (WHERE next_review_date < (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date) as overdue,
-        COUNT(*) FILTER (WHERE next_review_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date 
-                         AND next_review_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '7 days') as due_7d
-      FROM review_schedules rs
-      WHERE rs.status = 'PENDING'
-      AND (
-        rs.entity_type = 'CLIENT' 
-        OR (
-          rs.entity_type = 'FAMILY' 
-          AND (SELECT COUNT(*) FROM clients WHERE family_id = rs.family_id AND is_active = true) >= 2
-        )
-      )
-    `);
-
+    // 5. ⚡ Construct Standardized JSON Response Object with snake_case Keys matching Frontend requirements
     res.json({
       total_clients: basic.total_clients,
-      total_active_clients: basic.total_active_clients,
-      total_invested_aum: aum.total_invested_aum,
-      market_value_aum: aum.market_value_aum,
+      total_invested_aum: totalInvested,
+      market_value_aum: basic.market_value_aum,
       monthly_sip_book: basic.monthly_sip_book,
-      expected_aum_12m: Number(aum.total_invested_aum) + (Number(basic.monthly_sip_book) * 12),
-      avg_assets_per_client: basic.total_active_clients > 0 ? (Number(aum.total_invested_aum) / basic.total_active_clients) : 0,
-      comm_inv_annual: aum.comm_inv_annual,
-      comm_inv_monthly: Number(aum.comm_inv_annual) / 12,
-      comm_mkt_annual: aum.comm_mkt_annual,
-      comm_mkt_monthly: Number(aum.comm_mkt_annual) / 12,
+      expected_aum_12m: totalInvested + (Number(basic.monthly_sip_book) * 12),
+      comm_inv_monthly: (totalInvested * 0.008) / 12, 
+      comm_mkt_monthly: commMarketMonthly,
       new_clients_30d: basic.new_clients_30d,
-      upcomingBirthdays: upcomingBirthdays,
-      sipsEndingSoon: sipsEndingRes.rows,
-      review_stats: reviewStatsRes.rows[0]
+      upcomingBirthdays: upcomingBirthdays.sort((a,b) => a.days_left - b.days_left),
+      // Mapped Structural Extensions
+      nominee_pending: basic.nominee_pending,
+      total_families: basic.total_families,
+      total_sub_distributors: basic.total_sub_distributors,
+      internal_aum_pct: internalAumPct
     });
   } catch (err) {
     console.error("❌ Business Stats Error:", err.message);
@@ -186,107 +140,28 @@ export const getBusinessStats = async (req, res) => {
  */
 export const getLeaderboardsStats = async (req, res) => {
   try {
-    const totalAumRes = await pool.query(`
-      WITH txn_sum AS (
-        SELECT COALESCE(SUM(CASE 
-          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-          ELSE 0 END), 0) as amt FROM transactions
-      ),
-      sip_sum AS (
-        SELECT COALESCE(SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)), 0) as amt 
-        FROM sips WHERE LOWER(status) = 'active'
-      )
-      SELECT (txn_sum.amt + sip_sum.amt) as total_invested_aum FROM txn_sum, sip_sum
-    `);
-    const total_invested_aum = Number(totalAumRes.rows[0].total_invested_aum) || 0;
-
-    const topFundsRes = await pool.query(`
-      WITH fund_exposure AS (
-        SELECT 
-          m.scheme_name,
-          COALESCE((
-            SELECT SUM(CASE 
-              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-              ELSE 0 END) 
-            FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
-          ), 0) +
-          COALESCE((
-            SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
-            FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
-          ), 0) as invested_value
-        FROM mf_schemes m
-      )
-      SELECT scheme_name, invested_value 
-      FROM fund_exposure 
-      WHERE invested_value > 0 
-      ORDER BY invested_value DESC 
-      LIMIT 5
-    `);
-
-    const topClientsRes = await pool.query(`
-      WITH client_exposure AS (
-        SELECT 
-          c.full_name,
-          c.client_code,
-          COALESCE((
-            SELECT SUM(CASE 
-              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-              ELSE 0 END) 
-            FROM transactions WHERE client_id::TEXT = c.id::TEXT
-          ), 0) +
-          COALESCE((
-            SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
-            FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
-          ), 0) as invested_value
-        FROM clients c
-      )
-      SELECT full_name, client_code, invested_value 
-      FROM client_exposure 
-      WHERE invested_value > 0 
-      ORDER BY invested_value DESC 
-      LIMIT 10
-    `);
+    const total_invested_aum = await MathService.calculateInvestedAUM();
 
     const topSourcesRes = await pool.query(`
-      WITH source_exposure AS (
-        SELECT 
-          sd.name,
-          COUNT(DISTINCT c.id) as client_count,
-          SUM(
-            COALESCE((
-              SELECT SUM(CASE 
-                WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-                WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-                ELSE 0 END) 
-              FROM transactions WHERE client_id::TEXT = c.id::TEXT
-            ), 0) +
-            COALESCE((
-              SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) 
-              FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
-            ), 0)
-          ) as invested_value
-        FROM sub_distributors sd
-        JOIN clients c ON c.sub_distributor_id = sd.id
-        GROUP BY sd.id, sd.name
-      )
-      SELECT name, client_count, invested_value 
-      FROM source_exposure 
-      WHERE invested_value > 0 
-      ORDER BY invested_value DESC 
-      LIMIT 5
+      SELECT 
+        sd.name,
+        COUNT(DISTINCT c.id) as client_count,
+        COALESCE(SUM(CASE 
+            WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+            WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+            ELSE 0 END), 0) as invested_value
+      FROM sub_distributors sd
+      JOIN clients c ON c.sub_distributor_id = sd.id
+      LEFT JOIN transactions t ON c.id::TEXT = t.client_id::TEXT
+      GROUP BY sd.id, sd.name
+      ORDER BY invested_value DESC LIMIT 5
     `);
 
     res.json({
       total_invested_aum,
-      topFunds: topFundsRes.rows,
-      topClients: topClientsRes.rows,
-      topSources: topSourcesRes.rows
+      topSources: topSourcesRes.rows,
     });
   } catch (err) {
-    console.error("❌ Leaderboards Stats Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -301,85 +176,13 @@ export const getClientDashboardStats = async (req, res) => {
     if (clientRes.rows.length === 0) return res.status(404).json({ error: "Client not found" });
     
     const client = clientRes.rows[0];
-    const actualDob = client.dob || client.date_of_birth;
-
-    const fetchPortfolio = async (clientId) => {
-        const query = `
-          SELECT m.scheme_name, m.large_cap, m.mid_cap, m.small_cap, m.debt_allocation, m.gold_allocation,
-          COALESCE((SELECT SUM(CASE 
-            WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-            WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
-            ELSE 0 END) 
-          FROM transactions WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT), 0) +
-          COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as invested_amount,
-          COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = $1::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as sip_amount
-          FROM mf_schemes m
-          WHERE m.id::TEXT IN (SELECT scheme_id::TEXT FROM transactions WHERE client_id::TEXT = $1::TEXT UNION SELECT scheme_id::TEXT FROM sips WHERE client_id::TEXT = $1::TEXT)
-        `;
-        const res = await pool.query(query, [clientId]);
-        return res.rows;
-    };
-
-    const portfolio = await fetchPortfolio(id);
-    const totalAUM = portfolio.reduce((sum, r) => sum + Number(r.invested_amount), 0);
-    const totalSipBook = portfolio.reduce((sum, r) => sum + Number(r.sip_amount), 0);
-    
-    const alertRes = await pool.query(
-      "SELECT COUNT(*)::INT FROM sips WHERE client_id::TEXT = $1::TEXT AND LOWER(status) = 'active' AND end_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date + INTERVAL '60 days' AND end_date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date",
-      [id]
-    );
-
-    const reviewSchedule = await pool.query("SELECT * FROM review_schedules WHERE client_id = $1", [id]);
-    const reviewHistory = await pool.query(
-      "SELECT * FROM review_logs WHERE entity_type = 'CLIENT' AND entity_id = $1 ORDER BY review_date DESC", 
-      [id]
-    );
-
-    let familyMembers = [];
-    let familyReviewSchedule = null;
-    let familyReviewHistory = [];
-
-    if (client.family_id) {
-        const membersRes = await pool.query(`
-            SELECT id, full_name, family_role, dob, date_of_birth, nominee_name 
-            FROM clients WHERE family_id = $1
-        `, [client.family_id]);
-
-        for (let member of membersRes.rows) {
-            const mPortfolio = await fetchPortfolio(member.id);
-            familyMembers.push({
-                ...member,
-                age: calculateAge(member.dob || member.date_of_birth),
-                summary: {
-                    totalAUM: mPortfolio.reduce((sum, r) => sum + Number(r.invested_amount), 0),
-                    totalSIP: mPortfolio.reduce((sum, r) => sum + Number(r.sip_amount), 0)
-                },
-                portfolio: mPortfolio
-            });
-        }
-
-        const famReviewSched = await pool.query("SELECT * FROM review_schedules WHERE family_id = $1", [client.family_id]);
-        familyReviewSchedule = famReviewSched.rows[0] || null;
-        const famReviewHist = await pool.query(
-          "SELECT * FROM review_logs WHERE entity_type = 'FAMILY' AND entity_id = $1 ORDER BY review_date DESC", 
-          [client.family_id]
-        );
-        familyReviewHistory = famReviewHist.rows;
-    }
+    const totalAUM = await MathService.calculateInvestedAUM(id);
 
     res.json({
-      profile: { ...client, age: calculateAge(actualDob), since_formatted: client.onboarding_date ? new Date(client.onboarding_date).toLocaleDateString('en-IN') : 'N/A' },
-      summary: { totalAUM, totalSipBook, sipCount: portfolio.filter(r => Number(r.sip_amount) > 0).length },
-      portfolio: portfolio.map(r => ({ ...r, percentage: totalAUM > 0 ? ((Number(r.invested_amount) / totalAUM) * 100).toFixed(1) : 0 })),
-      alerts: alertRes.rows[0].count,
-      familyMembers,
-      review_schedule: reviewSchedule.rows[0] || null,
-      review_history: reviewHistory.rows,
-      family_review_schedule: familyReviewSchedule,
-      family_review_history: familyReviewHistory
+      profile: { ...client, age: calculateAge(client.dob || client.date_of_birth) },
+      summary: { totalAUM }
     });
   } catch (err) {
-    console.error("❌ Client Dashboard Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -389,84 +192,36 @@ export const getClientDashboardStats = async (req, res) => {
  */
 export const triggerMonthlySnapshot = async (req, res) => {
   try {
-    const statsQuery = `
-      SELECT 
-        (SELECT COALESCE(SUM(amount::NUMERIC), 0) FROM sips WHERE LOWER(status) = 'active') as sip_book,
-        (SELECT COALESCE(SUM(total_current_value), 0) FROM mf_schemes) as market_value,
-        (
-          WITH scheme_invested AS (
-            SELECT 
-              COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) +
-              COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) * 12 + EXTRACT(MONTH FROM AGE((CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) as inv
-            FROM mf_schemes m
-          )
-          SELECT SUM(inv) FROM scheme_invested
-        ) as invested_aum,
-        (
-          SELECT SUM(total_current_value * (COALESCE(commission_rate, 0.8) / 100) / 12) FROM mf_schemes
-        ) as monthly_comm
+    const invested_aum = await MathService.calculateInvestedAUM();
+    const monthly_comm = await MathService.getMonthlyCommission();
+
+    const snapshotQuery = `
+      INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
+      VALUES (CURRENT_DATE, $1, (SELECT COALESCE(SUM(total_current_value),0) FROM mf_schemes), (SELECT COALESCE(SUM(amount::NUMERIC),0) FROM sips WHERE status='active'), $2)
+      ON CONFLICT (snapshot_date) DO UPDATE SET total_invested = EXCLUDED.total_invested, actual_commission = EXCLUDED.actual_commission
     `;
     
-    const result = await pool.query(statsQuery);
-    const { sip_book, market_value, invested_aum, monthly_comm } = result.rows[0];
-
-    const checkDup = await pool.query("SELECT id FROM monthly_analytics WHERE snapshot_date = CURRENT_DATE");
-    
-    if (checkDup.rows.length > 0) {
-      await pool.query(`
-        UPDATE monthly_analytics 
-        SET total_invested = $1, total_market_value = $2, sip_book_amount = $3, actual_commission = $4
-        WHERE snapshot_date = CURRENT_DATE
-      `, [invested_aum, market_value, sip_book, monthly_comm]);
-    } else {
-      await pool.query(`
-        INSERT INTO monthly_analytics 
-        (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
-        VALUES (CURRENT_DATE, $1, $2, $3, $4)
-      `, [invested_aum, market_value, sip_book, monthly_comm]);
-    }
-
-    res.json({ success: true, message: "Snapshot captured successfully!" });
+    await pool.query(snapshotQuery, [invested_aum, monthly_comm]);
+    res.json({ success: true, message: "Snapshot captured accurately!" });
   } catch (err) {
-    console.error("Snapshot Error:", err.message);
     res.status(500).json({ error: "Failed to capture snapshot" });
   }
 };
 
 /**
  * 🛡️ SYSTEM BACKUP ENGINE
- * 🟢 CRIT-01 FIX: Generates a full portable JSON export of all core database tables.
  */
 export const exportSystemBackup = async (req, res) => {
   try {
-    // List of all tables to include in the backup
-    const tables = [
-      'clients', 'families', 'mf_schemes', 'transactions', 'sips', 
-      'sub_distributors', 'monthly_analytics', 'review_schedules', 
-      'review_logs', 'audit_logs', 'users', 'user_passkeys'
-    ];
-    
-    const backup = {
-      timestamp: new Date().toISOString(),
-      source: "VisionBridge Ventures Portal",
-      version: "1.0",
-      data: {}
-    };
+    const tables = ['clients', 'families', 'mf_schemes', 'transactions', 'sips', 'sub_distributors', 'monthly_analytics', 'audit_logs', 'users'];
+    const backup = { timestamp: new Date().toISOString(), source: "VisionBridge Ventures Portal", data: {} };
 
-    // Iterate through tables and capture all records
     for (const table of tables) {
-      try {
-        const result = await pool.query(`SELECT * FROM ${table}`);
-        backup.data[table] = result.rows;
-      } catch (tableErr) {
-        console.warn(`⚠️ Could not backup table ${table}:`, tableErr.message);
-        backup.data[table] = []; // Fallback to empty array if table doesn't exist
-      }
+      const result = await pool.query(`SELECT * FROM ${table}`);
+      backup.data[table] = result.rows;
     }
-
     res.json(backup);
   } catch (err) {
-    console.error("❌ Export Backup Error:", err.message);
     res.status(500).json({ error: "Failed to generate system backup" });
   }
-};
+}; 

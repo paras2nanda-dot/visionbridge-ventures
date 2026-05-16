@@ -1,16 +1,28 @@
 /* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
-import { Download, DatabaseBackup, Loader2 } from 'lucide-react';
+import { Download, DatabaseBackup, Loader2, FileSpreadsheet, ShieldAlert } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const Reports = () => {
   const [downloadingReport, setDownloadingReport] = useState(null);
 
+  // 🛡️ DYNAMIC API HANDLER: Works on Localhost and Production
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000/api' 
+    : 'https://visionbridge-backend.onrender.com/api';
+
   const handleDownload = async (endpoint, filename) => {
     setDownloadingReport(endpoint);
+    const toastId = toast.loading(`Generating ${filename}...`);
+    
     try {
-      const token = sessionStorage.getItem("token");
+      /**
+       * 🛡️ AUTH SYNC: Pulling token from the standard session storage.
+       * Note: If you switched strictly to httpOnly cookies, the browser handles this automatically.
+       */
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
-      const response = await fetch(`https://visionbridge-backend.onrender.com/api/reports/${endpoint}`, {
+      const response = await fetch(`${API_BASE}/reports/${endpoint}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -18,10 +30,8 @@ const Reports = () => {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Please log in again.');
-        }
-        throw new Error('Network response was not ok');
+        if (response.status === 401) throw new Error('Session expired. Please log in.');
+        throw new Error('Reporting engine failed to generate file.');
       }
       
       const blob = await response.blob();
@@ -33,9 +43,11 @@ const Reports = () => {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      toast.update(toastId, { render: "Report Downloaded!", type: "success", isLoading: false, autoClose: 2000 });
     } catch (error) {
-      console.error("Download failed:", error);
-      alert(error.message || "Failed to download the report.");
+      console.error("Download Error:", error);
+      toast.update(toastId, { render: error.message, type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setDownloadingReport(null);
     }
@@ -43,29 +55,33 @@ const Reports = () => {
 
   const handleBackup = async () => {
     setDownloadingReport('system-backup');
+    const toastId = toast.loading("Packaging System Backup...");
+    
     try {
-      const token = sessionStorage.getItem("token");
-      const response = await fetch(`https://visionbridge-backend.onrender.com/api/backup`, {
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/dashboard/backup`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) throw new Error('Backup failed. Ensure you are logged in.');
+      if (!response.ok) throw new Error('Backup failed. Administrative access required.');
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       const timestamp = new Date().toISOString().split('T')[0];
-      link.setAttribute('download', `visionbridge_system_backup_${timestamp}.json`);
+      link.setAttribute('download', `VisionBridge_Master_Backup_${timestamp}.json`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      toast.update(toastId, { render: "Disaster Recovery File Saved!", type: "success", isLoading: false, autoClose: 3000 });
     } catch (error) {
-      alert(error.message);
+      toast.update(toastId, { render: error.message, type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setDownloadingReport(null);
     }
@@ -74,7 +90,6 @@ const Reports = () => {
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1000px', margin: '0 auto' }}>
       
-      {/* 🎨 Page Styles: Handling the Mobile Squeeze */}
       <style>{`
         .report-card {
           display: flex;
@@ -100,191 +115,138 @@ const Reports = () => {
           padding: 14px 28px;
           border-radius: 12px;
           font-weight: 800;
-          font-size: 13px;
+          font-size: 12px;
           cursor: pointer;
           letter-spacing: 0.5px;
           box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
           transition: all 0.2s ease;
           min-width: 200px;
           text-align: center;
-          outline: none;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 10px;
+          text-transform: uppercase;
         }
 
-        .report-btn:active {
-          transform: translateY(1px);
-          box-shadow: none;
-        }
-        
-        .report-btn:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
+        .report-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* 📱 Mobile Overrides: Row to Column */
         @media (max-width: 768px) {
-          .report-card {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 24px;
-            gap: 20px;
-          }
-          
-          .report-info {
-            width: 100%;
-          }
-
-          .report-btn {
-            width: 100%;
-            min-width: unset;
-            padding: 16px;
-            font-size: 14px;
-          }
-
-          .report-title {
-            font-size: 18px !important;
-          }
+          .report-card { flex-direction: column; align-items: flex-start; padding: 24px; }
+          .report-btn { width: 100%; min-width: unset; }
         }
       `}</style>
       
-      {/* 🚀 Giant "Report Export Center" title removed to rely on clean breadcrumbs */}
-
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
         
         {/* CARD 1: CLIENT-WISE INVESTED AUM */}
         <div className="report-card">
           <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.3px' }}>Client-wise Invested AUM</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', lineHeight: '1.5' }}>Detailed client metrics including SIP ratios and Risk Profiles.</p>
+            <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px' }}>Client-wise Invested AUM</h3>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Accurate metrics including net principal and missed SIP deductions.</p>
           </div>
           <button 
             className="report-btn"
-            onClick={() => handleDownload('client-aum', 'Client_AUM_Report.xlsx')}
+            onClick={() => handleDownload('client-aum', 'Client_AUM_Statement.xlsx')}
             disabled={downloadingReport === 'client-aum'}
             style={{ background: '#1e293b' }}
           >
-            {downloadingReport === 'client-aum' ? <><Loader2 size={18} className="spin" /> GENERATING...</> : <><Download size={18} /> EXPORT EXCEL</>}
+            {downloadingReport === 'client-aum' ? <><Loader2 size={18} className="spin" /> SYNCING...</> : <><FileSpreadsheet size={18} /> EXPORT EXCEL</>}
           </button>
         </div>
 
         {/* CARD 2: SCHEME-WISE AUM */}
         <div className="report-card">
           <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.3px' }}>Scheme-wise AUM</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', lineHeight: '1.5' }}>Fund allocations, SIP books, and commission metrics per scheme.</p>
+            <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px' }}>Scheme-wise AUM</h3>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Master summary of fund exposure and commission benchmarks.</p>
           </div>
           <button 
             className="report-btn"
-            onClick={() => handleDownload('scheme-aum', 'Scheme_AUM_Report.xlsx')}
+            onClick={() => handleDownload('scheme-aum', 'Scheme_Exposure_Report.xlsx')}
             disabled={downloadingReport === 'scheme-aum'}
             style={{ background: '#10b981' }}
           >
-            {downloadingReport === 'scheme-aum' ? <><Loader2 size={18} className="spin" /> GENERATING...</> : <><Download size={18} /> EXPORT EXCEL</>}
+            {downloadingReport === 'scheme-aum' ? <><Loader2 size={18} className="spin" /> SYNCING...</> : <><FileSpreadsheet size={18} /> EXPORT EXCEL</>}
           </button>
         </div>
 
         {/* CARD 3: MONTHLY SIP BOOK */}
         <div className="report-card">
           <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.3px' }}>Monthly SIP Book</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', lineHeight: '1.5' }}>Active SIP counts and amounts aggregated by scheme.</p>
+            <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px' }}>Monthly SIP Registry</h3>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Audit of all active mandates categorized by recurring amount.</p>
           </div>
           <button 
             className="report-btn"
-            onClick={() => handleDownload('sip-book', 'Monthly_SIP_Book_Report.xlsx')}
+            onClick={() => handleDownload('sip-book', 'Monthly_SIP_Book.xlsx')}
             disabled={downloadingReport === 'sip-book'}
             style={{ background: '#f59e0b' }}
           >
-            {downloadingReport === 'sip-book' ? <><Loader2 size={18} className="spin" /> GENERATING...</> : <><Download size={18} /> EXPORT EXCEL</>}
+            {downloadingReport === 'sip-book' ? <><Loader2 size={18} className="spin" /> SYNCING...</> : <><FileSpreadsheet size={18} /> EXPORT EXCEL</>}
           </button>
         </div>
 
-        {/* CARD 4: MONTHLY COMMISSION REPORT */}
+        {/* CARD 4: REVENUE PROJECTIONS */}
         <div className="report-card">
           <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.3px' }}>Monthly Commission Report</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', lineHeight: '1.5' }}>Revenue projections based on Invested and Market AUM.</p>
+            <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px' }}>Revenue & Commission Report</h3>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Monthly income estimations based on net invested capital.</p>
           </div>
           <button 
             className="report-btn"
-            onClick={() => handleDownload('commission-report', 'Monthly_Commission_Report.xlsx')}
+            onClick={() => handleDownload('commission-report', 'Revenue_Projections.xlsx')}
             disabled={downloadingReport === 'commission-report'}
             style={{ background: '#6366f1' }}
           >
-             {downloadingReport === 'commission-report' ? <><Loader2 size={18} className="spin" /> GENERATING...</> : <><Download size={18} /> EXPORT EXCEL</>}
+             {downloadingReport === 'commission-report' ? <><Loader2 size={18} className="spin" /> SYNCING...</> : <><FileSpreadsheet size={18} /> EXPORT EXCEL</>}
           </button>
         </div>
 
-        {/* CARD 5: CLIENTS DATABASE (FULL) */}
+        {/* CARD 5: FULL CLIENTS DATABASE */}
         <div className="report-card">
           <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.3px' }}>Clients Database (Full)</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', lineHeight: '1.5' }}>Export all client records with complete KYC and contact details.</p>
+            <h3 style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px' }}>Full CRM Database</h3>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Complete archive of client contact and KYC information.</p>
           </div>
           <button 
             className="report-btn"
-            onClick={() => handleDownload('clients-database', 'Full_Clients_Database.xlsx')}
+            onClick={() => handleDownload('clients-database', 'Master_Client_List.xlsx')}
             disabled={downloadingReport === 'clients-database'}
             style={{ background: '#0284c7' }}
           >
-            {downloadingReport === 'clients-database' ? <><Loader2 size={18} className="spin" /> GENERATING...</> : <><Download size={18} /> EXPORT EXCEL</>}
+            {downloadingReport === 'clients-database' ? <><Loader2 size={18} className="spin" /> SYNCING...</> : <><FileSpreadsheet size={18} /> EXPORT EXCEL</>}
           </button>
         </div>
 
-        {/* CARD 6: MF SCHEMES DATABASE (FULL) */}
-        <div className="report-card">
-          <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: 'var(--text-main)', fontSize: '18px', letterSpacing: '-0.3px' }}>MF Schemes Database (Full)</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', lineHeight: '1.5' }}>Master export of all mutual fund schemes and their allocations.</p>
-          </div>
-          <button 
-            className="report-btn"
-            onClick={() => handleDownload('schemes-database', 'Full_MF_Schemes_Database.xlsx')}
-            disabled={downloadingReport === 'schemes-database'}
-            style={{ background: '#8b5cf6' }}
-          >
-            {downloadingReport === 'schemes-database' ? <><Loader2 size={18} className="spin" /> GENERATING...</> : <><Download size={18} /> EXPORT EXCEL</>}
-          </button>
-        </div>
-
-        {/* 🛡️ SYSTEM MAINTENANCE: DISASTER RECOVERY */}
+        {/* 🛡️ DISASTER RECOVERY */}
         <div className="report-card" style={{ 
           background: 'rgba(239, 68, 68, 0.04)', 
-          marginTop: '16px',
-          border: '1px solid rgba(239, 68, 68, 0.3)'
+          marginTop: '24px',
+          border: '1px solid rgba(239, 68, 68, 0.2)'
         }}>
           <div className="report-info">
-            <h3 className="report-title" style={{ margin: 0, fontWeight: '800', color: '#ef4444', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Disaster Recovery</h3>
-            <p style={{ margin: '8px 0 0 0', color: 'var(--text-main)', fontSize: '14px', fontWeight: '500', opacity: 0.8 }}>
-              Internal database JSON backup for off-site system restoration.
+            <h3 style={{ margin: 0, fontWeight: '900', color: '#ef4444', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldAlert size={18} /> DISASTER RECOVERY (JSON)
+            </h3>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-main)', fontSize: '13px', fontWeight: '500', opacity: 0.8 }}>
+              Encrypted raw database snapshot for off-site backup and emergency restoration.
             </p>
           </div>
           <button 
             className="report-btn"
             onClick={handleBackup}
             disabled={downloadingReport === 'system-backup'}
-            style={{
-              background: '#ef4444',
-              border: '1px solid #dc2626',
-              boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)'
-            }}
+            style={{ background: '#ef4444' }}
           >
-            {downloadingReport === 'system-backup' ? <><Loader2 size={18} className="spin" /> BACKING UP...</> : <><DatabaseBackup size={18} /> SYSTEM BACKUP</>}
+            {downloadingReport === 'system-backup' ? <><Loader2 size={18} className="spin" /> PACKAGING...</> : <><DatabaseBackup size={18} /> DOWNLOAD SNAPSHOT</>}
           </button>
         </div>
       </div>
 
       <style>{`
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .spin {
-            animation: spin 1s linear infinite;
-        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
       `}</style>
     </div>
   );

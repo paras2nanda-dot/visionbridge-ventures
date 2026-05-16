@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { loginUser, resetPassword } from "../services/auth.service.js";
 import { pool } from "../config/db.js";
 import jwt from "jsonwebtoken";
@@ -25,10 +26,6 @@ const getWebAuthnConfig = (req) => {
   return { rpID, origin };
 };
 
-/**
- * 🛡️ HIGH-02 FIX: DATABASE-BACKED CHALLENGE STORE
- * Replaces the in-memory Map to survive server restarts on Render.
- */
 const saveChallenge = async (key, challenge) => {
   await pool.query(
     `INSERT INTO webauthn_challenges (key, challenge) VALUES ($1, $2) 
@@ -38,7 +35,6 @@ const saveChallenge = async (key, challenge) => {
 };
 
 const getChallenge = async (key) => {
-  // Challenges expire after 5 minutes for security
   const result = await pool.query(
     `SELECT challenge FROM webauthn_challenges 
      WHERE key = $1 AND created_at > NOW() - INTERVAL '5 minutes'`,
@@ -53,9 +49,9 @@ const deleteChallenge = async (key) => {
 
 /**
  * 🛡️ AUTO-HEALING DB FUNCTION
- * Ensures all necessary WebAuthn tables exist.
+ * M-3 FIX: Exported for startup use in index.js to prevent redundant checks.
  */
-const ensureWebAuthnTables = async () => {
+export const ensureWebAuthnTables = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_passkeys (
@@ -88,6 +84,7 @@ export const login = async (req, res) => {
   try {
     const data = await loginUser(username, password);
     
+    // Set token in secure cookie
     res.cookie('token', data.token, {
       httpOnly: true,
       secure: true, 
@@ -95,9 +92,17 @@ export const login = async (req, res) => {
       maxAge: 8 * 60 * 60 * 1000 
     });
 
-    res.json({ message: "Login successful", user: data.user, token: data.token });
+    /**
+     * 🛡️ CRIT-04 FIX: Removed token from response body.
+     * The frontend should only rely on the httpOnly cookie.
+     */
+    res.json({ 
+      success: true,
+      message: "Login successful", 
+      user: data.user 
+    });
   } catch (err) {
-    res.status(401).json({ error: err.message });
+    res.status(401).json({ success: false, error: err.message });
   }
 };
 
@@ -106,17 +111,16 @@ export const forgotPassword = async (req, res) => {
   const { securityAnswer, newPassword } = req.body;
   try {
     await resetPassword(username, securityAnswer, newPassword);
-    res.json({ message: "Password updated successfully" });
+    res.json({ success: true, message: "Password updated successfully" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
 export const logout = (req, res) => {
   res.clearCookie('token');
-  res.json({ message: "Logged out" });
+  res.json({ success: true, message: "Logged out" });
 };
-
 
 // ==========================================
 // 🛡️ BIOMETRIC (PASSKEY) AUTHENTICATION
@@ -126,14 +130,21 @@ export const generateRegOptions = async (req, res) => {
   const username = req.body.username?.trim().toLowerCase();
   const { rpID } = getWebAuthnConfig(req);
   
-  if (!username || !['paras', 'himanshu'].includes(username)) {
-    return res.status(403).json({ error: "Only authorized administrators can register biometrics." });
-  }
-
   try {
-    await ensureWebAuthnTables(); 
-    const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
+    /**
+     * 🛡️ CRIT-05 FIX: DB-BASED PERMISSION CHECK
+     * Replaces hardcoded names with the database flag 'can_register_biometric'.
+     */
+    const userCheck = await pool.query(
+        "SELECT can_register_biometric FROM users WHERE username = $1", 
+        [username]
+    );
 
+    if (!userCheck.rows[0]?.can_register_biometric) {
+      return res.status(403).json({ error: "Biometric registration not enabled for this account." });
+    }
+
+    const userPasskeys = await pool.query('SELECT credential_id FROM user_passkeys WHERE username = $1', [username]);
     const safeExcludeCredentials = userPasskeys.rows
       .filter(key => key.credential_id)
       .map(key => ({
@@ -158,7 +169,7 @@ export const generateRegOptions = async (req, res) => {
     res.json(options);
   } catch (err) {
     console.error("Error generating reg options:", err);
-    res.status(500).json({ error: `Backend Crash: ${err.message}` });
+    res.status(500).json({ error: `Backend error: ${err.message}` });
   }
 };
 
@@ -168,8 +179,7 @@ export const verifyReg = async (req, res) => {
   const { rpID, origin } = getWebAuthnConfig(req);
   
   const expectedChallenge = await getChallenge(`reg_${username}`);
-
-  if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired or not found. Try again." });
+  if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Please try again." });
 
   try {
     const verification = await verifyRegistrationResponse({
@@ -184,22 +194,16 @@ export const verifyReg = async (req, res) => {
 
       await pool.query(
         `INSERT INTO user_passkeys (username, credential_id, public_key, counter) VALUES ($1, $2, $3, $4)`,
-        [
-          username, 
-          credential.id, 
-          Buffer.from(credential.publicKey).toString('base64url'), 
-          credential.counter
-        ]
+        [username, credential.id, Buffer.from(credential.publicKey).toString('base64url'), credential.counter]
       );
 
       await logActivity(username, "CREATE", "Security", "Registered new biometric device");
       await deleteChallenge(`reg_${username}`);
       
-      return res.json({ verified: true, message: "Device registered successfully!" });
+      return res.json({ verified: true, message: "Device registered!" });
     }
   } catch (error) {
-    console.error("WebAuthn Reg Error:", error);
-    return res.status(400).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -208,8 +212,6 @@ export const generateAuthOptions = async (req, res) => {
   const { rpID } = getWebAuthnConfig(req);
 
   try {
-    await ensureWebAuthnTables();
-    
     let allowCredentials = [];
     if (username) {
       const userKeys = await pool.query('SELECT * FROM user_passkeys WHERE username = $1', [username]);
@@ -227,10 +229,8 @@ export const generateAuthOptions = async (req, res) => {
 
     const challengeKey = username ? `auth_${username}` : `auth_discoverable`;
     await saveChallenge(challengeKey, options.challenge);
-    
     res.json(options);
   } catch (err) {
-    console.error("Auth Options Error:", err);
     res.status(500).json({ error: `Auth setup failed: ${err.message}` });
   }
 };
@@ -243,17 +243,13 @@ export const verifyAuth = async (req, res) => {
   const challengeKey = username ? `auth_${username}` : `auth_discoverable`;
   const expectedChallenge = await getChallenge(challengeKey);
 
-  if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired. Try again." });
+  if (!expectedChallenge) return res.status(400).json({ error: "Challenge expired." });
 
   try {
     const keyResult = await pool.query('SELECT * FROM user_passkeys WHERE credential_id = $1', [body.id]);
     const passkey = keyResult.rows[0];
 
-    if (!passkey) {
-        return res.status(400).json({ 
-            error: "Device not recognized. Please login with password to re-register." 
-        });
-    }
+    if (!passkey) return res.status(400).json({ error: "Device not recognized." });
 
     const verification = await verifyAuthenticationResponse({
       response: body,
@@ -272,18 +268,13 @@ export const verifyAuth = async (req, res) => {
       await deleteChallenge(challengeKey);
 
       const authUsername = passkey.username;
-
-      /**
-       * 🛡️ MED-07 FIX: FETCH ACTUAL ROLE FROM DB
-       * Prevents biometric login from incorrectly granting hardcoded admin rights.
-       */
       const userResult = await pool.query('SELECT role FROM users WHERE username = $1', [authUsername]);
       const userRole = userResult.rows[0]?.role || 'advisor';
 
       const token = jwt.sign(
         { username: authUsername, role: userRole }, 
-        process.env.JWT_SECRET || 'fallback_secret_key', 
-        { expiresIn: '8h' }
+        process.env.JWT_SECRET, // 🛡️ Using env directly, index.js ensures this exists.
+        { expiresIn: "8h" }
       );
 
       await logActivity(authUsername, "UPDATE", "Login", "Authenticated via Biometrics");
@@ -295,11 +286,10 @@ export const verifyAuth = async (req, res) => {
         maxAge: 8 * 60 * 60 * 1000 
       });
 
-      return res.json({ message: "Biometric login successful", user: { username: authUsername, role: userRole }, token });
+      return res.json({ success: true, message: "Login successful", user: { username: authUsername, role: userRole } });
     }
   } catch (error) {
-    console.error("WebAuthn Auth Error:", error);
-    return res.status(400).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -310,7 +300,6 @@ export const verifyAuth = async (req, res) => {
 export const getPasskeys = async (req, res) => {
   try {
     const username = req.user.username; 
-    await ensureWebAuthnTables();
     const result = await pool.query(
       'SELECT id, username, created_at FROM user_passkeys WHERE username = $1 ORDER BY created_at DESC',
       [username]
@@ -330,13 +319,10 @@ export const deletePasskey = async (req, res) => {
       [id, username]
     );
     
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Passkey not found or unauthorized." });
-    }
+    if (result.rowCount === 0) return res.status(404).json({ error: "Passkey not found." });
 
     await logActivity(username, "DELETE", "Security", "Revoked biometric device");
-
-    res.json({ message: "Passkey removed successfully" });
+    res.json({ success: true, message: "Passkey removed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

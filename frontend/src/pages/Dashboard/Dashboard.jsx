@@ -3,13 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import BusinessDashboard from './BusinessDashboard';
 import ClientDashboard from './ClientDashboard';
 import LeaderboardsDashboard from './LeaderboardsDashboard'; 
-import api from '../../services/api'; // 🟢 Added for Review Indicators
+import api from '../../services/api'; 
 
-import { Briefcase, Users, Trophy, AlertCircle } from 'lucide-react'; 
+import { Briefcase, Users, Trophy } from 'lucide-react'; 
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('business');
-  const [reviewAlert, setReviewAlert] = useState(0); // 🟢 Tracks Overdue/Urgent Reviews
+  const [reviewAlert, setReviewAlert] = useState(0); 
   
   const tabOrder = ['business', 'client', 'leaderboards']; 
   
@@ -24,15 +24,19 @@ const Dashboard = () => {
 
   const minSwipeDistance = 50;
 
-  // 🟢 FETCH REVIEW INDICATORS (Requirement: Dashboard Indicators)
+  // 🛡️ SYNCED REVIEW INDICATORS
   useEffect(() => {
     const fetchReviewStats = async () => {
         try {
             const res = await api.get('/dashboard/reviews/stats');
-            // Alert if there are any overdue reviews
-            setReviewAlert(parseInt(res.data.overdue) || 0);
+            /**
+             * 🛡️ Robust Extraction: Ensures we pull 'overdue' count correctly 
+             * from the specific review controller response.
+             */
+            const overdueCount = res.data?.overdue || 0;
+            setReviewAlert(parseInt(overdueCount));
         } catch (err) {
-            console.error("Review Stats Fetch Error:", err);
+            console.error("Dashboard Metadata Sync Error:", err);
         }
     };
     fetchReviewStats();
@@ -47,15 +51,14 @@ const Dashboard = () => {
 
   const handleTabClick = (e, tabName) => switchTab(tabName);
 
+  // 🖐️ Swipe & Pointer Logic (Preserved)
   const onPointerDown = (e) => {
     touchEndX.current = null;
     touchStartX.current = e.clientX;
   };
 
   const onPointerMove = (e) => {
-    if (touchStartX.current !== null) {
-      touchEndX.current = e.clientX;
-    }
+    if (touchStartX.current !== null) touchEndX.current = e.clientX;
   };
 
   const onPointerUp = () => {
@@ -65,38 +68,35 @@ const Dashboard = () => {
     }
 
     const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe || isRightSwipe) {
+    if (Math.abs(distance) > minSwipeDistance) {
       const currentIndex = tabOrder.indexOf(activeTab);
-      if (isLeftSwipe && currentIndex < tabOrder.length - 1) {
+      if (distance > 0 && currentIndex < tabOrder.length - 1) {
         switchTab(tabOrder[currentIndex + 1]);
-      } else if (isRightSwipe && currentIndex > 0) {
+      } else if (distance < 0 && currentIndex > 0) {
         switchTab(tabOrder[currentIndex - 1]);
       }
     }
 
-    // Reset tracking
     touchStartX.current = null;
     touchEndX.current = null;
   };
 
   const tabStyle = (tabName) => ({
-    padding: '12px 24px', 
+    padding: '14px 28px', 
     cursor: 'pointer',
-    fontSize: '14px', 
-    letterSpacing: '0.3px',
+    fontSize: '13px', 
+    letterSpacing: '0.5px',
     fontWeight: activeTab === tabName ? '800' : '600',
     color: activeTab === tabName ? '#0284c7' : 'var(--text-muted)',
     borderBottom: activeTab === tabName ? '3px solid #0284c7' : '3px solid transparent',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '10px',
     whiteSpace: 'nowrap', 
     flexShrink: 0,
-    position: 'relative' // 🟢 Needed for notification badge
+    textTransform: 'uppercase',
+    position: 'relative'
   });
 
   return (
@@ -105,45 +105,49 @@ const Dashboard = () => {
       <style>{`
         .dashboard-tabs::-webkit-scrollbar { display: none; }
         .dashboard-tabs button { 
-          border-top: none !important; 
-          border-left: none !important; 
-          border-right: none !important; 
+          border: none !important; 
           box-shadow: none !important; 
           background: transparent !important; 
           border-radius: 0 !important;
+          outline: none !important;
         } 
         .dashboard-tabs button:hover { color: #0284c7; }
         
         .tab-badge {
             position: absolute;
-            top: 8px;
-            right: 8px;
+            top: 10px;
+            right: 12px;
             width: 8px;
             height: 8px;
             background: #ef4444;
             border-radius: 50%;
-            box-shadow: 0 0 0 2px var(--bg-main);
+            border: 2px solid var(--bg-main);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
       `}</style>
       
+      {/* 🟢 STICKY TAB NAVIGATOR */}
       <div 
         className="dashboard-tabs" 
         ref={tabContainerRef}
         style={{ 
             display: 'flex', 
-            gap: '16px', 
+            gap: '8px', 
             borderBottom: '1px solid var(--border)',
             background: 'var(--bg-main)',
             position: 'sticky',
             top: '0', 
-            paddingTop: '4px',
-            paddingBottom: '0',
             zIndex: 100,
             overflowX: 'auto', 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none', 
-            marginBottom: '32px',
-            scrollBehavior: 'smooth'
+            marginBottom: '32px'
       }}>
         <button ref={tabRefs.business} style={tabStyle('business')} onClick={(e) => handleTabClick(e, 'business')}>
           <Briefcase size={18} /> Business Analytics
@@ -157,8 +161,9 @@ const Dashboard = () => {
         </button>
       </div>
 
+      {/* 🟢 SWIPEABLE CONTENT AREA */}
       <div 
-        style={{ paddingTop: '8px', minHeight: '60vh', width: '100%' }}
+        style={{ paddingTop: '8px', minHeight: '70vh', width: '100%' }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

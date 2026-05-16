@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { pool } from '../config/db.js';
 
 // --- REPORT 1: CLIENT-WISE AUM ---
@@ -7,15 +8,27 @@ export const getClientAumReportData = async () => {
       SELECT 
         c.client_code AS client_id, 
         c.full_name AS client_name,
-        sd.name AS sub_distributor_name, -- 🟢 FETCHING PARTNER NAME
+        sd.name AS sub_distributor_name,
         COALESCE(c.monthly_income, 0) AS monthly_income,
         EXTRACT(YEAR FROM AGE(CURRENT_DATE, COALESCE(c.dob, c.date_of_birth))) AS age, 
         c.risk_profile,
-        COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE client_id::TEXT = c.id::TEXT), 0) + 
-        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'), 0) AS invested_aum,
+        -- 🟢 SMART MATH: Includes SIP Missed & End-Date logic
+        COALESCE((
+            SELECT SUM(CASE 
+                WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+                WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
+                ELSE 0 END) 
+            FROM transactions WHERE client_id::TEXT = c.id::TEXT
+        ), 0) + 
+        COALESCE((
+            SELECT SUM(amount::NUMERIC * (
+                GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+            )) 
+            FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
+        ), 0) AS invested_aum,
         COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'), 0) AS monthly_active_sip
       FROM clients c
-      LEFT JOIN sub_distributors sd ON c.sub_distributor_id = sd.id -- 🟢 LINKING TO PARTNER TABLE
+      LEFT JOIN sub_distributors sd ON c.sub_distributor_id = sd.id
     )
     SELECT 
       client_id,
@@ -56,8 +69,20 @@ export const getSchemeAumReportData = async () => {
             SELECT client_id FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
           ) AS unique_clients
         ) AS client_count,
-        COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) + 
-        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) AS invested_aum,
+        -- 🟢 SMART MATH: Includes SIP Missed & End-Date logic
+        COALESCE((
+            SELECT SUM(CASE 
+                WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+                WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
+                ELSE 0 END) 
+            FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
+        ), 0) + 
+        COALESCE((
+            SELECT SUM(amount::NUMERIC * (
+                GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+            )) 
+            FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
+        ), 0) AS invested_aum,
         COALESCE((SELECT SUM(amount::NUMERIC) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) AS active_sip_book,
         COALESCE(m.total_current_value, 0) AS total_market_value, 
         COALESCE(m.large_cap, 0) AS largecap_pct,
@@ -103,8 +128,20 @@ export const getMonthlyCommissionData = async () => {
         m.scheme_name,
         COALESCE(m.commission_rate, 0) AS commission_pct,
         COALESCE(m.total_current_value, 0) AS total_market_value,
-        COALESCE((SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) FROM transactions WHERE scheme_id::TEXT = m.id::TEXT), 0) + 
-        COALESCE((SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'), 0) AS invested_aum
+        -- 🟢 SMART MATH: Includes SIP Missed & End-Date logic
+        COALESCE((
+            SELECT SUM(CASE 
+                WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+                WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
+                ELSE 0 END) 
+            FROM transactions WHERE scheme_id::TEXT = m.id::TEXT
+        ), 0) + 
+        COALESCE((
+            SELECT SUM(amount::NUMERIC * (
+                GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+            )) 
+            FROM sips WHERE scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
+        ), 0) AS invested_aum
       FROM mf_schemes m
     )
     SELECT 
@@ -129,7 +166,7 @@ export const getFullClientsDatabaseData = async () => {
     SELECT 
       c.client_code AS formatted_id,
       c.full_name,
-      sd.name AS sub_distributor_name, -- 🟢 FETCHING PARTNER NAME
+      sd.name AS sub_distributor_name,
       TO_CHAR(COALESCE(c.dob, c.date_of_birth), 'DD-MM-YYYY') AS dob_display,
       TO_CHAR(c.onboarding_date, 'DD-MM-YYYY') AS onboarding_display,
       c.added_by,
@@ -148,7 +185,7 @@ export const getFullClientsDatabaseData = async () => {
       c.nominee_mobile,
       c.notes AS client_notes
     FROM clients c
-    LEFT JOIN sub_distributors sd ON c.sub_distributor_id = sd.id -- 🟢 LINKING TO PARTNER TABLE
+    LEFT JOIN sub_distributors sd ON c.sub_distributor_id = sd.id
     ORDER BY c.client_code ASC;
   `;
   const result = await pool.query(query);
@@ -177,7 +214,7 @@ export const getFullSchemeDatabaseData = async () => {
   return result.rows;
 };
 
-// --- NEW: PARTNER-SPECIFIC CLIENT REPORT DATA ---
+// --- PARTNER-SPECIFIC CLIENT REPORT ---
 export const getPartnerClientReportData = async (partnerId) => {
   const query = `
     SELECT
@@ -185,12 +222,19 @@ export const getPartnerClientReportData = async (partnerId) => {
       c.client_code,
       c.mobile_number,
       m.scheme_name,
+      -- 🟢 SMART MATH: Includes SIP Missed & End-Date logic
       COALESCE((
         SELECT SUM(CASE 
-          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC 
-          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN -amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
           ELSE 0 END) 
         FROM transactions WHERE client_id::TEXT = c.id::TEXT AND scheme_id::TEXT = m.id::TEXT
+      ), 0) +
+      COALESCE((
+        SELECT SUM(amount::NUMERIC * (
+            GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+        )) 
+        FROM sips WHERE client_id::TEXT = c.id::TEXT AND scheme_id::TEXT = m.id::TEXT AND LOWER(status) = 'active'
       ), 0) AS invested_aum,
       COALESCE((
         SELECT SUM(amount::NUMERIC) 

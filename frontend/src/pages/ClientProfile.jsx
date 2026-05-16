@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -6,7 +7,7 @@ import {
   User, Briefcase, Users, ArrowLeft, PieChart as PieIcon, 
   Activity, Clock, Download, List, CalendarDays, ShieldCheck
 } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -20,7 +21,7 @@ const ClientProfile = () => {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const COLORS = ['#8b5cf6', '#0284c7', '#f59e0b', '#10b981', '#ef4444', '#fbbf24'];
+  const COLORS = ['#0284c7', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#fbbf24'];
 
   useEffect(() => {
     const fetchMegaData = async () => {
@@ -32,14 +33,17 @@ const ClientProfile = () => {
         ]);
         
         setData(clientRes.data);
-        setSchemes(schemesRes.data?.data || (Array.isArray(schemesRes.data) ? schemesRes.data : []));
         
-        // Filter SIPs specifically for this client
-        const allSips = sipsRes.data?.data || (Array.isArray(sipsRes.data) ? sipsRes.data : []);
-        setSips(allSips.filter(s => String(s.client_id) === String(id)));
+        // 🛡️ Standardized Array Extraction
+        const validSchemes = schemesRes.data?.data || (Array.isArray(schemesRes.data) ? schemesRes.data : []);
+        const validSips = sipsRes.data?.data || (Array.isArray(sipsRes.data) ? sipsRes.data : []);
+        
+        setSchemes(validSchemes);
+        setSips(validSips.filter(s => String(s.client_id) === String(id)));
         
       } catch (err) {
-        toast.error("Error syncing profile data");
+        console.error("Profile Sync Error:", err);
+        toast.error("Failed to sync comprehensive profile data");
         navigate('/dashboard');
       } finally {
         setLoading(false);
@@ -48,14 +52,20 @@ const ClientProfile = () => {
     fetchMegaData();
   }, [id, navigate]);
 
-  // Helper to calculate Large/Mid/Small allocation
+  /**
+   * 🧠 PRECISION ALLOCATION CALCULATOR
+   * Uses Net Invested AUM from the Math Service for weight calculation.
+   */
   const calculateAllocation = (portfolioArray) => {
     if (!portfolioArray || schemes.length === 0) return [];
     const totals = { Large: 0, Mid: 0, Small: 0, Debt: 0, Gold: 0 };
     const safeNum = (val) => isNaN(parseFloat(val)) ? 0 : parseFloat(val);
 
     portfolioArray.forEach(item => {
+      // Use the actual invested_amount (Net of redemptions/missed SIPs)
       const investedValue = safeNum(item.invested_amount) || safeNum(item.sip_amount);
+      if (investedValue <= 0) return;
+
       const master = schemes.find(s => (s.scheme_name || '').trim().toLowerCase() === (item.scheme_name || '').trim().toLowerCase());
       if (master) {
         totals.Large += investedValue * (safeNum(master.large_percent || master.large_cap) / 100);
@@ -87,7 +97,7 @@ const ClientProfile = () => {
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
     setIsGenerating(true);
-    const toastId = toast.loading("Generating 360° Portfolio Report...");
+    const toastId = toast.loading("Generating High-Fidelity Portfolio Statement...");
 
     try {
       const element = reportRef.current;
@@ -99,16 +109,21 @@ const ClientProfile = () => {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-      pdf.save(`VisionBridge_Full_Statement_${data.profile.full_name}.pdf`);
-      toast.update(toastId, { render: "Statement Downloaded!", type: "success", isLoading: false, autoClose: 2000 });
+      pdf.save(`VisionBridge_Statement_${data.profile.full_name}.pdf`);
+      toast.update(toastId, { render: "Report Ready for Client!", type: "success", isLoading: false, autoClose: 2000 });
     } catch (error) {
-      toast.error("PDF Export Failed");
+      toast.error("PDF Engine Timeout");
     } finally { setIsGenerating(false); }
   };
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Activity className="spin" color="#0284c7" /></div>;
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: '20px' }}>
+        <Activity className="spin" color="#0284c7" size={32} />
+        <span style={{ fontWeight: '800', letterSpacing: '1px', color: 'var(--text-muted)' }}>PREPARING FINANCIAL DATA...</span>
+    </div>
+  );
 
   return (
     <div className="container" style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto' }}>
@@ -116,7 +131,7 @@ const ClientProfile = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800' }}><ArrowLeft size={20} /> BACK TO DASHBOARD</button>
         <button onClick={handleDownloadPDF} disabled={isGenerating} style={{ background: '#10b981', color: 'white', padding: '14px 28px', borderRadius: '14px', border: 'none', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
-          <Download size={20} /> {isGenerating ? "PREPARING REPORT..." : "GENERATE COMPREHENSIVE PDF"}
+          <Download size={20} /> {isGenerating ? "CAPTURING STATEMENT..." : "GENERATE COMPREHENSIVE PDF"}
         </button>
       </div>
 
@@ -134,16 +149,16 @@ const ClientProfile = () => {
           </div>
         </div>
 
-        {/* SUMMARY SECTION: KYC & CHARTS */}
+        {/* SUMMARY SECTION */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '30px', marginBottom: '45px' }}>
           <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
             <h3 style={{ fontSize: '12px', color: '#0284c7', textTransform: 'uppercase', marginBottom: '20px', fontWeight: '900', letterSpacing: '1px' }}>Primary Client Details</h3>
-            <DetailRow label="Name" value={data.profile.full_name} />
-            <DetailRow label="Age" value={`${data.profile.age} Yrs`} />
+            <DetailRow label="Full Name" value={data.profile.full_name} />
+            <DetailRow label="Client Age" value={`${data.profile.age} Yrs`} />
             <DetailRow label="Risk Profile" value={data.profile.risk_profile || 'Moderate'} />
-            <DetailRow label="PAN" value={data.profile.pan || 'N/A'} />
+            <DetailRow label="PAN Account" value={data.profile.pan || 'N/A'} />
             <div style={{ marginTop: '25px', paddingTop: '20px', borderTop: '2px solid #e2e8f0' }}>
-              <p style={{ margin: 0, fontSize: '11px', fontWeight: '900', color: '#64748b' }}>TOTAL ASSETS VALUATION</p>
+              <p style={{ margin: 0, fontSize: '11px', fontWeight: '900', color: '#64748b' }}>NET INVESTED VALUATION</p>
               <h2 style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#0284c7' }}>{formatINR(data.summary.totalAUM)}</h2>
             </div>
           </div>
@@ -173,17 +188,17 @@ const ClientProfile = () => {
           </div>
         </div>
 
-        {/* 🟢 NEW SECTION: ACTIVE SIP REGISTRY */}
+        {/* ACTIVE SIP REGISTRY */}
         <SectionHeader icon={<CalendarDays size={20}/>} title="Active SIP Registry" />
         <table style={tableBaseStyle}>
           <thead>
             <tr style={tableHeaderRowStyle}>
               <th style={tableHeadStyle}>S.No</th>
               <th style={tableHeadStyle}>MF Scheme Name</th>
-              <th style={tableHeadStyle}>SIP Amount</th>
-              <th style={tableHeadStyle}>SIP Date</th>
+              <th style={tableHeadStyle}>Monthly Amount</th>
+              <th style={tableHeadStyle}>SIP Day</th>
               <th style={tableHeadStyle}>Start Date</th>
-              <th style={tableHeadStyle}>End Date</th>
+              <th style={tableHeadStyle}>Expiry Date</th>
             </tr>
           </thead>
           <tbody>
@@ -192,27 +207,27 @@ const ClientProfile = () => {
                 <td style={tableCellStyle}>{i + 1}</td>
                 <td style={{...tableCellStyle, fontWeight: '800'}}>{sip.scheme_name}</td>
                 <td style={{...tableCellStyle, color: '#10b981', fontWeight: '800'}}>{formatINR(sip.amount)}</td>
-                <td style={tableCellStyle}>{sip.sip_date || 'N/A'}</td>
+                <td style={tableCellStyle}>{sip.sip_day || '1st'}</td>
                 <td style={tableCellStyle}>{new Date(sip.start_date).toLocaleDateString('en-GB')}</td>
-                <td style={{...tableCellStyle, color: '#ef4444'}}>{new Date(sip.end_date).toLocaleDateString('en-GB')}</td>
+                <td style={{...tableCellStyle, color: '#ef4444'}}>{sip.end_date ? new Date(sip.end_date).toLocaleDateString('en-GB') : 'Perpetual'}</td>
               </tr>
-            )) : <tr><td colSpan="6" style={{...tableCellStyle, textAlign: 'center', color: '#94a3b8'}}>No active SIPs found for this client record.</td></tr>}
+            )) : <tr><td colSpan="6" style={{...tableCellStyle, textAlign: 'center', color: '#94a3b8'}}>No active SIP mandates found for this client.</td></tr>}
           </tbody>
         </table>
 
-        {/* SECTION: FAMILY MEMBERS & NOMINEE AUDIT */}
+        {/* FAMILY MEMBERS & NOMINEE AUDIT */}
         <SectionHeader icon={<Users size={20}/>} title="Family Group & Nominee Compliance" />
         <table style={tableBaseStyle}>
           <thead>
             <tr style={tableHeaderRowStyle}>
               <th style={tableHeadStyle}>Member Name</th>
-              <th style={tableHeadStyle}>Role</th>
+              <th style={tableHeadStyle}>Group Role</th>
               <th style={tableHeadStyle}>Nominee Registered</th>
-              <th style={{...tableHeadStyle, textAlign: 'right'}}>Total AUM</th>
+              <th style={{...tableHeadStyle, textAlign: 'right'}}>Invested AUM</th>
             </tr>
           </thead>
           <tbody>
-            {data.familyMembers.map((m, i) => (
+            {data.familyMembers?.map((m, i) => (
               <tr key={i} style={tableRowStyle}>
                 <td style={{...tableCellStyle, fontWeight: '800'}}>{m.full_name}</td>
                 <td style={tableCellStyle}><span style={badgeStyle}>{m.family_role}</span></td>
@@ -228,12 +243,12 @@ const ClientProfile = () => {
           </tbody>
         </table>
 
-        {/* FOOTER: NOTES & LOGS */}
+        {/* FOOTER: HOLDINGS & INTERACTION */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '40px' }}>
             <div>
-                <SectionHeader icon={<List size={18}/>} title="Holdings Breakdown" />
+                <SectionHeader icon={<List size={18}/>} title="Individual Portfolio Summary" />
                 <div style={{ display: 'grid', gap: '10px' }}>
-                    {data.portfolio.map((item, i) => (
+                    {data.portfolio?.map((item, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#f8fafc', borderRadius: '8px', fontSize: '12px' }}>
                             <span style={{ fontWeight: '700' }}>{item.scheme_name}</span>
                             <span style={{ fontWeight: '800', color: '#0284c7' }}>{formatINR(item.invested_amount)}</span>
@@ -242,22 +257,27 @@ const ClientProfile = () => {
                 </div>
             </div>
             <div>
-                <SectionHeader icon={<Clock size={18}/>} title="Interaction History" />
-                {data.review_history?.length > 0 ? data.review_history.map((h, i) => (
+                <SectionHeader icon={<Clock size={18}/>} title="Advisory Timeline" />
+                {data.review_history?.length > 0 ? data.review_history.slice(0, 3).map((h, i) => (
                     <div key={i} style={{ marginBottom: '15px', padding: '15px', background: '#f1f5f9', borderRadius: '10px', borderLeft: '4px solid #0284c7' }}>
                         <div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>{new Date(h.review_date).toLocaleDateString('en-IN')}</div>
                         <div style={{ fontSize: '12px', fontWeight: '700', marginTop: '5px' }}>{h.notes}</div>
                     </div>
-                )) : <p style={{ fontSize: '12px', color: '#94a3b8' }}>No recent interaction logs.</p>}
+                )) : <p style={{ fontSize: '12px', color: '#94a3b8' }}>No recent interaction logs available.</p>}
             </div>
         </div>
 
       </div>
+      
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+      `}</style>
     </div>
   );
 };
 
-// --- STYLES & SUB-COMPONENTS ---
+// --- STYLES & SUB-COMPONENTS (Preserved) ---
 const DetailRow = ({ label, value }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
     <span style={{ color: '#64748b', fontWeight: '700' }}>{label}</span>

@@ -1,15 +1,19 @@
+/* eslint-disable no-unused-vars */
 import { pool } from "../config/db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
-
 /**
  * 🔑 Authenticate User (Case-Insensitive)
+ * M-2 FIX: Added 'role' to JWT payload for secure route handling.
+ * C-2 FIX: Removed weak fallback secret.
  */
 export const loginUser = async (username, password) => {
+  // We fetch the role from the database to include it in the session
   const result = await pool.query(
-    `SELECT * FROM users WHERE LOWER(username) = LOWER($1)`,
+    `SELECT id, username, full_name, password_hash, role 
+     FROM users 
+     WHERE LOWER(username) = LOWER($1)`,
     [username]
   );
 
@@ -20,18 +24,32 @@ export const loginUser = async (username, password) => {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new Error("Invalid credentials");
 
-  // 🛡️ Token payload includes username for the activity logger
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) throw new Error("Server Error: JWT_SECRET not configured");
+
+  // 🛡️ Token payload now includes role for permission-based access
   const token = jwt.sign(
-    { id: user.id, username: user.username, full_name: user.full_name },
+    { 
+      id: user.id, 
+      username: user.username, 
+      role: user.role || 'advisor' 
+    },
     JWT_SECRET,
     { expiresIn: "8h" }
   );
 
-  return { token, user: { username: user.username, full_name: user.full_name } };
+  return { 
+    token, 
+    user: { 
+      username: user.username, 
+      full_name: user.full_name, 
+      role: user.role || 'advisor' 
+    } 
+  };
 };
 
 /**
- * 🔒 Reset Password
+ * 🔒 Reset Password (Security Question)
  */
 export const resetPassword = async (username, securityAnswer, newPassword) => {
   const result = await pool.query(
@@ -44,7 +62,7 @@ export const resetPassword = async (username, securityAnswer, newPassword) => {
   const user = result.rows[0];
 
   if (!user.security_answer_hash) {
-    throw new Error("Security answer not set. Contact system admin.");
+    throw new Error("Security answer not set for this account. Contact system admin.");
   }
 
   const cleanAnswer = securityAnswer.toLowerCase().trim();

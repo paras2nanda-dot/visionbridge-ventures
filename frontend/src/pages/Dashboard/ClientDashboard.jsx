@@ -1,14 +1,15 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // 🟢 Added for Full-Screen Navigation
+import { useNavigate } from 'react-router-dom'; 
 import { 
   Search, PieChart as PieChartIcon, CheckCircle2, AlertTriangle, 
   UserSearch, Wallet, TrendingUp, Clock, Activity, Users, 
   ChevronDown, ChevronUp, ShieldAlert, ExternalLink 
 } from 'lucide-react';
 import api from '../../services/api'; 
+import { toast } from 'react-toastify';
 
-// --- Premium Donut Chart with Precise Segments ---
+// --- Premium Donut Chart with Precise Segments (Restored Fully) ---
 const AssetDonut = ({ data }) => {
   if (!data || data.length === 0) return (
     <div style={{ padding: '40px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border)', textAlign: 'center', width: '100%' }}>
@@ -74,7 +75,7 @@ const AssetDonut = ({ data }) => {
 };
 
 const ClientDashboard = () => {
-  const navigate = useNavigate(); // 🟢 Restored for full-screen view
+  const navigate = useNavigate(); 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
@@ -84,13 +85,12 @@ const ClientDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [clientUpcomingSIPs, setClientUpcomingSIPs] = useState([]);
 
-  // 🟢 FAMILY FEATURE STATE
   const [familyMembers, setFamilyMembers] = useState([]);
   const [totalBusinessAUM, setTotalBusinessAUM] = useState(0);
   const [expandedMemberId, setExpandedMemberId] = useState(null);
 
   useEffect(() => {
-    // 🛡️ SPRINT 3 FIX: Use .data.data for paginated client list
+    // 🛡️ SPRINT 3 Standardized Fetching
     api.get('/clients')
       .then(res => setClients(res.data?.data || (Array.isArray(res.data) ? res.data : [])))
       .catch(err => console.error("Error fetching clients:", err));
@@ -115,7 +115,7 @@ const ClientDashboard = () => {
     ])
       .then(async ([dashRes, sipRes]) => {
         const dashData = dashRes.data;
-        // 🛡️ SPRINT 3 FIX: Handle potentially paginated SIP response
+        // 🛡️ standard handling for potentially paginated SIP response
         const sipData = sipRes.data?.data || (Array.isArray(sipRes.data) ? sipRes.data : []);
 
         setSelectedClient(dashData.profile || client);
@@ -140,6 +140,7 @@ const ClientDashboard = () => {
         console.error("Error loading profile:", err);
         setSelectedClient(client);
         setIsLoading(false);
+        toast.error("Profile sync incomplete");
       });
   };
 
@@ -154,6 +155,7 @@ const ClientDashboard = () => {
     if (!Array.isArray(portfolio) || portfolio.length === 0) return [];
     const totals = { large: 0, mid: 0, small: 0, debt: 0, gold: 0 };
     portfolio.forEach(item => {
+      // Use Net Invested AUM from MathService for allocation weight
       const investedValue = safeNum(item.invested_amount) > 0 ? safeNum(item.invested_amount) : safeNum(item.sip_amount);
       if (investedValue <= 0) return;
 
@@ -192,7 +194,7 @@ const ClientDashboard = () => {
   return (
     <div className="fade-in" style={{ paddingBottom: '40px' }}>
       
-      {/* 🔍 Search Header */}
+      {/* 🔍 Search Header (Restored) */}
       <div style={{ position: 'relative', marginBottom: '32px' }}>
         <input 
           type="text" 
@@ -221,7 +223,7 @@ const ClientDashboard = () => {
         </div>
       ) : selectedClient && selectedClient.full_name ? (
         <>
-          {/* Action Required Alert */}
+          {/* Action Required Alert (Restored) */}
           {clientUpcomingSIPs.length > 0 && (
             <div style={{ ...cardStyle, borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.02)', borderLeft: '6px solid #ef4444' }}>
                 <h3 style={{ margin: '0 0 12px 0', color: '#ef4444', fontSize: '16px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -252,7 +254,7 @@ const ClientDashboard = () => {
             </div>
           )}
 
-          {/* Individual Header */}
+          {/* Individual Header (Restored) */}
           <div style={{...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px'}}>
               <div>
                 <h2 style={{ margin: '0 0 12px 0', color: 'var(--text-main)', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -266,24 +268,24 @@ const ClientDashboard = () => {
                 </div>
               </div>
               <button 
-                onClick={() => navigate(`/clients/${selectedClient.id}`)}
+                onClick={() => navigate(`/clients`)}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: '#0284c7', color: 'white', borderRadius: '12px', border: 'none', fontWeight: '800', cursor: 'pointer', transition: 'transform 0.2s', boxShadow: '0 4px 6px -1px rgba(2, 132, 199, 0.3)' }}
               >
-                VIEW FULL PROFILE <ExternalLink size={18} />
+                VIEW CLIENT DATABASE <ExternalLink size={18} />
               </button>
           </div>
 
-          {/* Individual Metrics */}
+          {/* Individual Metrics (Restored) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginBottom: '32px' }}>
             <div style={cardStyle}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
-                    <Wallet size={16} color="#0284c7" /> Invested AUM
+                    <Wallet size={16} color="#0284c7" /> Net Invested AUM
                 </div>
                 <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)'}}>₹{formatINR(summary?.totalAUM)}</div>
             </div>
             <div style={cardStyle}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
-                    <TrendingUp size={16} color="#8b5cf6" /> Monthly SIP
+                    <TrendingUp size={16} color="#8b5cf6" /> Monthly SIP Book
                 </div>
                 <div style={{fontSize: '28px', fontWeight: '800', color: 'var(--text-main)'}}>₹{formatINR(summary?.totalSipBook)}</div>
             </div>
@@ -295,13 +297,13 @@ const ClientDashboard = () => {
             </div>
             <div style={cardStyle}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px'}}>
-                    <Clock size={16} color="#f59e0b" /> Client Since
+                    <Clock size={16} color="#f59e0b" /> Client Onboarded
                 </div>
-                <div style={{fontSize: '24px', fontWeight: '800', color: 'var(--text-main)'}}>{selectedClient.since_formatted || 'N/A'}</div>
+                <div style={{fontSize: '22px', fontWeight: '800', color: 'var(--text-main)'}}>{selectedClient.since_formatted || 'N/A'}</div>
             </div>
           </div>
 
-          {/* 🟢 FAMILY PORTFOLIO SECTION (Fully Restored) */}
+          {/* 🟢 FAMILY PORTFOLIO SECTION (Restored Fully) */}
           {selectedClient.family_id && (
             <div className="fade-in" style={{ marginTop: '60px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
@@ -317,18 +319,18 @@ const ClientDashboard = () => {
                         <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text-main)' }}>{familyMembers.length}</div>
                     </div>
                     <div style={cardStyle}>
-                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>Total Family Invested AUM</div>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>Group Invested AUM</div>
                         <div style={{ fontSize: '32px', fontWeight: '900', color: '#0284c7' }}>₹{formatINR(familyTotalAUM)}</div>
                     </div>
                     <div style={cardStyle}>
-                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>% of Total Business AUM</div>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>% of Total Book</div>
                         <div style={{ fontSize: '32px', fontWeight: '900', color: '#10b981' }}>
                             {totalBusinessAUM > 0 ? ((familyTotalAUM / totalBusinessAUM) * 100).toFixed(2) : '0.00'}%
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '24px', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: '24px', alignItems: 'start' }}>
                     <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                             <thead style={{ background: 'var(--bg-main)' }}>
@@ -338,7 +340,7 @@ const ClientDashboard = () => {
                                     <th style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Age</th>
                                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Monthly SIP</th>
                                     <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Invested AUM</th>
-                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>% Share</th>
+                                    <th style={{ padding: '16px', textAlign: 'right', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', fontWeight: '900' }}>Weight</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -384,25 +386,25 @@ const ClientDashboard = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={cardStyle}>
-                            <h3 style={{ margin: '0 0 24px 0', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation (Individual)</h3>
+                            <h3 style={{ margin: '0 0 24px 0', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Asset Allocation</h3>
                             <AssetDonut data={getAssetAllocation()} />
                         </div>
 
                         <div style={{ ...cardStyle, background: 'rgba(239, 68, 68, 0.02)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
                             <h3 style={{ margin: '0 0 16px 0', fontSize: '11px', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ShieldAlert size={16} /> Nominee Compliance Audit
+                                <ShieldAlert size={16} /> Compliance Review
                             </h3>
                             {familyMembers.some(m => !m.nominee_name) ? (
                                 <ul style={{ margin: 0, padding: '0 0 0 12px', listStyle: 'none' }}>
                                     {familyMembers.filter(m => !m.nominee_name).map(m => (
                                         <li key={m.id} style={{ padding: '8px 0', fontSize: '13px', color: 'var(--text-main)', fontWeight: '700', borderBottom: '1px dashed var(--border)' }}>
-                                            ⚠️ {m.full_name}
+                                            ⚠️ {m.full_name} (Missing Nominee)
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontWeight: '800', fontSize: '14px' }}>
-                                    <CheckCircle2 size={18} /> All Family Nominees Registered
+                                    <CheckCircle2 size={18} /> All Family Nominees Verified
                                 </div>
                             )}
                         </div>
@@ -414,8 +416,8 @@ const ClientDashboard = () => {
       ) : (
         <div style={{ textAlign: 'center', padding: '100px 20px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px dashed var(--border)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <UserSearch size={48} style={{ opacity: 0.3, marginBottom: '20px' }} />
-          <h2 style={{ fontWeight: '800', fontSize: '20px', color: 'var(--text-main)', marginBottom: '8px', letterSpacing: '-0.3px' }}>Client Insights Hub</h2>
-          <p style={{ fontWeight: '500', fontSize: '14px' }}>Search a Client ID or Name above to view detailed portfolio analytics.</p>
+          <h2 style={{ fontWeight: '800', fontSize: '20px', color: 'var(--text-main)', marginBottom: '8px', letterSpacing: '-0.3px' }}>Client Performance Engine</h2>
+          <p style={{ fontWeight: '500', fontSize: '14px' }}>Select a client record above to generate deep-dive performance metrics and family mapping.</p>
         </div>
       )}
       
