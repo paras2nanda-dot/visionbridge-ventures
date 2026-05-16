@@ -37,11 +37,10 @@ export const getBusinessTotalAUM = async (req, res) => {
 };
 
 /**
- * 🏢 BUSINESS DASHBOARD LOGIC (Fixed: Removed next_review_date to eliminate 500 error)
+ * 🏢 BUSINESS DASHBOARD LOGIC
  */
 export const getBusinessStats = async (req, res) => {
   try {
-    // 1. Basic Counts, Compliance, and Live Active Balances
     const basicQuery = `
       WITH current_ist AS (
         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
@@ -63,7 +62,6 @@ export const getBusinessStats = async (req, res) => {
         (SELECT COUNT(*)::INT FROM clients WHERE is_active = true AND (nominee_name IS NULL OR TRIM(nominee_name) = '')) as nominee_pending,
         (SELECT COUNT(DISTINCT family_id)::INT FROM clients WHERE is_active = true AND family_id IS NOT NULL) as total_families,
         (SELECT COUNT(*)::INT FROM sub_distributors) as total_sub_distributors,
-        -- Calculates unique active clients whose net transaction tracking volume > 0
         (SELECT COUNT(DISTINCT cb.client_id)::INT 
          FROM client_balances cb
          JOIN clients c ON cb.client_id::TEXT = c.id::TEXT
@@ -72,11 +70,9 @@ export const getBusinessStats = async (req, res) => {
     const basicRes = await pool.query(basicQuery);
     const basic = basicRes.rows[0];
 
-    // 2. Call Centralized Brain (MathService)
     const totalInvested = await MathService.calculateInvestedAUM();
     const commMarketMonthly = await MathService.getMonthlyCommission();
 
-    // 3. Organic Direct-to-Firm Resource Isolation Logic (Internal Sourcing Split)
     const internalAumQuery = `
       WITH internal_book AS (
         SELECT 
@@ -104,12 +100,10 @@ export const getBusinessStats = async (req, res) => {
     const internalAumRes = await pool.query(internalAumQuery);
     const directAumValue = Number(internalAumRes.rows[0]?.direct_aum || 0);
 
-    // Formulate clean acquisition ratio breakdown
     const internalAumPct = totalInvested > 0 
       ? Number(((directAumValue / totalInvested) * 100).toFixed(1)) 
       : 0;
 
-    // 4. Additional Insights (Birthdays)
     const clientsRes = await pool.query("SELECT full_name, dob, date_of_birth FROM clients WHERE is_active = true");
     const today = new Date();
     let upcomingBirthdays = [];
@@ -127,7 +121,6 @@ export const getBusinessStats = async (req, res) => {
 
     const monthlyInvestedComm = (totalInvested * 0.008) / 12;
 
-    // 5. Construct Clean JSON Payload containing Active Portfolios Counter
     res.json({
       total_clients: basic.total_clients,
       total_invested_aum: totalInvested,
@@ -155,13 +148,12 @@ export const getBusinessStats = async (req, res) => {
 };
 
 /**
- * 🏆 LEADERBOARDS DASHBOARD LOGIC (Fixed: Full structural populating across all three panels)
+ * 🏆 LEADERBOARDS DASHBOARD LOGIC
  */
 export const getLeaderboardsStats = async (req, res) => {
   try {
     const total_invested_aum = await MathService.calculateInvestedAUM();
 
-    // 1. Query Top 5 Funds by Exposure based on net transaction metrics
     const topFundsRes = await pool.query(`
       SELECT 
         m.scheme_name,
@@ -179,7 +171,6 @@ export const getLeaderboardsStats = async (req, res) => {
       ORDER BY invested_value DESC LIMIT 5
     `);
 
-    // 2. Query Top 10 Active Clients by Net Invested Portfolio Position
     const topClientsRes = await pool.query(`
       SELECT 
         c.full_name,
@@ -195,7 +186,6 @@ export const getLeaderboardsStats = async (req, res) => {
       ORDER BY invested_value DESC LIMIT 10
     `);
 
-    // 3. Query Partner Leaderboard Intermediary Network
     const topSourcesRes = await pool.query(`
       SELECT 
         sd.name,
@@ -224,22 +214,107 @@ export const getLeaderboardsStats = async (req, res) => {
 };
 
 /**
- * 👤 CLIENT DASHBOARD LOGIC
+ * 👤 CLIENT DASHBOARD LOGIC (Fixed syntax bugs)
  */
 export const getClientDashboardStats = async (req, res) => {
   const { id } = req.params;
   try {
     const clientRes = await pool.query("SELECT * FROM clients WHERE id::TEXT = $1::TEXT", [id]);
     if (clientRes.rows.length === 0) return res.status(404).json({ error: "Client not found" });
-    
     const client = clientRes.rows[0];
-    const totalAUM = await MathService.calculateInvestedAUM(id);
+
+    const totalBusinessAUM = await MathService.calculateInvestedAUM();
+
+    let familyMembers = [];
+    if (client.family_id) {
+      const famRes = await pool.query("SELECT * FROM clients WHERE family_id = $1 AND is_active = true", [client.family_id]);
+      familyMembers = famRes.rows;
+    } else {
+      familyMembers = [client];
+    }
+
+    let groupAUM = 0;
+    let nomineesVerified = true;
+
+    const processedMembers = await Promise.all(familyMembers.map(async (m) => {
+      const memberAUM = await MathService.calculateInvestedAUM(m.id);
+      groupAUM += memberAUM;
+
+      const sipRes = await pool.query(
+        "SELECT COALESCE(SUM(amount::NUMERIC), 0) as monthly_sip FROM sips WHERE client_id::TEXT = $1::TEXT AND LOWER(status) = 'active'", 
+        [m.id]
+      );
+      const monthlySip = parseFloat(sipRes.rows[0]?.monthly_sip || 0);
+
+      if (!m.nominee_name || m.nominee_name.trim() === '') {
+        nomineesVerified = false; 
+      }
+
+      return {
+        id: m.id,
+        full_name: m.full_name,
+        client_code: m.client_code,
+        role: String(m.id) === String(id) ? "Primary" : "Dependent", // 🟢 FIXED JAVASCRIPT SYNTAX HERE
+        age: calculateAge(m.dob || m.date_of_birth),
+        monthly_sip: monthlySip,
+        invested_aum: memberAUM,
+        weight: 0 
+      };
+    }));
+
+    processedMembers.forEach(m => {
+      m.weight = groupAUM > 0 ? Number(((m.invested_aum / groupAUM) * 100).toFixed(1)) : 0;
+    });
+
+    const allocationQuery = `
+      SELECT 
+        m.scheme_name AS name,
+        SUM(CASE 
+          WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+          WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+          ELSE 0 END) as value
+      FROM transactions t
+      JOIN mf_schemes m ON t.scheme_id::TEXT = m.id::TEXT
+      WHERE t.client_id::TEXT = $1::TEXT
+      GROUP BY m.scheme_name
+      HAVING SUM(CASE 
+        WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
+        WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
+        ELSE 0 END) > 0;
+    `;
+    const allocationRes = await pool.query(allocationQuery, [id]);
+
+    const rawDate = client.onboarding_date || client.created_at;
+    const formattedOnboardingDate = rawDate 
+      ? new Date(rawDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) 
+      : "N/A";
+
+    const bookPercentage = totalBusinessAUM > 0 ? Number(((groupAUM / totalBusinessAUM) * 100).toFixed(2)) : 0;
 
     res.json({
-      profile: { ...client, age: calculateAge(client.dob || client.date_of_birth) },
-      summary: { totalAUM }
+      profile: { 
+        ...client, 
+        age: calculateAge(client.dob || client.date_of_birth),
+        onboarding_date: formattedOnboardingDate,
+        nominees_verified: nomineesVerified
+      },
+      summary: {
+        totalAUM: await MathService.calculateInvestedAUM(id),
+        group_aum: groupAUM,
+        book_percentage: bookPercentage
+      },
+      family: {
+        total_members: familyMembers.length,
+        group_aum: groupAUM,
+        book_percentage: bookPercentage,
+        nominees_verified: nomineesVerified,
+        members: processedMembers
+      },
+      allocation: allocationRes.rows
     });
+
   } catch (err) {
+    console.error("❌ getClientDashboardStats Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
