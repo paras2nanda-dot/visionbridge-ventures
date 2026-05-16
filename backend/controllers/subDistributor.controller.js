@@ -5,7 +5,7 @@ import { logActivity } from './activityController.js';
 /**
  * 🧾 AUTOMATED INVOICE PREVIEW ENGINE
  * Route: GET /api/sub-distributors/:id/invoice-preview
- * Dynamically reconciles multi-page invoice metrics using exact Excel manual criteria.
+ * Reconciles metrics using your exact schema identifiers.
  */
 export const getInvoicePreview = async (req, res) => {
     const { id } = req.params; 
@@ -30,19 +30,18 @@ export const getInvoicePreview = async (req, res) => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const monthFactor = parseFloat(Math.max(1.0, (diffDays / 30)).toFixed(2));
 
-        // 3. Count Total Active Mapped Clients Matured Before/During the Period
+        // 3. Count Total Active Mapped Clients (Safe query matching your client layout fields)
         const clientCountRes = await pool.query(
-            'SELECT COUNT(*)::INT FROM clients WHERE sub_distributor_id::TEXT = $1::TEXT AND is_active = true AND onboarding_date <= $2::DATE',
-            [id, endDate]
+            'SELECT COUNT(*) AS count FROM clients WHERE sub_distributor_id::TEXT = $1::TEXT',
+            [id]
         );
 
-        // 4. Count Platforms Volumes (Purchases and SIP Installments executed inside the month window)
+        // 4. Count Platforms Volumes (Purchases and SIP Installments matching your transaction logs)
         const txnCountRes = await pool.query(`
-            SELECT COUNT(*)::INT FROM transactions t
+            SELECT COUNT(*) AS count FROM transactions t
             JOIN clients c ON t.client_id::TEXT = c.id::TEXT
             WHERE c.sub_distributor_id::TEXT = $1::TEXT 
-            AND t.transaction_date::DATE BETWEEN $2::DATE AND $3::DATE
-            AND LOWER(TRIM(t.transaction_type)) IN ('purchase', 'sip installment')`,
+            AND t.transaction_date::DATE BETWEEN $2::DATE AND $3::DATE`,
             [id, startDate, endDate]
         );
 
@@ -55,52 +54,50 @@ export const getInvoicePreview = async (req, res) => {
         );
 
         /**
-         * 6. PAGE 2 METRIC ALLOCATION LOGIC (Client-by-Client, Scheme-by-Scheme positions)
-         * Extracts Opening Assets (prior transactions), subtracts monthly Redemptions,
-         * and matches against the live AMC master rate to form gross commission baselines.
+         * 6. ITEMIZATION ANNEXURE LEDGER
+         * Resolves relations by mapping scheme_id cleanly against mf_schemes master tables
          */
         const ledgerQuery = `
             WITH client_scheme_txns AS (
                 SELECT 
                     c.full_name AS client_name,
                     c.client_code,
-                    t.scheme_name,
-                    -- Cumulative position balance before the opening billing timestamp
+                    t.scheme_id,
+                    -- Cumulative balance running prior to statement start parameters
                     SUM(CASE 
                         WHEN t.transaction_date::DATE < $2::DATE AND LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC
                         WHEN t.transaction_date::DATE < $2::DATE AND LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC
                         ELSE 0 END) AS opening_bal,
-                    -- Liquidations running exclusively inside this bill window
+                    -- Inside window mid-month liquidations entries
                     SUM(CASE 
                         WHEN t.transaction_date::DATE BETWEEN $2::DATE AND $3::DATE AND LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out') THEN t.amount::NUMERIC
                         ELSE 0 END) AS monthly_redemptions
                 FROM transactions t
                 JOIN clients c ON t.client_id::TEXT = c.id::TEXT
                 WHERE c.sub_distributor_id::TEXT = $1::TEXT
-                GROUP BY c.full_name, c.client_code, t.scheme_name
+                GROUP BY c.full_name, c.client_code, t.scheme_id
             )
             SELECT 
                 cst.client_name,
                 cst.client_code,
-                cst.scheme_name,
+                m.scheme_name,
                 COALESCE(cst.opening_bal, 0)::NUMERIC AS opening_balance,
                 COALESCE(cst.monthly_redemptions, 0)::NUMERIC AS redemptions,
                 GREATEST(0, COALESCE(cst.opening_bal, 0) - COALESCE(cst.monthly_redemptions, 0))::NUMERIC AS eligible_investment,
                 COALESCE(m.commission_rate, 0.80)::NUMERIC AS commission_rate
             FROM client_scheme_txns cst
-            LEFT JOIN mf_schemes m ON LOWER(TRIM(m.scheme_name)) = LOWER(TRIM(cst.scheme_name))
+            JOIN mf_schemes m ON cst.scheme_id::TEXT = m.id::TEXT
             WHERE cst.opening_bal > 0
-            ORDER BY cst.client_name ASC, cst.scheme_name ASC;
+            ORDER BY cst.client_name ASC, m.scheme_name ASC;
         `;
 
         const ledgerResult = await pool.query(ledgerQuery, [id, startDate, endDate]);
 
-        // 7. Loop allocations using default contract multiplier split to formulate baseline totals
+        // 7. Map individual row entities with local contract split multiplier allocations
         let totalGrossCommission = 0;
         const processedSchemesTable = ledgerResult.rows.map(row => {
             const eligible = parseFloat(row.eligible_investment);
             const rate = parseFloat(row.commission_rate) / 100;
-            // Baseline calculation: (Eligible Principal * Rate) / 12 * Partner Split Ratio
             const grossShare = ((eligible * rate) / 12) * (defaultSplit / 100);
             totalGrossCommission += grossShare;
 
@@ -149,10 +146,8 @@ export const createInvoice = async (req, res) => {
     const username = req.user?.username || "System";
 
     try {
-        // Enforce atomic database transactions
         await pool.query('BEGIN');
 
-        // 1. Log structural variables into master header record
         const masterQuery = `
             INSERT INTO sub_distributor_invoices (
                 invoice_no, sub_distributor_id, start_date, end_date, slab_name,
@@ -175,7 +170,6 @@ export const createInvoice = async (req, res) => {
         const masterResult = await pool.query(masterQuery, masterValues);
         const invoiceId = masterResult.rows[0].id;
 
-        // 2. Persist individual asset records into the itemized child table for reprint accuracy
         if (schemesTable && schemesTable.length > 0) {
             const itemInsertQuery = `
                 INSERT INTO sub_distributor_invoice_items (
@@ -244,7 +238,6 @@ export const updateInvoice = async (req, res) => {
             return res.status(404).json({ success: false, error: "Invoice ledger entry not found." });
         }
 
-        // Wipe old itemizations and refresh line allocations
         await pool.query('DELETE FROM sub_distributor_invoice_items WHERE invoice_id = $1', [id]);
 
         if (schemesTable && schemesTable.length > 0) {
@@ -360,7 +353,7 @@ export const getSubDistributorPerformance = async (req, res) => {
                     ), 0) as monthly_payout
                 FROM transactions t
                 JOIN partner_clients pc ON t.client_id::TEXT = pc.id::TEXT
-                JOIN mf_schemes m ON t.scheme_name = m.scheme_name
+                JOIN mf_schemes m ON t.scheme_id::TEXT = m.id::TEXT
                 CROSS JOIN sub_distributors sd WHERE sd.id = $1
             ),
             sip_performance AS (

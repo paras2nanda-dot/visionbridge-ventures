@@ -32,7 +32,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // 🟢 STATE FOR SUB-MENU ACCORDION
+  // STATE FOR SUB-MENU ACCORDION
   const [openMenus, setOpenMenus] = useState({
     relations: false,
     portfolio: false,
@@ -43,11 +43,11 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
     setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
   };
 
-  // 🟢 AUTO-EXPAND SUB-MENU IF A SUB-ITEM IS ACTIVE
+  // AUTO-EXPAND SUB-MENU IF A SUB-ITEM IS ACTIVE
   useEffect(() => {
     if (['/clients', '/reviews', '/sub-distributors'].includes(location.pathname)) setOpenMenus(p => ({ ...p, relations: true }));
     if (['/sips', '/transactions', '/schemes'].includes(location.pathname)) setOpenMenus(p => ({ ...p, portfolio: true }));
-    if (['/invoices', '/reports'].includes(location.pathname)) setOpenMenus(p => ({ ...p, business: true }));
+    if (['/reports'].includes(location.pathname)) setOpenMenus(p => ({ ...p, business: true }));
   }, [location.pathname]);
 
   const handleBackup = async () => {
@@ -95,6 +95,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             color: #94a3b8; text-decoration: none; font-weight: 700; font-size: 14px;
             transition: all 0.2s ease; border-left: 4px solid transparent; cursor: pointer;
             width: 100%; border: none; background: transparent;
+            text-align: left;
           }
 
           .sidebar-link:hover, .menu-trigger:hover { background: rgba(255, 255, 255, 0.05); color: #f8fafc; }
@@ -143,7 +144,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             <LayoutDashboard size={18} /> Dashboard
           </NavLink>
 
-          {/* 🟢 GROUP 1: RELATIONSHIP MANAGEMENT */}
+          {/* GROUP 1: RELATIONSHIP MANAGEMENT */}
           <div>
             <div className="menu-trigger" onClick={() => toggleMenu('relations')}>
               <Users size={18} /> Relationship Management {openMenus.relations ? <ChevronDown size={14} style={{ marginLeft: 'auto' }} /> : <ChevronRight size={14} style={{ marginLeft: 'auto' }} />}
@@ -157,7 +158,7 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             )}
           </div>
 
-          {/* 🟢 GROUP 2: PORTFOLIO DESK */}
+          {/* GROUP 2: PORTFOLIO DESK */}
           <div>
             <div className="menu-trigger" onClick={() => toggleMenu('portfolio')}>
               <Repeat size={18} /> Portfolio Desk {openMenus.portfolio ? <ChevronDown size={14} style={{ marginLeft: 'auto' }} /> : <ChevronRight size={14} style={{ marginLeft: 'auto' }} />}
@@ -171,14 +172,13 @@ const Sidebar = ({ closeMobileMenu, isMobileOpen }) => {
             )}
           </div>
 
-          {/* 🟢 GROUP 3: BUSINESS OPS */}
+          {/* GROUP 3: BUSINESS OPS */}
           <div>
             <div className="menu-trigger" onClick={() => toggleMenu('business')}>
               <Receipt size={18} /> Business Suite {openMenus.business ? <ChevronDown size={14} style={{ marginLeft: 'auto' }} /> : <ChevronRight size={14} style={{ marginLeft: 'auto' }} />}
             </div>
             {openMenus.business && (
               <div className="sub-menu">
-                <NavLink to="/invoices" className={({ isActive }) => isActive ? 'sub-link active' : 'sub-link'}>Invoice Manager</NavLink>
                 <NavLink to="/reports" className={({ isActive }) => isActive ? 'sub-link active' : 'sub-link'}>Download Reports</NavLink>
               </div>
             )}

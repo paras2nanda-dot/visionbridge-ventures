@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify"; 
@@ -17,12 +18,7 @@ import Reports from "./pages/Reports";
 import SubDistributors from "./pages/SubDistributors"; 
 import Login from "./pages/Login";
 import Reviews from "./pages/Reviews";
-
-// 🟢 NEW-01: IMPORT CLIENT PROFILE
 import ClientProfile from "./pages/ClientProfile";
-
-// 🟢 CRIT-02 FIX: IMPORT INVOICE MANAGER
-import InvoiceManager from "./pages/Invoices/InvoiceManager";
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = sessionStorage.getItem("username");
@@ -39,7 +35,7 @@ const PublicRoute = ({ children }) => {
 function App() {
   const location = useLocation();
 
-  // 🔊 THE BUILT-IN "POP" SYNTHESIZER
+  // THE BUILT-IN "POP" SYNTHESIZER
   useEffect(() => {
     const playPop = () => {
       try {
@@ -72,7 +68,7 @@ function App() {
     return () => window.removeEventListener('pointerdown', handleInteraction);
   }, []);
 
-  // 🌌 THEME ENGINE
+  // THEME ENGINE
   useEffect(() => {
     const isLoginPage = location.pathname === '/login';
     const savedTheme = isLoginPage ? 'light' : (localStorage.getItem('vb-theme') || 'midnight');
@@ -122,18 +118,13 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/charts" element={<Charts />} />
           <Route path="/clients" element={<ClientsDatabase />} />
-          
-          {/* 🟢 NEW-01 FIX: REGISTERED CLIENT PROFILE ROUTE */}
           <Route path="/clients/:id" element={<ClientProfile />} />
-
           <Route path="/schemes" element={<MFSchemes />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/sips" element={<Sips />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/sub-distributors" element={<SubDistributors />} />
           <Route path="/reviews" element={<Reviews />} />
-          
-          <Route path="/invoices" element={<InvoiceManager />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
