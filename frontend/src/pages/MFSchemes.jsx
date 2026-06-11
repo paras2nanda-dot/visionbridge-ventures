@@ -15,7 +15,7 @@ const MFSchemes = () => {
     "Equity": ["Large Cap", "Mid Cap", "Small Cap", "Multi Cap", "Flexi Cap", "ELSS", "Sectoral/Thematic", "Focused", "Value/Contra"],
     "Debt": ["Liquid", "Overnight", "Ultra Short Duration", "Low Duration", "Money Market", "Corporate Bond", "Gilt", "Dynamic Bond"],
     "Hybrid": ["Aggressive Hybrid", "Balanced Advantage", "Multi Asset Allocation", "Arbitrage", "Equity Savings"],
-    "Other": ["Index Fund", "ETF", "Fund of Funds", "Gold"]
+    "Other": ["Index Fund", "ETF", "Fund of Funds", "Gold", "Global Equity", "REIT"]
   };
 
   const initialState = {
@@ -28,6 +28,8 @@ const MFSchemes = () => {
     small_cap: '',
     debt_allocation: '',
     gold_allocation: '',
+    global_equity: '', 
+    reit: '', 
     commission_rate: '0.8',
     total_current_value: '' 
   };
@@ -47,7 +49,7 @@ const MFSchemes = () => {
   };
 
   const totalEquity = Number(formData.large_cap || 0) + Number(formData.mid_cap || 0) + Number(formData.small_cap || 0);
-  const grandTotal = totalEquity + Number(formData.debt_allocation || 0) + Number(formData.gold_allocation || 0);
+  const grandTotal = totalEquity + Number(formData.debt_allocation || 0) + Number(formData.gold_allocation || 0) + Number(formData.global_equity || 0) + Number(formData.reit || 0);
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Number(val) || 0);
 
@@ -67,6 +69,8 @@ const MFSchemes = () => {
         small_cap: formData.small_cap || 0,
         debt_allocation: formData.debt_allocation || 0,
         gold_allocation: formData.gold_allocation || 0,
+        global_equity: formData.global_equity || 0,
+        reit: formData.reit || 0,
         commission_rate: formData.commission_rate || 0.8,
         total_current_value: formData.total_current_value || 0
     };
@@ -106,6 +110,8 @@ const MFSchemes = () => {
       small_cap: s.small_cap ?? '', 
       debt_allocation: s.debt_allocation ?? '',
       gold_allocation: s.gold_allocation ?? '',
+      global_equity: s.global_equity ?? '',
+      reit: s.reit ?? '',
       commission_rate: s.commission_rate ?? '0.8',
       total_current_value: s.total_current_value ?? ''
     });
@@ -148,11 +154,8 @@ const MFSchemes = () => {
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px', maxWidth: '1440px', margin: '0 auto' }}>
       
-      {/* 🚀 Giant "Mutual Fund Master" title removed to rely on clean breadcrumbs */}
-
       <div className="card" style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '40px', position: 'relative', overflow: 'hidden' }}>
         
-        {/* State Indicator */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: isEditing ? '#f59e0b' : '#0284c7' }}></div>
 
         <form onSubmit={handleSubmit}>
@@ -182,7 +185,7 @@ const MFSchemes = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
               <div style={{ padding: '24px', background: 'rgba(2, 132, 199, 0.04)', borderRadius: '12px', border: '1px solid rgba(2, 132, 199, 0.2)' }}>
                 <label style={{...labelStyle, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Market Value (₹)</label>
                 <input 
@@ -205,6 +208,8 @@ const MFSchemes = () => {
                     <div><label style={labelStyle}>Small %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Debt %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.debt_allocation} onChange={e => setFormData({...formData, debt_allocation: e.target.value})} /></div>
                     <div><label style={labelStyle}>Gold %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.gold_allocation} onChange={e => setFormData({...formData, gold_allocation: e.target.value})} /></div>
+                    <div><label style={labelStyle}>Global Eq %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.global_equity} onChange={e => setFormData({...formData, global_equity: e.target.value})} /></div>
+                    <div><label style={labelStyle}>REIT %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.reit} onChange={e => setFormData({...formData, reit: e.target.value})} /></div>
                 </div>
                 <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUITY CONCENTRATION: <strong style={{color: 'var(--text-main)'}}>{totalEquity}%</strong></span>
@@ -254,7 +259,6 @@ const MFSchemes = () => {
         </form>
       </div>
 
-      {/* 🔍 SEARCH BAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ position: 'relative', maxWidth: '500px', width: '100%' }}>
           <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -268,7 +272,6 @@ const MFSchemes = () => {
         </div>
       </div>
 
-      {/* SCHEMES TABLE */}
       <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <div className="table-container" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
