@@ -2,7 +2,7 @@ import { pool } from "../config/db.js";
 
 export const MathService = {
     /**
-     * 🧠 ACCURATE AUM CALCULATION
+     * 🧠 ACCURATE AUM CALCULATION (Fixed: Future transactions & future SIPs filtered out)
      * Formula: (Historical Purchases) - (Redemptions) - (SIP Missed Entries)
      */
     calculateInvestedAUM: async (clientId = null) => {
@@ -14,7 +14,10 @@ export const MathService = {
                         WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
                         ELSE 0 END) as net_amt
                 FROM transactions
-                ${clientId ? 'WHERE client_id::TEXT = $1::TEXT' : ''}
+                WHERE 1=1
+                -- 🟢 THE FIX: Strictly omit transaction entries logged with a future processing date
+                AND transaction_date <= CURRENT_DATE
+                ${clientId ? 'AND client_id::TEXT = $1::TEXT' : ''}
             ),
             sip_sums AS (
                 SELECT 
@@ -29,6 +32,8 @@ export const MathService = {
                     )) as sip_est
                 FROM sips 
                 WHERE LOWER(status) = 'active'
+                -- 🟢 THE FIX: Strictly ignore upcoming SIP mandates until their start_date is reached
+                AND start_date <= CURRENT_DATE
                 ${clientId ? 'AND client_id::TEXT = $1::TEXT' : ''}
             )
             SELECT (COALESCE(t.net_amt, 0) + COALESCE(s.sip_est, 0)) as total 
