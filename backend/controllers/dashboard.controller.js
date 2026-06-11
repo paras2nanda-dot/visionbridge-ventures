@@ -136,10 +136,7 @@ export const getBusinessStats = async (req, res) => {
       total_sub_distributors: basic.total_sub_distributors,
       internal_aum_pct: internalAumPct,
       active_invested_clients: basic.active_invested_clients || 0,
-      review_stats: {
-        overdue: 0,
-        due_7d: 0
-      }
+      review_stats: { overdue: 0, due_7d: 0 }
     });
   } catch (err) {
     console.error("❌ Business Stats Error:", err.message);
@@ -201,12 +198,7 @@ export const getLeaderboardsStats = async (req, res) => {
       ORDER BY invested_value DESC LIMIT 5
     `);
 
-    res.json({
-      total_invested_aum,
-      topFunds: topFundsRes.rows,
-      topClients: topClientsRes.rows,
-      topSources: topSourcesRes.rows,
-    });
+    res.json({ total_invested_aum, topFunds: topFundsRes.rows, topClients: topClientsRes.rows, topSources: topSourcesRes.rows });
   } catch (err) {
     console.error("❌ getLeaderboardsStats Error:", err.message);
     res.status(500).json({ error: err.message });
@@ -292,24 +284,9 @@ export const getClientDashboardStats = async (req, res) => {
     const bookPercentage = totalBusinessAUM > 0 ? Number(((groupAUM / totalBusinessAUM) * 100).toFixed(2)) : 0;
 
     res.json({
-      profile: { 
-        ...client, 
-        age: calculateAge(client.dob || client.date_of_birth),
-        onboarding_date: formattedOnboardingDate,
-        nominees_verified: nomineesVerified
-      },
-      summary: {
-        totalAUM: await MathService.calculateInvestedAUM(id),
-        group_aum: groupAUM,
-        book_percentage: bookPercentage
-      },
-      family: {
-        total_members: familyMembers.length,
-        group_aum: groupAUM,
-        book_percentage: bookPercentage,
-        nominees_verified: nomineesVerified,
-        members: processedMembers
-      },
+      profile: { ...client, age: calculateAge(client.dob || client.date_of_birth), onboarding_date: formattedOnboardingDate, nominees_verified: nomineesVerified },
+      summary: { totalAUM: await MathService.calculateInvestedAUM(id), group_aum: groupAUM, book_percentage: bookPercentage },
+      family: { total_members: familyMembers.length, group_aum: groupAUM, book_percentage: bookPercentage, nominees_verified: nomineesVerified, members: processedMembers },
       allocation: allocationRes.rows
     });
 
@@ -320,33 +297,48 @@ export const getClientDashboardStats = async (req, res) => {
 };
 
 /**
- * 📸 SNAPSHOT ENGINE (Fixed Missing Column Crash)
+ * 📸 SNAPSHOT ENGINE (BULLETPROOF FIX)
+ * Resolves Neon DB constraint crashes by extracting math directly into JS values 
+ * before insertion, matching exactly to your verified schema columns.
  */
 export const triggerMonthlySnapshot = async (req, res) => {
   try {
+    // 1. Calculate values safely outside of the SQL Insert to avoid type crashes
     const invested_aum = await MathService.calculateInvestedAUM();
     const monthly_comm = await MathService.getMonthlyCommission();
 
-    // Removed sip_book_amount to perfectly match actual database schema
-    const snapshotQuery = `
-      INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, actual_commission)
-      VALUES (
-        CURRENT_DATE, 
-        $1, 
-        (SELECT COALESCE(SUM(total_current_value),0) FROM mf_schemes), 
-        $2
-      )
-      ON CONFLICT (snapshot_date) 
-      DO UPDATE SET 
-        total_invested = EXCLUDED.total_invested, 
-        actual_commission = EXCLUDED.actual_commission
-    `;
-    
-    await pool.query(snapshotQuery, [invested_aum, monthly_comm]);
+    const marketValueRes = await pool.query(`SELECT COALESCE(SUM(total_current_value::NUMERIC), 0) as mv FROM mf_schemes`);
+    const total_market_value = marketValueRes.rows[0].mv;
+
+    const sipBookRes = await pool.query(`SELECT COALESCE(SUM(amount::NUMERIC), 0) as sb FROM sips WHERE LOWER(status) = 'active' AND start_date <= CURRENT_DATE`);
+    const sip_book_amount = sipBookRes.rows[0].sb;
+
+    // 2. Check explicitly if a snapshot exists for today
+    const checkRes = await pool.query(`SELECT id FROM monthly_analytics WHERE snapshot_date::DATE = CURRENT_DATE`);
+
+    if (checkRes.rows.length > 0) {
+      // Record exists -> UPDATE exactly by ID
+      await pool.query(`
+        UPDATE monthly_analytics 
+        SET total_invested = $1, 
+            total_market_value = $2,
+            sip_book_amount = $3,
+            actual_commission = $4
+        WHERE id = $5
+      `, [invested_aum, total_market_value, sip_book_amount, monthly_comm, checkRes.rows[0].id]);
+    } else {
+      // No record -> INSERT fresh
+      await pool.query(`
+        INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
+        VALUES (CURRENT_DATE, $1, $2, $3, $4)
+      `, [invested_aum, total_market_value, sip_book_amount, monthly_comm]);
+    }
+
     res.json({ success: true, message: "Snapshot captured accurately!" });
   } catch (err) {
     console.error("❌ Snapshot Insertion Error:", err.message);
-    res.status(500).json({ error: "Failed to capture snapshot due to schema mismatch" });
+    // Passing the exact DB error back so you can see it in your browser network tab if it fails
+    res.status(500).json({ error: "Failed to capture snapshot: " + err.message });
   }
 };
 
