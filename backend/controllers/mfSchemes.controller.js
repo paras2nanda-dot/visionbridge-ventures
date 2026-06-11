@@ -21,12 +21,13 @@ export const createScheme = async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO mf_schemes 
-      (scheme_name, amc_name, category, sub_category, large_cap, mid_cap, small_cap, debt_allocation, gold_allocation, commission_rate, total_current_value) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      (scheme_name, amc_name, category, sub_category, large_cap, mid_cap, small_cap, debt_allocation, gold_allocation, global_equity, reit, commission_rate, total_current_value) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
       [
         s.scheme_name, s.amc_name, safeCategory, s.sub_category, 
         Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
         Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
+        Number(s.global_equity || 0), Number(s.reit || 0),
         Number(s.commission_rate || 0.8), Number(s.total_current_value || 0)
       ]
     );
@@ -73,9 +74,11 @@ export const updateScheme = async (req, res) => {
         small_cap = $7, 
         debt_allocation = $8, 
         gold_allocation = $9, 
-        commission_rate = $10, 
-        total_current_value = $11
-      WHERE id = $12 RETURNING *`;
+        global_equity = $10,
+        reit = $11,
+        commission_rate = $12, 
+        total_current_value = $13
+      WHERE id = $14 RETURNING *`;
       
     const values = [
       s.scheme_name, 
@@ -86,7 +89,9 @@ export const updateScheme = async (req, res) => {
       Number(s.mid_cap || 0), 
       Number(s.small_cap || 0), 
       Number(s.debt_allocation || 0), 
-      Number(s.gold_allocation || 0), 
+      Number(s.gold_allocation || 0),
+      Number(s.global_equity || 0),
+      Number(s.reit || 0),
       Number(s.commission_rate || 0.8), 
       Number(s.total_current_value || 0), 
       id
