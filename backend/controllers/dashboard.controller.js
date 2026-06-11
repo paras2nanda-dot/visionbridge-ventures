@@ -297,27 +297,32 @@ export const getClientDashboardStats = async (req, res) => {
 };
 
 /**
- * 📸 SNAPSHOT ENGINE (BULLETPROOF FIX)
- * Resolves Neon DB constraint crashes by extracting math directly into JS values 
- * before insertion, matching exactly to your verified schema columns.
+ * 📸 SNAPSHOT ENGINE (BULLETPROOF V3)
+ * Completely bypasses PostgreSQL Date/Timestamp casting crashes.
+ * Calculates values safely, ensures numbers are sent to DB, and routes inserts via JS limits.
  */
 export const triggerMonthlySnapshot = async (req, res) => {
   try {
-    // 1. Calculate values safely outside of the SQL Insert to avoid type crashes
-    const invested_aum = await MathService.calculateInvestedAUM();
-    const monthly_comm = await MathService.getMonthlyCommission();
+    const invested_aum = Number(await MathService.calculateInvestedAUM()) || 0;
+    const monthly_comm = Number(await MathService.getMonthlyCommission()) || 0;
 
-    const marketValueRes = await pool.query(`SELECT COALESCE(SUM(total_current_value::NUMERIC), 0) as mv FROM mf_schemes`);
-    const total_market_value = marketValueRes.rows[0].mv;
+    const marketValueRes = await pool.query(`SELECT COALESCE(SUM(total_current_value), 0) as mv FROM mf_schemes`);
+    const total_market_value = Number(marketValueRes.rows[0]?.mv) || 0;
 
     const sipBookRes = await pool.query(`SELECT COALESCE(SUM(amount::NUMERIC), 0) as sb FROM sips WHERE LOWER(status) = 'active' AND start_date <= CURRENT_DATE`);
-    const sip_book_amount = sipBookRes.rows[0].sb;
+    const sip_book_amount = Number(sipBookRes.rows[0]?.sb) || 0;
 
-    // 2. Check explicitly if a snapshot exists for today
-    const checkRes = await pool.query(`SELECT id FROM monthly_analytics WHERE snapshot_date::DATE = CURRENT_DATE`);
+    // 🟢 JS Date matching avoids DB Unique Key / Timestamp collisions
+    const historyRes = await pool.query(`SELECT id, snapshot_date FROM monthly_analytics`);
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const existingRecord = historyRes.rows.find(row => {
+      if (!row.snapshot_date) return false;
+      const rowDate = new Date(row.snapshot_date).toISOString().split('T')[0];
+      return rowDate === todayStr;
+    });
 
-    if (checkRes.rows.length > 0) {
-      // Record exists -> UPDATE exactly by ID
+    if (existingRecord) {
       await pool.query(`
         UPDATE monthly_analytics 
         SET total_invested = $1, 
@@ -325,9 +330,8 @@ export const triggerMonthlySnapshot = async (req, res) => {
             sip_book_amount = $3,
             actual_commission = $4
         WHERE id = $5
-      `, [invested_aum, total_market_value, sip_book_amount, monthly_comm, checkRes.rows[0].id]);
+      `, [invested_aum, total_market_value, sip_book_amount, monthly_comm, existingRecord.id]);
     } else {
-      // No record -> INSERT fresh
       await pool.query(`
         INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
         VALUES (CURRENT_DATE, $1, $2, $3, $4)
@@ -336,9 +340,8 @@ export const triggerMonthlySnapshot = async (req, res) => {
 
     res.json({ success: true, message: "Snapshot captured accurately!" });
   } catch (err) {
-    console.error("❌ Snapshot Insertion Error:", err.message);
-    // Passing the exact DB error back so you can see it in your browser network tab if it fails
-    res.status(500).json({ error: "Failed to capture snapshot: " + err.message });
+    console.error("❌ Snapshot Error Details:", err.message);
+    res.status(500).json({ error: "DB Error: " + err.message });
   }
 };
 
