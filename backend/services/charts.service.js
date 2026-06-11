@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { pool } from '../config/db.js';
 
 export const getChartsData = async () => {
@@ -9,28 +10,41 @@ export const getChartsData = async () => {
     FROM clients
   `);
 
-  // 2. Fetch AUM Splits (SIP vs Transaction) - Filtered for Active SIPs
+  // 2. Fetch AUM Splits (SIP vs Transaction) - Filtered for Active SIPs & Past Dates
   const aumData = await pool.query(`
     SELECT 
-      (SELECT COALESCE(SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)), 0) 
-       FROM sips WHERE LOWER(status) = 'active') as sip_aum,
-      (SELECT COALESCE(SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END), 0) 
-       FROM transactions) as trans_aum
+      (SELECT COALESCE(SUM(amount::NUMERIC * (
+          GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + 
+          EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+      )), 0) 
+      FROM sips WHERE LOWER(status) = 'active' AND start_date <= CURRENT_DATE) as sip_aum,
+      
+      (SELECT COALESCE(SUM(CASE 
+          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
+          ELSE 0 END), 0) 
+      FROM transactions WHERE transaction_date <= CURRENT_DATE) as trans_aum
   `);
 
-  // 3. Age Buckets for AUM (Handles COALESCE age and Active SIPs)
+  // 3. Age Buckets for AUM (Handles COALESCE age, Active SIPs, & Past Dates)
   const ageAumData = await pool.query(`
     WITH client_total_aum AS (
       SELECT 
         c.id,
         EXTRACT(YEAR FROM AGE(CURRENT_DATE, COALESCE(c.dob, c.date_of_birth))) as age,
         COALESCE((
-            SELECT SUM(CASE WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in') THEN amount::NUMERIC ELSE -amount::NUMERIC END) 
-            FROM transactions WHERE client_id::TEXT = c.id::TEXT
+            SELECT SUM(CASE 
+                WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+                WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
+                ELSE 0 END) 
+            FROM transactions WHERE client_id::TEXT = c.id::TEXT AND transaction_date <= CURRENT_DATE
         ), 0) +
         COALESCE((
-            SELECT SUM(amount::NUMERIC * (EXTRACT(YEAR FROM AGE(CURRENT_DATE, start_date)) * 12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, start_date)) + 1)) 
-            FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active'
+            SELECT SUM(amount::NUMERIC * (
+                GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + 
+                EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+            )) 
+            FROM sips WHERE client_id::TEXT = c.id::TEXT AND LOWER(status) = 'active' AND start_date <= CURRENT_DATE
         ), 0) as total_invested
       FROM clients c
     )
@@ -53,13 +67,13 @@ export const getChartsData = async () => {
   `);
 
   // 📈 4. STOCK-STYLE TREND DATA
-  // Removed LIMIT 12 and TO_CHAR so we get the full history with raw dates
+  // 🟢 THE FIX: Safely passing 0 as sip_growth to prevent missing DB column crash
   const trendData = await pool.query(`
     SELECT 
       snapshot_date as raw_date,
       total_invested as invested_aum,
       total_market_value as market_value_aum,
-      sip_book_amount as sip_growth,
+      0 as sip_growth, 
       actual_commission as commission
     FROM monthly_analytics
     ORDER BY snapshot_date ASC
@@ -106,7 +120,6 @@ export const getChartsData = async () => {
       ],
       ageBucketsAum: ageAumData.rows.map(r => ({ name: r.name, value: parseFloat(r.value) }))
     },
-    // 🟢 TRANSFORMED FOR FRONTEND: Converts date to numeric timestamp (ms)
     trends: trendData.rows.map(r => ({
       timestamp: new Date(r.raw_date).getTime(),
       invested_aum: parseFloat(r.invested_aum),

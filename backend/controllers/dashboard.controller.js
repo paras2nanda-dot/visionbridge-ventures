@@ -214,7 +214,7 @@ export const getLeaderboardsStats = async (req, res) => {
 };
 
 /**
- * 👤 CLIENT DASHBOARD LOGIC (Fixed syntax bugs)
+ * 👤 CLIENT DASHBOARD LOGIC
  */
 export const getClientDashboardStats = async (req, res) => {
   const { id } = req.params;
@@ -254,7 +254,7 @@ export const getClientDashboardStats = async (req, res) => {
         id: m.id,
         full_name: m.full_name,
         client_code: m.client_code,
-        role: String(m.id) === String(id) ? "Primary" : "Dependent", // 🟢 FIXED JAVASCRIPT SYNTAX HERE
+        role: String(m.id) === String(id) ? "Primary" : "Dependent",
         age: calculateAge(m.dob || m.date_of_birth),
         monthly_sip: monthlySip,
         invested_aum: memberAUM,
@@ -320,27 +320,26 @@ export const getClientDashboardStats = async (req, res) => {
 };
 
 /**
- * 📸 SNAPSHOT ENGINE (Fixed case-sensitivity execution crash)
+ * 📸 SNAPSHOT ENGINE (Fixed Missing Column Crash)
  */
 export const triggerMonthlySnapshot = async (req, res) => {
   try {
     const invested_aum = await MathService.calculateInvestedAUM();
     const monthly_comm = await MathService.getMonthlyCommission();
 
+    // Removed sip_book_amount to perfectly match actual database schema
     const snapshotQuery = `
-      INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
+      INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, actual_commission)
       VALUES (
         CURRENT_DATE, 
         $1, 
         (SELECT COALESCE(SUM(total_current_value),0) FROM mf_schemes), 
-        (SELECT COALESCE(SUM(amount::NUMERIC),0) FROM sips WHERE LOWER(status) = 'active'), 
         $2
       )
       ON CONFLICT (snapshot_date) 
       DO UPDATE SET 
         total_invested = EXCLUDED.total_invested, 
-        actual_commission = EXCLUDED.actual_commission,
-        sip_book_amount = EXCLUDED.sip_book_amount
+        actual_commission = EXCLUDED.actual_commission
     `;
     
     await pool.query(snapshotQuery, [invested_aum, monthly_comm]);
