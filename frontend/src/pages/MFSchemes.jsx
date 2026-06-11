@@ -49,13 +49,23 @@ const MFSchemes = () => {
   };
 
   const totalEquity = Number(formData.large_cap || 0) + Number(formData.mid_cap || 0) + Number(formData.small_cap || 0);
-  const grandTotal = totalEquity + Number(formData.debt_allocation || 0) + Number(formData.gold_allocation || 0) + Number(formData.global_equity || 0) + Number(formData.reit || 0);
+  
+  // Robust math calculation to prevent floating point errors
+  const rawSum = totalEquity + 
+                 Number(formData.debt_allocation || 0) + 
+                 Number(formData.gold_allocation || 0) + 
+                 Number(formData.global_equity || 0) + 
+                 Number(formData.reit || 0);
+  
+  const grandTotal = parseFloat(rawSum.toFixed(2));
 
   const formatINR = (val) => new Intl.NumberFormat('en-IN').format(Number(val) || 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (grandTotal !== 100) {
+    
+    // Check if total is effectively 100 with small margin of error for floating point
+    if (Math.abs(grandTotal - 100) > 0.01) {
       return toast.warn(`Allocation must be exactly 100%. Current: ${grandTotal}%`);
     }
 
@@ -202,7 +212,7 @@ const MFSchemes = () => {
               </div>
 
               <div style={{ padding: '24px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '16px' }}>
                     <div><label style={labelStyle}>Large %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.large_cap} onChange={e => setFormData({...formData, large_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Mid %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.mid_cap} onChange={e => setFormData({...formData, mid_cap: e.target.value})} /></div>
                     <div><label style={labelStyle}>Small %</label><input style={{...inputStyle, padding: '12px'}} type="number" step="any" value={formData.small_cap} onChange={e => setFormData({...formData, small_cap: e.target.value})} /></div>
@@ -215,9 +225,9 @@ const MFSchemes = () => {
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUITY CONCENTRATION: <strong style={{color: 'var(--text-main)'}}>{totalEquity}%</strong></span>
                     <div style={{ 
                       padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', 
-                      background: grandTotal === 100 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                      color: grandTotal === 100 ? '#10b981' : '#ef4444',
-                      border: `1px solid ${grandTotal === 100 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                      background: Math.abs(grandTotal - 100) < 0.01 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+                      color: Math.abs(grandTotal - 100) < 0.01 ? '#10b981' : '#ef4444',
+                      border: `1px solid ${Math.abs(grandTotal - 100) < 0.01 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
                     }}>
                       TOTAL ALLOCATION: {grandTotal}%
                     </div>
