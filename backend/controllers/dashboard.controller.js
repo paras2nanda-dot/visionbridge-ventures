@@ -320,7 +320,7 @@ export const getClientDashboardStats = async (req, res) => {
 };
 
 /**
- * 📸 SNAPSHOT ENGINE
+ * 📸 SNAPSHOT ENGINE (Fixed case-sensitivity execution crash)
  */
 export const triggerMonthlySnapshot = async (req, res) => {
   try {
@@ -329,14 +329,25 @@ export const triggerMonthlySnapshot = async (req, res) => {
 
     const snapshotQuery = `
       INSERT INTO monthly_analytics (snapshot_date, total_invested, total_market_value, sip_book_amount, actual_commission)
-      VALUES (CURRENT_DATE, $1, (SELECT COALESCE(SUM(total_current_value),0) FROM mf_schemes), (SELECT COALESCE(SUM(amount::NUMERIC),0) FROM sips WHERE status='active'), $2)
-      ON CONFLICT (snapshot_date) DO UPDATE SET total_invested = EXCLUDED.total_invested, actual_commission = EXCLUDED.actual_commission
+      VALUES (
+        CURRENT_DATE, 
+        $1, 
+        (SELECT COALESCE(SUM(total_current_value),0) FROM mf_schemes), 
+        (SELECT COALESCE(SUM(amount::NUMERIC),0) FROM sips WHERE LOWER(status) = 'active'), 
+        $2
+      )
+      ON CONFLICT (snapshot_date) 
+      DO UPDATE SET 
+        total_invested = EXCLUDED.total_invested, 
+        actual_commission = EXCLUDED.actual_commission,
+        sip_book_amount = EXCLUDED.sip_book_amount
     `;
     
     await pool.query(snapshotQuery, [invested_aum, monthly_comm]);
     res.json({ success: true, message: "Snapshot captured accurately!" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to capture snapshot" });
+    console.error("❌ Snapshot Insertion Error:", err.message);
+    res.status(500).json({ error: "Failed to capture snapshot due to schema mismatch" });
   }
 };
 
@@ -354,6 +365,7 @@ export const exportSystemBackup = async (req, res) => {
     }
     res.json(backup);
   } catch (err) {
+    console.error("❌ System Backup Error:", err.message);
     res.status(500).json({ error: "Failed to generate system backup" });
   }
 };
