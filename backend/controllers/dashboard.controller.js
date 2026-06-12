@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { pool } from '../config/db.js';
 import { MathService } from '../services/MathService.js';
+import { logActivity } from './activityController.js'; // Ensure logActivity is imported if used in CRUD
 
 // 🛡️ Safe Date Parser Helper
 const parseSafeDate = (dateStr) => {
@@ -71,36 +72,8 @@ export const getBusinessStats = async (req, res) => {
     const basic = basicRes.rows[0];
 
     const totalInvested = await MathService.calculateInvestedAUM();
+    const externalAum = await MathService.calculateExternalAUM();
     const commMarketMonthly = await MathService.getMonthlyCommission();
-
-    // 🟢 V4 FIX: Absolute Source of Truth Architecture
-    // We calculate External AUM, then subtract it from MathService's Total AUM.
-    // This perfectly syncs the percentage to the exact ₹ number on your screen.
-    const externalAumQuery = `
-      SELECT 
-        COALESCE((
-          SELECT SUM(CASE 
-            WHEN LOWER(TRIM(t.transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
-            WHEN LOWER(TRIM(t.transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
-            ELSE 0 END) 
-          FROM transactions t
-          JOIN clients c ON t.client_id::TEXT = c.id::TEXT
-          WHERE c.sub_distributor_id IS NOT NULL AND TRIM(c.sub_distributor_id::TEXT) != ''
-        ), 0) + 
-        COALESCE((
-          SELECT SUM(s.amount::NUMERIC * (
-            GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(s.end_date, CURRENT_DATE)), s.start_date)) * 12 + 
-            EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(s.end_date, CURRENT_DATE)), s.start_date)) + 1))
-          )) 
-          FROM sips s
-          JOIN clients c ON s.client_id::TEXT = c.id::TEXT
-          WHERE c.sub_distributor_id IS NOT NULL AND TRIM(c.sub_distributor_id::TEXT) != '' 
-            AND LOWER(s.status) = 'active' AND s.start_date <= CURRENT_DATE
-        ), 0) AS external_aum
-    `;
-    
-    const extRes = await pool.query(externalAumQuery);
-    const externalAum = Number(extRes.rows[0]?.external_aum || 0);
 
     let internalAumPct = 0;
     if (totalInvested > 0) {
@@ -370,5 +343,113 @@ export const exportSystemBackup = async (req, res) => {
   } catch (err) {
     console.error("❌ System Backup Error:", err.message);
     res.status(500).json({ error: "Failed to generate system backup" });
+  }
+};
+
+/**
+ * 💰 MF SCHEME CRUD LOGIC (RESTORED)
+ */
+export const getSchemes = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM mf_schemes ORDER BY amc_name ASC, scheme_name ASC');
+    res.json(result.rows);
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
+  }
+};
+
+export const createScheme = async (req, res) => {
+  const s = req.body;
+  const user = req.user?.username || "System";
+  const safeCategory = s.category === 'Other' ? 'Equity' : s.category;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO mf_schemes 
+      (scheme_name, amc_name, category, sub_category, large_cap, mid_cap, small_cap, debt_allocation, gold_allocation, global_equity, reit, commission_rate, total_current_value) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+      [
+        s.scheme_name, s.amc_name, safeCategory, s.sub_category, 
+        Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
+        Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
+        Number(s.global_equity || 0), Number(s.reit || 0),
+        Number(s.commission_rate || 0.8), Number(s.total_current_value || 0)
+      ]
+    );
+    
+    const newScheme = result.rows[0];
+    await logActivity(user, 'CREATE', newScheme.scheme_name, `✨ Added new mutual fund scheme (${newScheme.scheme_name}).`, null, newScheme);
+
+    res.status(201).json(newScheme);
+  } catch (err) { 
+    console.error("DB Error:", err.message);
+    res.status(400).json({ error: "Database save error: " + err.message }); 
+  }
+};
+
+export const updateScheme = async (req, res) => {
+  const { id } = req.params;
+  const s = req.body;
+  const user = req.user?.username || "System";
+  
+  try {
+    const oldRes = await pool.query('SELECT * FROM mf_schemes WHERE id = $1', [id]);
+    if (oldRes.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const oldData = oldRes.rows[0];
+
+    const query = `
+      UPDATE mf_schemes SET 
+        scheme_name = $1, 
+        amc_name = $2, 
+        category = $3, 
+        sub_category = $4, 
+        large_cap = $5, 
+        mid_cap = $6, 
+        small_cap = $7, 
+        debt_allocation = $8, 
+        gold_allocation = $9, 
+        global_equity = $10,
+        reit = $11,
+        commission_rate = $12, 
+        total_current_value = $13
+      WHERE id = $14 RETURNING *`;
+      
+    const values = [
+      s.scheme_name, s.amc_name, s.category, s.sub_category, 
+      Number(s.large_cap || 0), Number(s.mid_cap || 0), Number(s.small_cap || 0), 
+      Number(s.debt_allocation || 0), Number(s.gold_allocation || 0),
+      Number(s.global_equity || 0), Number(s.reit || 0),
+      Number(s.commission_rate || 0.8), Number(s.total_current_value || 0), 
+      id
+    ];
+
+    const result = await pool.query(query, values);
+    const newData = result.rows[0];
+
+    await logActivity(user, 'UPDATE', newData.scheme_name, `Updated mutual fund scheme parameters (${newData.scheme_name}).`, oldData, newData);
+
+    res.json(newData);
+  } catch (err) { 
+    console.error("Update Error:", err.message);
+    res.status(400).json({ error: err.message }); 
+  }
+};
+
+export const deleteScheme = async (req, res) => {
+  const { id } = req.params;
+  const user = req.user?.username || "System";
+  
+  try {
+    const schemeData = await pool.query('SELECT * FROM mf_schemes WHERE id = $1', [id]);
+    if (schemeData.rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const deletedRecord = schemeData.rows[0];
+
+    await pool.query('DELETE FROM mf_schemes WHERE id = $1', [id]);
+    
+    await logActivity(user, 'DELETE', deletedRecord.scheme_name, `🗑️ Removed mutual fund scheme (${deletedRecord.scheme_name}).`, deletedRecord, null);
+
+    res.json({ message: "Scheme deleted" });
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
   }
 };
