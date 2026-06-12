@@ -76,7 +76,6 @@ const Clients = () => {
         api.get('/clients'), api.get('/sub-distributors'), api.get('/clients/families')
       ]);
       
-      // 🛡️ FIX: Standardized Array Extraction
       const validClients = cRes.data?.data || (Array.isArray(cRes.data) ? cRes.data : []);
       const validDistributors = sdRes.data?.data || (Array.isArray(sdRes.data) ? sdRes.data : []);
       const validFamilies = fRes.data?.data || (Array.isArray(fRes.data) ? fRes.data : []);
@@ -86,7 +85,6 @@ const Clients = () => {
       setFamilies(validFamilies);
       setSelectedIds([]);
       
-      // 🟢 Accurate Next ID Calculation
       if (!isEditing && !isViewing) {
         const maxNum = validClients.reduce((acc, c) => {
           const num = parseInt(c.client_code?.replace('C', ''), 10);
@@ -102,7 +100,7 @@ const Clients = () => {
   };
 
   const calculateHealth = (c) => {
-    let score = 20; // Basic registration
+    let score = 20; 
     if (c.email) score += 20;
     if (c.nominee_name) score += 20;
     if (c.pan) score += 20;
@@ -126,9 +124,13 @@ const Clients = () => {
         ? await api.put(`/clients/${editingId}`, formData)
         : await api.post(`/clients`, formData);
 
-      if (res.data.success) {
-        toast.success("✅ Client Saved Successfully");
-        setIsEditing(false); setFormData(initialState); fetchInitialData(); setActiveSubTab('basic'); 
+      // 🟢 FIX: Check if res.data exists generally, rather than forcing it to find a 'success' flag
+      if (res.data) {
+        toast.success(isEditing ? "✅ Client Updated Successfully" : "✅ Client Saved Successfully");
+        setIsEditing(false); 
+        setFormData(initialState); 
+        fetchInitialData(); 
+        setActiveSubTab('basic'); 
       }
     } catch (err) { 
       toast.error(err.response?.data?.error || "Save Failed"); 
@@ -164,7 +166,6 @@ const Clients = () => {
     }
   };
 
-  // 🛡️ FIXED: Search optimization via useMemo prevents typing lag
   const filteredClients = useMemo(() => {
     const s = searchTerm.toLowerCase();
     return clients.filter(c => 
@@ -230,7 +231,7 @@ const Clients = () => {
                   <div><label style={labelStyle}>Nominee Name</label><input style={inputStyle} value={formData.nominee_name} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_name: e.target.value})} /></div>
                   <div><label style={labelStyle}>Nominee Mobile</label><input style={inputStyle} value={formData.nominee_mobile} readOnly={isViewing} onChange={e => setFormData({...formData, nominee_mobile: e.target.value.replace(/\D/g, '')})} /></div>
                   
-                  {/* Family Logic (Preserved) */}
+                  {/* Family Logic */}
                   <div style={{ gridColumn: '1 / -1', padding: '24px', background: 'rgba(2, 132, 199, 0.03)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
                     <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={18}/> Family Grouping</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
@@ -317,8 +318,8 @@ const Clients = () => {
                     <td style={{ padding: '16px' }}>{c.mobile_number}</td>
                     <td style={{ padding: '16px', color: 'var(--text-muted)' }}>{c.added_by}</td>
                     <td style={{ padding: '16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        <button onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', margin: '0 4px' }}><Eye size={18} /></button>
-                        <button onClick={() => handleAction(c, 'edit')} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', margin: '0 4px' }}><Edit size={18} /></button>
+                        <button type="button" onClick={() => handleAction(c, 'view')} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', margin: '0 4px' }}><Eye size={18} /></button>
+                        <button type="button" onClick={() => handleAction(c, 'edit')} style={{ color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', margin: '0 4px' }}><Edit size={18} /></button>
                     </td>
                   </tr>
                 );
