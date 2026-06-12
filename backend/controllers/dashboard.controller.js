@@ -73,36 +73,45 @@ export const getBusinessStats = async (req, res) => {
     const totalInvested = await MathService.calculateInvestedAUM();
     const commMarketMonthly = await MathService.getMonthlyCommission();
 
+    // 🟢 UNIFIED QUERY FIX: Calculates both internal and total AUM side-by-side
+    // This ensures the Math logic matches exactly, preventing >100% calculation errors
     const internalAumQuery = `
-      WITH internal_book AS (
-        SELECT 
-          COALESCE((
-            SELECT SUM(CASE 
-              WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN t.amount::NUMERIC 
-              WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -t.amount::NUMERIC 
-              ELSE 0 END) 
-            FROM transactions t
-            JOIN clients cl ON t.client_id::TEXT = cl.id::TEXT
-            WHERE cl.sub_distributor_id IS NULL
-          ), 0) + 
-          COALESCE((
-            SELECT SUM(s.amount::NUMERIC * (
-              GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(s.end_date, CURRENT_DATE)), s.start_date)) * 12 + 
-              EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(s.end_date, CURRENT_DATE)), s.start_date)) + 1))
-            )) 
-            FROM sips s
-            JOIN clients cl ON s.client_id::TEXT = cl.id::TEXT
-            WHERE cl.sub_distributor_id IS NULL AND LOWER(s.status) = 'active'
-          ), 0) AS direct_aum
+      WITH all_txns AS (
+        SELECT SUM(CASE 
+          WHEN LOWER(TRIM(transaction_type)) IN ('purchase', 'switch in', 'switch_in', 'sip installment') THEN amount::NUMERIC 
+          WHEN LOWER(TRIM(transaction_type)) IN ('redemption', 'switch out', 'switch_out', 'sip missed') THEN -amount::NUMERIC 
+          ELSE 0 END) as net_amt,
+          client_id
+        FROM transactions GROUP BY client_id
+      ),
+      all_sips AS (
+        SELECT SUM(amount::NUMERIC * (
+          GREATEST(0, (EXTRACT(YEAR FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) * 12 + 
+          EXTRACT(MONTH FROM AGE(LEAST(CURRENT_DATE, COALESCE(end_date, CURRENT_DATE)), start_date)) + 1))
+        )) as active_sip,
+        client_id
+        FROM sips WHERE LOWER(status) = 'active' AND start_date <= CURRENT_DATE GROUP BY client_id
       )
-      SELECT direct_aum FROM internal_book;
+      SELECT 
+        COALESCE((SELECT SUM(net_amt) FROM all_txns) + (SELECT SUM(active_sip) FROM all_sips), 0) as total_db_aum,
+        COALESCE((
+          SELECT SUM(t.net_amt) 
+          FROM all_txns t JOIN clients c ON t.client_id::TEXT = c.id::TEXT WHERE c.sub_distributor_id IS NULL
+        ) + (
+          SELECT SUM(s.active_sip) 
+          FROM all_sips s JOIN clients c ON s.client_id::TEXT = c.id::TEXT WHERE c.sub_distributor_id IS NULL
+        ), 0) as internal_db_aum
     `;
     const internalAumRes = await pool.query(internalAumQuery);
-    const directAumValue = Number(internalAumRes.rows[0]?.direct_aum || 0);
+    const totalDbAumValue = Number(internalAumRes.rows[0]?.total_db_aum || 0);
+    const internalDbAumValue = Number(internalAumRes.rows[0]?.internal_db_aum || 0);
 
-    const internalAumPct = totalInvested > 0 
-      ? Number(((directAumValue / totalInvested) * 100).toFixed(1)) 
+    let internalAumPct = totalDbAumValue > 0 
+      ? Number(((internalDbAumValue / totalDbAumValue) * 100).toFixed(1)) 
       : 0;
+      
+    // Final safety clamp
+    if (internalAumPct > 100) internalAumPct = 100;
 
     const clientsRes = await pool.query("SELECT full_name, dob, date_of_birth FROM clients WHERE is_active = true");
     const today = new Date();
