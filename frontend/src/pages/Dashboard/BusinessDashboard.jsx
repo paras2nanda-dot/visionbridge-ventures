@@ -74,7 +74,7 @@ const BusinessDashboard = () => {
   return (
     <div className="fade-in" style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
       
-      {/* 🟢 BRAND NEW ROW: STRATEGIC ACQUISITION & STRUCTURAL METRICS */}
+      {/* 🟢 ROW 1: STRATEGIC ACQUISITION & STRUCTURAL METRICS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         <MetricCard 
             label="Nominee Pending" 
@@ -106,7 +106,7 @@ const BusinessDashboard = () => {
         />
       </div>
 
-      {/* 🟢 ORIGINAL TOP ROW: COMPLIANCE & CLIENTS */}
+      {/* 🟢 ROW 2: COMPLIANCE & CLIENTS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         <MetricCard 
             label="Reviews Overdue" 
@@ -127,7 +127,7 @@ const BusinessDashboard = () => {
         <MetricCard label="Onboarded (30D)" value={data.new_clients_30d || 0} sub="Recent Growth" icon={<Users size={24} />} figureColor="#10b981" />
       </div>
 
-      {/* 🟢 ORIGINAL SECOND ROW: WEALTH & ASSETS */}
+      {/* 🟢 ROW 3: WEALTH & ASSETS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         <MetricCard 
             label="Total Invested AUM" 
@@ -158,7 +158,7 @@ const BusinessDashboard = () => {
         />
       </div>
 
-      {/* 🟢 ORIGINAL THIRD ROW: REVENUE INSIGHTS */}
+      {/* 🟢 ROW 4: REVENUE INSIGHTS (BALANCED GRID CONVERSION) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
         <MetricCard 
             label="Comm. (Invested)" 
@@ -174,6 +174,20 @@ const BusinessDashboard = () => {
             icon={<CircleDollarSign size={24} />} 
             figureColor="#0284c7" 
             pulse 
+        />
+        <MetricCard 
+            label="Annual Comm. (Inv)" 
+            value={`₹${formatINR(data.comm_inv_yearly)}/yr`} 
+            sub="Annual Cost Floor Projection" 
+            icon={<CircleDollarSign size={24} />} 
+            figureColor="#f59e0b" 
+        />
+        <MetricCard 
+            label="Annual Comm. (Mkt)" 
+            value={`₹${formatINR(data.comm_mkt_yearly)}/yr`} 
+            sub="Annual Market Valuation Est" 
+            icon={<CircleDollarSign size={24} />} 
+            figureColor="#10b981" 
         />
       </div>
 
@@ -192,7 +206,7 @@ const BusinessDashboard = () => {
                   <div style={{ fontWeight: '800', fontSize: '14px' }}>{sip.full_name}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{sip.scheme_name}</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textProject: 'right' }}>
                   <div style={{ fontSize: '11px', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase' }}>{sip.days_left} Days Remaining</div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Ends: {new Date(sip.end_date).toLocaleDateString('en-IN')}</div>
                 </div>
