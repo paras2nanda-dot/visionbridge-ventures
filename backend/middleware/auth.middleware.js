@@ -7,12 +7,16 @@ import jwt from 'jsonwebtoken';
  * C-2 FIX: Removed weak hardcoded fallback secret.
  */
 const authMiddleware = (req, res, next) => {
-  // 1. Try to get token from httpOnly cookies (Most Secure)
-  let token = req.cookies?.token;
+  let token = null;
 
-  // 2. Fallback: Check if the frontend sent it in the Authorization headers
-  if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+  // 1. PRIMARY: Check if the frontend sent a fresh token in the Authorization headers
+  if (req.headers.authorization?.startsWith("Bearer ")) {
     token = req.headers.authorization.split(" ")[1];
+  }
+
+  // 2. FALLBACK: Try to get token from httpOnly cookies
+  if (!token && req.cookies?.token) {
+    token = req.cookies.token;
   }
 
   // 3. Block access if no token exists
