@@ -10,7 +10,7 @@ export const BASE_URL = "https://visionbridge-backend.onrender.com/api";
 const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true, // 🛡️ Essential for sending/receiving httpOnly cookies
-  timeout: 10000, 
+  timeout: 60000, // 🟢 FIX: Increased to 60s to handle Render free-tier cold starts
 });
 
 /**
