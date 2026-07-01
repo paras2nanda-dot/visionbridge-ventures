@@ -84,7 +84,7 @@ export const login = async (req, res) => {
   try {
     const data = await loginUser(username, password);
     
-    // Set token in secure cookie
+    // Set token in secure cookie (Kept as fallback for same-domain usage)
     res.cookie('token', data.token, {
       httpOnly: true,
       secure: true, 
@@ -93,12 +93,14 @@ export const login = async (req, res) => {
     });
 
     /**
-     * 🛡️ CRIT-04 FIX: Removed token from response body.
-     * The frontend should only rely on the httpOnly cookie.
+     * 🛡️ CRIT-04 FIX (REVERTED): Added token back to response body.
+     * The frontend needs this for cross-domain API requests because
+     * browsers block 3rd-party httpOnly cookies between Vercel and Render.
      */
     res.json({ 
       success: true,
-      message: "Login successful", 
+      message: "Login successful",
+      token: data.token, // 👈 THE FIX: Sending token back to frontend
       user: data.user 
     });
   } catch (err) {
@@ -286,7 +288,12 @@ export const verifyAuth = async (req, res) => {
         maxAge: 8 * 60 * 60 * 1000 
       });
 
-      return res.json({ success: true, message: "Login successful", user: { username: authUsername, role: userRole } });
+      return res.json({ 
+        success: true, 
+        message: "Login successful",
+        token: token, // 👈 THE FIX: Sending token back to frontend for Biometric login
+        user: { username: authUsername, role: userRole } 
+      });
     }
   } catch (error) {
     res.status(400).json({ error: error.message });
